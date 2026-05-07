@@ -170,9 +170,9 @@ api.login / signup / logout
 
 ---
 
-## 8. 現在の状態（2026-05-06）
+## 8. 現在の状態（2026-05-07）
 
-**最新ビルド: Build #21**（EAS ID: `39929ac5-83c8-442c-b77c-21eacd6cf38c`）
+**最新ビルド: Build #22**（EAS ID: `7081fa8d-e679-4e8d-8873-3794fb17c32b`）
 **TestFlight 未提出。**
 
 | 機能 | 状態 |
@@ -190,7 +190,7 @@ api.login / signup / logout
 
 **TestFlight に提出：**
 ```
-cd "C:\Users\SoichiroKamibeppu(MC\KotoClipApp" && eas submit --platform ios --id 39929ac5-83c8-442c-b77c-21eacd6cf38c
+cd "C:\Users\SoichiroKamibeppu(MC\KotoClipApp" && eas submit --platform ios --id 7081fa8d-e679-4e8d-8873-3794fb17c32b
 ```
 
 初回はApp Store ConnectへのログインとascAppIdの入力を求められる。

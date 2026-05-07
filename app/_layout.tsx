@@ -1,7 +1,7 @@
+import 'react-native-reanimated';
 import { useEffect, useState } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import 'react-native-reanimated';
 import { useFonts } from 'expo-font';
 import { LobsterTwo_700Bold } from '@expo-google-fonts/lobster-two';
 import { SpaceGrotesk_700Bold } from '@expo-google-fonts/space-grotesk';
@@ -62,14 +62,13 @@ function RootLayoutNav() {
 
 export default function RootLayout() {
   const [splashDone, setSplashDone] = useState(false);
-  // フォントをルートレベルで読み込むことで、ホーム画面でも確実に適用される
-  useFonts({ LobsterTwo_700Bold, SpaceGrotesk_700Bold });
+  const [fontsLoaded] = useFonts({ LobsterTwo_700Bold, SpaceGrotesk_700Bold });
 
   return (
     <AuthProvider>
       <RootLayoutNav />
       {!splashDone && (
-        <SplashAnimation onFinish={() => setSplashDone(true)} />
+        <SplashAnimation fontsLoaded={!!fontsLoaded} onFinish={() => setSplashDone(true)} />
       )}
     </AuthProvider>
   );

@@ -9,9 +9,6 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useFonts } from 'expo-font';
-import { LobsterTwo_700Bold } from '@expo-google-fonts/lobster-two';
-import { SpaceGrotesk_700Bold } from '@expo-google-fonts/space-grotesk';
 
 const { height: SH } = Dimensions.get('window');
 const EZ = Easing.bezier(0.16, 1, 0.3, 1);
@@ -182,8 +179,7 @@ function LightGate() {
   );
 }
 
-export function SplashAnimation({ onFinish }: { onFinish: () => void }) {
-  const [fontsLoaded] = useFonts({ LobsterTwo_700Bold, SpaceGrotesk_700Bold });
+export function SplashAnimation({ onFinish, fontsLoaded }: { onFinish: () => void; fontsLoaded: boolean }) {
   const started = useRef(false);
   const overlayOpacity = useSharedValue(1);
 
