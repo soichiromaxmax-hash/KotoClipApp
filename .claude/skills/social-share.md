@@ -32,26 +32,25 @@ isStreakMilestone(days) // → boolean
 - 同じマイルストーンは1度しか出さない
 - 「あとで」を押しても dismissed として記録 → 二度と出さない
 
-## Phase 1 で未実装（Phase 2以降）
+## Phase 2 以降（未実装）
 - Memory Rate カード（定着率改善後の週次）
 - Daily Encounter カード（5語以上保存した日）
 
 ## 依存ライブラリ
 ```bash
 # インストール済み（2026-05-01）
-react-native-view-shot  expo-sharing  expo-media-library
+react-native-view-shot  expo-sharing
 ```
 package.json 追加済み・`eas build` で自動リンク。追加インストール不要。
 
 ## SNS別シェア動作
 | プラットフォーム | 動作 |
 |---|---|
-| Instagram / TikTok | 画像をカメラロール保存 → アプリを開く → アプリ内で投稿 |
-| X / LINE / Facebook / LinkedIn | 同上（アプリ未インストールの場合はネイティブ共有シートにフォールバック） |
-| 「成果をシェア」ボタン | ネイティブ共有シート（全アプリ選択可） |
+| Instagram / X / LINE / Facebook / LinkedIn | `Sharing.shareAsync(uri)` でiOS純正シェートシートを開く |
+| 「成果をシェア」ボタン | 同上（全アプリ選択可） |
 
-iOS の `Linking.canOpenURL` は `LSApplicationQueriesSchemes` への宣言が必要。
-app.json の `ios.infoPlist` に追加済み: instagram / twitter / line / tiktok / fb / linkedin
+**TikTokは削除済み。追加しないこと。**
+`handlePlatform()` はプラットフォームに関係なく `Sharing.shareAsync(uri)` を呼ぶ統一実装。
 
 ## SharePayload 型
 ```ts
@@ -65,18 +64,11 @@ type SharePayload =
 - サイズ: `SCREEN_WIDTH * 0.78` × 9:16（モーダル内）→ キャプチャ後 PNG でシェア
 - 背景: `#0E1116` + SVG RadialGradient（上部 mint 0.13 / 右下 gold 0.10）
 - カラー: mint=`#7CF7DF` / gold=`#F5B84B` / text=`#F8FAFC` / muted=`#94A3B8`
-- Koto: `LobsterTwo_700Bold` / Clip: `SpaceGrotesk_700Bold` + gold 枠 + arch
 
 ## UXルール（厳守）
 - 毎日出さない / 強制モーダル禁止 / 広告に見えるデザイン禁止
 - 「あとで」を選んでも同じマイルストーンを再表示しない
 - result フェーズに移行 → API取得 → 条件一致したら prompt 表示（非同期・非ブロッキング）
-
-## 分析イベント（未実装・Phase 2）
-```
-share_prompt_shown / share_prompt_dismissed
-share_card_generated / share_sheet_opened
-```
 
 ## ハッシュタグ
 Streak: `#KotoClip #英語学習 #単語帳`
