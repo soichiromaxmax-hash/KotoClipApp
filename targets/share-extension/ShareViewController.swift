@@ -67,10 +67,7 @@ private class ShareVM: ObservableObject {
                     return
                 }
                 let refresh = (json?["refresh_token"] as? String) ?? ""
-                let ud = UserDefaults(suiteName: APP_GROUP)
-                ud?.set(access, forKey: "vocab_token")
-                ud?.set(refresh, forKey: "vocab_refresh")
-                ud?.synchronize()
+                saveTokens(access: access, refresh: refresh)
                 // ログイン成功 → 単語を検索
                 load()
             } catch {
@@ -99,14 +96,31 @@ private class ShareVM: ObservableObject {
     func cancel() { complete() }
 
     // MARK: - Token helpers
+    // App Group が未作成でも動作するよう、extension 固有の UserDefaults.standard をフォールバックに使う
 
     private func storedToken() -> String? {
-        UserDefaults(suiteName: APP_GROUP)?.string(forKey: "vocab_token")
+        // App Group 優先（メインアプリとのトークン共有）
+        if let t = UserDefaults(suiteName: APP_GROUP)?.string(forKey: "vocab_token"), !t.isEmpty { return t }
+        // フォールバック: 拡張自身の標準 UserDefaults
+        return UserDefaults.standard.string(forKey: "koto_ext_token")
+    }
+
+    private func storedRefresh() -> String? {
+        if let r = UserDefaults(suiteName: APP_GROUP)?.string(forKey: "vocab_refresh"), !r.isEmpty { return r }
+        return UserDefaults.standard.string(forKey: "koto_ext_refresh")
+    }
+
+    private func saveTokens(access: String, refresh: String) {
+        let ud = UserDefaults(suiteName: APP_GROUP)
+        ud?.set(access,  forKey: "vocab_token")
+        ud?.set(refresh, forKey: "vocab_refresh")
+        ud?.synchronize()
+        UserDefaults.standard.set(access,  forKey: "koto_ext_token")
+        UserDefaults.standard.set(refresh, forKey: "koto_ext_refresh")
     }
 
     private func refreshToken() async throws -> String {
-        let ud = UserDefaults(suiteName: APP_GROUP)
-        guard let refresh = ud?.string(forKey: "vocab_refresh"), !refresh.isEmpty else {
+        guard let refresh = storedRefresh(), !refresh.isEmpty else {
             throw URLError(.userAuthenticationRequired)
         }
         guard let url = URL(string: "\(API_BASE)/auth/refresh") else { throw URLError(.badURL) }
@@ -123,8 +137,7 @@ private class ShareVM: ObservableObject {
             throw URLError(.userAuthenticationRequired)
         }
         let newRefresh = (json?["refresh_token"] as? String) ?? refresh
-        ud?.set(newAccess, forKey: "vocab_token")
-        ud?.set(newRefresh, forKey: "vocab_refresh")
+        saveTokens(access: newAccess, refresh: newRefresh)
         return newAccess
     }
 
@@ -133,7 +146,7 @@ private class ShareVM: ObservableObject {
         guard var token = storedToken() else { throw URLError(.userAuthenticationRequired) }
 
         func makeRequest(_ t: String) -> URLRequest {
-            var r = URLRequest(url: url, timeoutInterval: 20)
+            var r = URLRequest(url: url, timeoutInterval: 30)
             r.httpMethod = method
             r.setValue("Bearer \(t)", forHTTPHeaderField: "Authorization")
             if let body {

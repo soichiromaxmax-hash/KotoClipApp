@@ -59,6 +59,11 @@ function withTimeout<T>(promise: Promise<T>, fallback: T, ms = 6000): Promise<T>
 let _cachedStats: Stats | null = null;
 let _cachedWild: Encounter[] = [];
 
+export function resetHomeCache() {
+  _cachedStats = null;
+  _cachedWild = [];
+}
+
 export default function HomeScreen() {
   const router = useRouter();
   const [stats, setStats] = useState<Stats | null>(_cachedStats);
@@ -89,9 +94,8 @@ export default function HomeScreen() {
       withTimeout<Encounter[]>(api.getTodayEncounters(), []),
     ])
       .then(([nextStats, nextWild]) => {
-        if (!alive) return;
         if (nextStats !== null) {
-          // API 成功: キャッシュ更新
+          // API 成功: キャッシュ・状態を必ず更新（unfocus中でもcomponentはマウント済みなので安全）
           const w = Array.isArray(nextWild) ? nextWild : [];
           _cachedStats = nextStats;
           _cachedWild = w;
@@ -99,7 +103,9 @@ export default function HomeScreen() {
           setWild(w);
           setNetError(false);
         } else if (_cachedStats !== null) {
-          // API 失敗だがキャッシュあり: 既存データを保持
+          // API 失敗だがキャッシュあり: キャッシュを状態に反映
+          setStats(_cachedStats);
+          setWild(_cachedWild);
         } else {
           // 初回ロードで API 失敗: エラー表示（空状態ではない）
           setNetError(true);
@@ -107,7 +113,7 @@ export default function HomeScreen() {
       })
       .finally(() => {
         refreshing.current = false;
-        if (alive) setLoading(false);
+        setLoading(false); // alive に関わらず常に呼ぶ（React 18でunmount後は無視される）
       });
 
     return () => { alive = false; };
