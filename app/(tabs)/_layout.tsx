@@ -1,33 +1,72 @@
+import { ComponentProps } from 'react';
 import { Tabs } from 'expo-router';
-import React from 'react';
+import { Ionicons } from '@expo/vector-icons';
 
-import { HapticTab } from '@/components/haptic-tab';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+type IconName = ComponentProps<typeof Ionicons>['name'];
+
+function TabIcon({ name, color }: { name: IconName; color: string; focused: boolean }) {
+  return (
+    <Ionicons name={name} size={24} color={color} />
+  );
+}
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
-
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
         headerShown: false,
-        tabBarButton: HapticTab,
-      }}>
+        tabBarStyle: {
+          backgroundColor: '#151A22',
+          borderTopColor: 'rgba(255,255,255,0.08)',
+          borderTopWidth: 1,
+          height: 80,
+          paddingBottom: 16,
+        },
+        tabBarLabelStyle: { fontSize: 10, fontWeight: '400', letterSpacing: 0.4 },
+        tabBarActiveTintColor: '#2DD4BF',
+        tabBarInactiveTintColor: '#64748B',
+      }}
+    >
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+          title: 'ホーム',
+          tabBarIcon: ({ focused, color }) => <TabIcon name={focused ? 'home' : 'home-outline'} focused={focused} color={color} />,
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="study"
         options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+          title: '学習',
+          tabBarIcon: ({ focused, color }) => <TabIcon name={focused ? 'school' : 'school-outline'} focused={focused} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="add"
+        options={{
+          title: '手動追加',
+          tabBarIcon: ({ focused, color }) => <TabIcon name={focused ? 'add-circle' : 'add-circle-outline'} focused={focused} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="words"
+        options={{
+          title: '単語帳',
+          tabBarIcon: ({ focused, color }) => <TabIcon name={focused ? 'library' : 'library-outline'} focused={focused} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="settings"
+        options={{
+          title: '設定',
+          tabBarIcon: ({ focused, color }) => <TabIcon name={focused ? 'settings' : 'settings-outline'} focused={focused} color={color} />,
+        }}
+      />
+      {/* タブバーには表示しないが、ルートとして保持 */}
+      <Tabs.Screen
+        name="wild"
+        options={{
+          href: null,
         }}
       />
     </Tabs>

@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>KotoClip Icon Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Lobster+Two:ital,wght@0,700&family=Space+Grotesk:wght@700&display=block" rel="stylesheet">
+<style>
+  body { font-family: sans-serif; background: #1a1a2e; display: flex; flex-direction: column; align-items: center; padding: 40px; gap: 24px; color: #fff; }
+  canvas { border-radius: 22.5%; box-shadow: 0 12px 48px rgba(0,0,0,0.5); }
+  button { padding: 14px 32px; font-size: 16px; font-weight: 700; background: #2DD4BF; color: #0E1116; border: none; border-radius: 10px; cursor: pointer; }
+  p { color: #aaa; font-size: 13px; }
+  code { background: #333; padding: 2px 6px; border-radius: 4px; font-size: 12px; }
+</style>
+</head>
+<body>
+<h2 style="color:#2DD4BF">KotoClip アイコン生成</h2>
+<canvas id="c" width="1024" height="1024"></canvas>
+<button onclick="dl()">1024×1024 PNG をダウンロード</button>
+<p>ダウンロードしたファイルを <code>KotoClipApp/assets/images/icon.png</code> に上書き</p>
+
+<script>
+const CV  = document.getElementById('c');
+const ctx = CV.getContext('2d');
+const W = 1024, H = 1024;
+
+// フォントを明示的にロードしてから描画（display=swapでの未ロード描画を防止）
+Promise.all([
+  document.fonts.load('bold 252px "Lobster Two"'),
+  document.fonts.load('bold 218px "Space Grotesk"'),
+]).then(draw);
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+
+  // ── 背景 ───────────────────────────────────────────────────────────────────
+  const bg = ctx.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, '#151A22');
+  bg.addColorStop(1, '#0E1116');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  // ── コト（Kotoバード）──────────────────────────────────────────────────────
+  const S  = 3.5;
+  const OX = W / 2 - 60 * S;
+  const OY = 40;
+
+  ctx.save();
+  ctx.translate(OX, OY);
+  ctx.scale(S, S);
+  drawBird();
+  ctx.restore();
+
+  // ── KotoClip ロゴ ──────────────────────────────────────────────────────────
+  drawLogo();
+}
+
+function drawBird() {
+  // 影
+  ctx.save(); ctx.globalAlpha = 0.28; ctx.fillStyle = '#000';
+  ellipse(60, 167, 34, 5); ctx.restore();
+
+  // ボディ
+  ctx.fillStyle = '#DDBE55';
+  ctx.strokeStyle = 'rgba(40,33,18,0.14)'; ctx.lineWidth = 0.8;
+  ctx.beginPath();
+  ctx.moveTo(60,36);
+  ctx.bezierCurveTo(84,36,106,60,106,92);
+  ctx.bezierCurveTo(106,124,86,148,60,148);
+  ctx.bezierCurveTo(34,148,14,124,14,92);
+  ctx.bezierCurveTo(14,60,36,36,60,36);
+  ctx.fill(); ctx.stroke();
+
+  // ベリー影
+  ctx.fillStyle = 'rgba(155,118,28,0.16)'; ellipse(60,122,30,22);
+
+  // 白目
+  ctx.fillStyle = '#F8FAF7';
+  ellipse(40,74,13,13); ellipse(80,74,13,13);
+
+  // 瞳
+  ctx.fillStyle = '#111';
+  circle(40,74,6.5); circle(80,74,6.5);
+
+  // 白目ハイライト
+  ctx.fillStyle = '#fff';
+  circle(43,71,2.2); circle(83,71,2.2);
+
+  // くちばし
+  ctx.fillStyle = '#B85F2A'; ellipse(60,100,16,7);
+  ctx.strokeStyle = 'rgba(74,39,19,0.46)'; ctx.lineWidth = 1.8;
+  ctx.beginPath(); ctx.moveTo(46,100); ctx.quadraticCurveTo(60,102.5,74,100); ctx.stroke();
+
+  // 足
+  ctx.fillStyle = '#C4A830'; ctx.globalAlpha = 0.85;
+  ellipse(46,151,14,8); ellipse(74,151,14,8);
+  ctx.globalAlpha = 1;
+
+  // 手
+  ctx.fillStyle = '#D4B640';
+  ellipse(24,120,9,8); ellipse(96,120,9,8);
+
+  // カード（両手で持つ）
+  const [cx,cy,cw,ch,cr] = [26,102,48,34,5];
+  ctx.fillStyle = 'rgba(47,191,143,0.22)'; rRect(cx+2,cy+3,cw,ch,cr);
+  ctx.fillStyle = '#D9F2E7'; rRect(cx,cy,cw,ch,cr);
+  ctx.strokeStyle = 'rgba(36,137,102,0.38)'; ctx.lineWidth = 2.2;
+  hLine(cx+6, cy+ch*0.30, cw-12);
+  ctx.strokeStyle = 'rgba(36,137,102,0.30)'; ctx.lineWidth = 2;
+  hLine(cx+6, cy+ch*0.52, cw-16);
+  hLine(cx+6, cy+ch*0.73, cw-14);
+
+  // クリップ（上部）
+  ctx.strokeStyle = '#2FBF8F'; ctx.lineWidth = 8;
+  rRectStroke(44,13,34,23,11.5);
+  ctx.strokeStyle = '#248966'; ctx.lineWidth = 3.8;
+  ctx.beginPath(); ctx.moveTo(53,28); ctx.lineTo(69,28); ctx.stroke();
+}
+
+function drawLogo() {
+  const KOTO_SIZE = 252;
+  const CLIP_SIZE = 218;
+  const GOLD      = 'rgba(245,184,75,0.88)';
+  const TEAL_C    = '#7CF7DF';
+  const WHITE_C   = '#F1F5F9';
+  // CSS: letter-spacing -0.035em (Koto), -0.058em (Clip)
+  const KOTO_LS   = `-${(KOTO_SIZE * 0.035).toFixed(1)}px`;
+  const CLIP_LS   = `-${(CLIP_SIZE * 0.058).toFixed(1)}px`;
+
+  // テキスト幅を計測（letter-spacing適用後）
+  ctx.font = `bold ${KOTO_SIZE}px "Lobster Two", "Pacifico", cursive`;
+  ctx.letterSpacing = KOTO_LS;
+  const kotoW = ctx.measureText('Koto').width;
+
+  ctx.font = `bold ${CLIP_SIZE}px "Space Grotesk", "Inter", system-ui, sans-serif`;
+  ctx.letterSpacing = CLIP_LS;
+  const clipM   = ctx.measureText('Clip');
+  const clipW   = clipM.width;
+  const clipAsc = clipM.actualBoundingBoxAscent;
+  const clipDesc = clipM.actualBoundingBoxDescent;
+
+  // "Clip" のパディング（em単位）
+  const PL = CLIP_SIZE * 0.11;
+  const PR = CLIP_SIZE * 0.12;
+  const PT = CLIP_SIZE * 0.04;
+  const PB = CLIP_SIZE * 0.09;
+
+  const GAP      = KOTO_SIZE * 0.02;
+  const clipBoxW = PL + clipW + PR;
+  const totalW   = kotoW + GAP + clipBoxW;
+  const startX   = (W - totalW) / 2;
+  const baselineY = H - 175;
+
+  // "Clip" ボックスの上端・高さ
+  const clipBoxTop = baselineY - clipAsc - PT;
+  const clipBoxH   = clipAsc + clipDesc + PT + PB;
+  const clipTextX  = startX + kotoW + GAP + PL;
+  const clipBoxX   = startX + kotoW + GAP;
+
+  // ── "Koto" ──────────────────────────────────────────────────────────────
+  ctx.textBaseline  = 'alphabetic';
+  ctx.textAlign     = 'left';
+  ctx.font          = `bold ${KOTO_SIZE}px "Lobster Two", "Pacifico", cursive`;
+  ctx.letterSpacing = KOTO_LS;
+  ctx.fillStyle     = WHITE_C;
+  ctx.shadowColor   = 'rgba(124,247,223,0.18)';
+  ctx.shadowBlur    = 22;
+  ctx.fillText('Koto', startX, baselineY);
+  ctx.shadowColor   = 'transparent';
+
+  // ── "Clip" ボーダー ───────────────────────────────────────────────────
+  const bRadius = CLIP_SIZE * 0.18;
+  ctx.letterSpacing = '0px';
+  ctx.strokeStyle   = GOLD;
+  ctx.lineWidth     = 3.5;
+  ctx.shadowColor   = 'rgba(245,184,75,0.28)';
+  ctx.shadowBlur    = 18;
+  ctx.beginPath();
+  ctx.roundRect(clipBoxX, clipBoxTop, clipBoxW, clipBoxH, bRadius);
+  ctx.stroke();
+  ctx.shadowColor = 'transparent';
+
+  // ── クリップタブ（::before）─────────────────────────────────────────
+  const tabW = CLIP_SIZE * 0.34;
+  const tabH = CLIP_SIZE * 0.19;
+  const tabX = clipBoxX + CLIP_SIZE * 0.18;
+  const tabY = clipBoxTop - tabH + 2;
+  const tabR = CLIP_SIZE * 0.14;
+
+  ctx.strokeStyle = 'rgba(245,184,75,0.80)';
+  ctx.lineWidth   = 3;
+  ctx.beginPath();
+  ctx.moveTo(tabX + tabR,        tabY);
+  ctx.lineTo(tabX + tabW - tabR, tabY);
+  ctx.arcTo(tabX + tabW, tabY, tabX + tabW, tabY + tabR, tabR);
+  ctx.lineTo(tabX + tabW, tabY + tabH);
+  ctx.moveTo(tabX, tabY + tabH);
+  ctx.lineTo(tabX, tabY + tabR);
+  ctx.arcTo(tabX, tabY, tabX + tabR, tabY, tabR);
+  ctx.stroke();
+
+  // ── "Clip" テキスト ───────────────────────────────────────────────────
+  ctx.font          = `bold ${CLIP_SIZE}px "Space Grotesk", "Inter", system-ui, sans-serif`;
+  ctx.letterSpacing = CLIP_LS;
+  ctx.fillStyle     = TEAL_C;
+  ctx.shadowColor   = 'rgba(124,247,223,0.40)';
+  ctx.shadowBlur    = 24;
+  ctx.fillText('Clip', clipTextX, baselineY);
+  ctx.letterSpacing = '0px';
+  ctx.shadowColor   = 'transparent';
+
+  // ── ボトムライン（::after）── 右から左へのgoldグラデーション線 ─────────
+  const lineMargin = CLIP_SIZE * 0.14;
+  const lineY      = clipBoxTop + clipBoxH - CLIP_SIZE * 0.08;
+  const lineX1     = clipBoxX + lineMargin;
+  const lineX2     = clipBoxX + clipBoxW - lineMargin;
+  const lineGrad   = ctx.createLinearGradient(lineX1, lineY, lineX2, lineY);
+  lineGrad.addColorStop(0,   'transparent');
+  lineGrad.addColorStop(0.5, 'rgba(255,230,167,0.70)');
+  lineGrad.addColorStop(1,   'transparent');
+  ctx.strokeStyle = lineGrad;
+  ctx.lineWidth   = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(lineX1, lineY);
+  ctx.lineTo(lineX2, lineY);
+  ctx.stroke();
+}
+
+// ── ヘルパー ─────────────────────────────────────────────────────────────────
+function ellipse(x,y,rx,ry){ ctx.beginPath(); ctx.ellipse(x,y,rx,ry,0,0,Math.PI*2); ctx.fill(); }
+function circle(x,y,r){ ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill(); }
+function rRect(x,y,w,h,r){ ctx.beginPath(); ctx.roundRect(x,y,w,h,r); ctx.fill(); }
+function rRectStroke(x,y,w,h,r){ ctx.beginPath(); ctx.roundRect(x,y,w,h,r); ctx.stroke(); }
+function hLine(x,y,len){ ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x+len,y); ctx.stroke(); }
+
+function dl() {
+  const a = document.createElement('a');
+  a.download = 'icon.png';
+  a.href = CV.toDataURL('image/png');
+  a.click();
+}
+</script>
+</body>
+</html>

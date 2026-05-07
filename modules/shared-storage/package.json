@@ -1,0 +1,6 @@
+{
+  "name": "shared-storage",
+  "version": "1.0.0",
+  "description": "App Group UserDefaults bridge for KotoClip Share Extension",
+  "main": "index.ts"
+}

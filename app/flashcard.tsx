@@ -1,0 +1,526 @@
+import { useEffect, useRef, useState } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  SafeAreaView,
+  ScrollView,
+} from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
+import { api } from '@/lib/api';
+import { KotoBird } from '@/components/KotoBird';
+
+interface Word {
+  id: number;
+  word: string;
+  meaning: string;
+  context?: string;
+  ai_explanation?: string;
+}
+
+type Direction = 'en_ja' | 'ja_en';
+type Rating = 'good' | 'hard' | 'again';
+
+// ─── フリップカード ─────────────────────────────────────────────────────────
+
+function FlipCard({
+  word,
+  onRate,
+  reversed,
+}: {
+  word: Word;
+  onRate: (r: Rating) => void;
+  reversed: boolean;
+}) {
+  const [flipped, setFlipped] = useState(false);
+  const [locked, setLocked] = useState(true);
+
+  useEffect(() => {
+    setFlipped(false);
+    setLocked(true);
+    const t = setTimeout(() => setLocked(false), 500);
+    return () => clearTimeout(t);
+  }, [word.id, reversed]);
+
+  const badge = !flipped
+    ? reversed ? 'Meaning' : 'Flashcard'
+    : reversed ? 'Word' : 'Meaning';
+
+  return (
+    <View style={s.questionWrap}>
+      <View style={s.questionCard}>
+        <View style={s.mascotCorner} pointerEvents="none">
+          <KotoBird size={60} />
+        </View>
+        <Text style={s.modeBadge}>{badge}</Text>
+
+        {/* 表面 */}
+        {!flipped && !reversed && (
+          <>
+            <Text style={s.wordDisplay}>{word.word}</Text>
+            {!!word.context && (
+              <Text style={s.contextText}>{word.context.slice(0, 80)}</Text>
+            )}
+          </>
+        )}
+        {!flipped && reversed && (
+          <Text style={s.meaningDisplay}>{word.meaning}</Text>
+        )}
+
+        {/* 裏面 */}
+        {flipped && !reversed && (
+          <>
+            <Text style={s.meaningDisplay}>{word.meaning}</Text>
+            {!!word.context && (
+              <View style={s.contextBlock}>
+                <Text style={s.contextBlockText}>{word.context}</Text>
+              </View>
+            )}
+            {!!word.ai_explanation && (
+              <Text style={s.aiText}>{word.ai_explanation}</Text>
+            )}
+          </>
+        )}
+        {flipped && reversed && (
+          <>
+            <Text style={s.wordDisplay}>{word.word}</Text>
+            {!!word.context && (
+              <View style={s.contextBlock}>
+                <Text style={s.contextBlockText}>{word.context}</Text>
+              </View>
+            )}
+            {!!word.ai_explanation && (
+              <Text style={s.aiText}>{word.ai_explanation}</Text>
+            )}
+          </>
+        )}
+      </View>
+
+      {!flipped ? (
+        <TouchableOpacity
+          style={[s.primaryBtn, locked && { opacity: 0.38 }]}
+          onPress={() => setFlipped(true)}
+          disabled={locked}
+          activeOpacity={0.8}
+        >
+          <Text style={s.primaryBtnText}>答えを見る</Text>
+        </TouchableOpacity>
+      ) : (
+        <View style={s.ratingWrap}>
+          <TouchableOpacity style={s.ratingAgain} onPress={() => onRate('again')} activeOpacity={0.8}>
+            <Text style={s.ratingBtnText}>もう一度</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={s.ratingHard} onPress={() => onRate('hard')} activeOpacity={0.8}>
+            <Text style={s.ratingBtnText}>あいまい</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={s.ratingGood} onPress={() => onRate('good')} activeOpacity={0.8}>
+            <Text style={s.ratingBtnText}>覚えていた</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+    </View>
+  );
+}
+
+// ─── メイン画面 ─────────────────────────────────────────────────────────────
+
+export default function FlashcardScreen() {
+  const router = useRouter();
+  const [allLoaded, setAllLoaded] = useState(false);
+  const [queue, setQueue] = useState<Word[]>([]);
+  const [idx, setIdx] = useState(0);
+  const [ratings, setRatings] = useState({ good: 0, hard: 0, again: 0 });
+  const [done, setDone] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<{ wordId: number; rating: Rating; elapsed: number } | null>(null);
+  const [direction, setDirection] = useState<Direction>('en_ja');
+  const startTime = useRef(Date.now());
+  const sessionWords = useRef<Word[]>([]);
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { load(); }, []);
+
+  async function load() {
+    try {
+      let words: Word[] = await api.getDue(10);
+      if (!Array.isArray(words)) throw new Error('データを取得できませんでした');
+      if (words.length === 0) {
+        words = await api.getAllWords(10, true);
+        if (!Array.isArray(words)) words = [];
+      }
+      sessionWords.current = [...words].slice(0, 10);
+      setAllLoaded(true);
+      if (sessionWords.current.length > 0) beginSession(sessionWords.current);
+    } catch (e: any) {
+      setLoadError(e.message || 'エラーが発生しました');
+      setAllLoaded(true);
+    }
+  }
+
+  function beginSession(words: Word[]) {
+    setQueue(words.slice(0, 10));
+    setIdx(0);
+    setRatings({ good: 0, hard: 0, again: 0 });
+    setDone(false);
+    setSaveError(null);
+    startTime.current = Date.now();
+  }
+
+  function advanceQueue(rating: Rating) {
+    setRatings((r) => ({ ...r, [rating]: (r[rating] ?? 0) + 1 }));
+    startTime.current = Date.now();
+    if (idx + 1 >= queue.length) setDone(true);
+    else setIdx((i) => i + 1);
+  }
+
+  function restartSession() {
+    beginSession([...sessionWords.current].sort(() => Math.random() - 0.5));
+  }
+
+  async function onRate(rating: Rating) {
+    const word = queue[idx];
+    const elapsed = Math.max(1, Math.round(((Date.now() - startTime.current) / 1000 / 86400) * 10) / 10);
+    try {
+      await api.postReview(word.id, rating, elapsed);
+    } catch {
+      setSaveError({ wordId: word.id, rating, elapsed });
+      return;
+    }
+    advanceQueue(rating);
+  }
+
+  async function retrySave() {
+    if (!saveError) return;
+    try {
+      await api.postReview(saveError.wordId, saveError.rating, saveError.elapsed);
+      const { rating } = saveError;
+      setSaveError(null);
+      advanceQueue(rating);
+    } catch {
+      // keep error shown
+    }
+  }
+
+  function skipSave() {
+    if (!saveError) return;
+    const { rating } = saveError;
+    setSaveError(null);
+    advanceQueue(rating);
+  }
+
+  function handleDirection(d: Direction) {
+    if (d === direction) return;
+    setDirection(d);
+    beginSession(sessionWords.current);
+  }
+
+  const pct = queue.length > 0 ? (idx / queue.length) * 100 : 0;
+
+  // ローディング
+  if (!allLoaded) {
+    return (
+      <SafeAreaView style={s.root}>
+        <View style={s.centered}>
+          <KotoBird size={76} />
+          <Text style={s.loadingText}>カードを準備中...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // エラー
+  if (loadError) {
+    return (
+      <SafeAreaView style={s.root}>
+        <View style={s.centered}>
+          <Text style={s.errorText}>{loadError}</Text>
+          <TouchableOpacity style={s.primaryBtn} onPress={() => router.back()}>
+            <Text style={s.primaryBtnText}>ホームへ</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // 単語なし
+  if (sessionWords.current.length === 0) {
+    return (
+      <SafeAreaView style={s.root}>
+        <View style={s.centered}>
+          <KotoBird size={82} />
+          <Text style={s.emptyTitle}>単語がまだありません</Text>
+          <Text style={s.emptySub}>まずは言葉をためて始めましょう。</Text>
+          <TouchableOpacity style={s.primaryBtn} onPress={() => router.push('/(tabs)/add' as any)}>
+            <Text style={s.primaryBtnText}>手動で単語を追加する</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // バッチ完了
+  if (done) {
+    const total = ratings.good + ratings.hard + ratings.again;
+    const accuracy = total > 0 ? Math.round((ratings.good / total) * 100) : 0;
+    return (
+      <SafeAreaView style={s.root}>
+        <ScrollView contentContainerStyle={s.centeredScroll} showsVerticalScrollIndicator={false}>
+          <KotoBird size={88} />
+          <Text style={s.doneTitle}>{queue.length}枚を確認</Text>
+          <Text style={s.batchInfo}>このセッションはここまで</Text>
+          <View style={s.statsRow}>
+            <View style={s.statCard}>
+              <Text style={[s.statNum, { color: '#22C55E' }]}>{ratings.good}</Text>
+              <Text style={s.statLbl}>覚えていた</Text>
+            </View>
+            <View style={s.statCard}>
+              <Text style={[s.statNum, { color: '#F59E0B' }]}>{ratings.hard}</Text>
+              <Text style={s.statLbl}>惜しかった</Text>
+            </View>
+            <View style={s.statCard}>
+              <Text style={[s.statNum, { color: '#EF4444' }]}>{ratings.again}</Text>
+              <Text style={s.statLbl}>忘れていた</Text>
+            </View>
+          </View>
+          <View style={s.accuracyCard}>
+            <Text style={s.accuracyNum}>{accuracy}%</Text>
+            <Text style={s.accuracyLbl}>このセットの定着率</Text>
+          </View>
+          <TouchableOpacity style={s.primaryBtn} onPress={restartSession}>
+            <Text style={s.primaryBtnText}>もう一度10枚</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={s.ghostBtn} onPress={() => router.back()}>
+            <Text style={s.ghostBtnText}>ホームへ</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
+  const word = queue[idx];
+
+  return (
+    <SafeAreaView style={s.root}>
+      {/* ヘッダー */}
+      <View style={s.header}>
+        <TouchableOpacity onPress={() => router.back()} style={s.closeBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+          <Text style={s.closeBtnText}>✕</Text>
+        </TouchableOpacity>
+        <View style={s.progressBg}>
+          <LinearGradient
+            colors={['#2DD4BF', '#4CC9F0']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={[s.progressFill, { width: `${pct}%` as any }]}
+          />
+        </View>
+        <Text style={s.scoreBadge}>{idx + 1} / {queue.length}</Text>
+      </View>
+
+      <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
+        {/* 方向切り替え */}
+        <View style={s.dirBar}>
+          {(['en_ja', 'ja_en'] as Direction[]).map((d) => (
+            <TouchableOpacity
+              key={d}
+              style={[s.dirTab, direction === d && s.dirTabActive]}
+              onPress={() => handleDirection(d)}
+            >
+              <Text style={[s.dirTabText, direction === d && s.dirTabTextActive]}>
+                {d === 'en_ja' ? '英 → 日' : '日 → 英'}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        <Text style={s.batchInfoSmall}>10枚で終了</Text>
+
+        {saveError ? (
+          <View style={s.saveErrorBox}>
+            <Text style={s.saveErrorTitle}>保存に失敗しました</Text>
+            <Text style={s.saveErrorSub}>ネットワーク接続を確認して、もう一度お試しください。</Text>
+            <TouchableOpacity style={s.primaryBtn} onPress={retrySave}>
+              <Text style={s.primaryBtnText}>保存し直す</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={s.ghostBtn} onPress={skipSave}>
+              <Text style={s.ghostBtnText}>スキップして次へ</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <FlipCard
+            key={`${word.id}-${direction}`}
+            word={word}
+            onRate={onRate}
+            reversed={direction === 'ja_en'}
+          />
+        )}
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+// ─── スタイル ───────────────────────────────────────────────────────────────
+
+const s = StyleSheet.create({
+  root: { flex: 1, backgroundColor: '#0E1116' },
+  content: { padding: 16, paddingBottom: 40 },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 16, padding: 40 },
+  centeredScroll: { alignItems: 'center', padding: 24, gap: 16, paddingBottom: 40 },
+
+  // ヘッダー
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 10,
+  },
+  closeBtn: { padding: 4 },
+  closeBtnText: { color: '#6B7280', fontSize: 18, fontWeight: '500' },
+  progressBg: {
+    flex: 1,
+    height: 6,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: 99,
+    overflow: 'hidden',
+  },
+  progressFill: { height: 6, borderRadius: 99 },
+  scoreBadge: {
+    color: '#6B7280',
+    fontSize: 12,
+    minWidth: 44,
+    textAlign: 'right',
+  },
+
+  // 方向バー
+  dirBar: {
+    flexDirection: 'row',
+    backgroundColor: '#1D2430',
+    borderRadius: 10,
+    padding: 4,
+    gap: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+    marginBottom: 10,
+  },
+  dirTab: { flex: 1, paddingVertical: 8, borderRadius: 8, alignItems: 'center' },
+  dirTabActive: { backgroundColor: '#2DD4BF' },
+  dirTabText: { color: '#6B7280', fontWeight: '600', fontSize: 13 },
+  dirTabTextActive: { color: '#0E1116' },
+  batchInfoSmall: { color: '#6B7280', fontSize: 11, textAlign: 'center', marginBottom: 14 },
+
+  // 問題カード
+  questionWrap: { gap: 14 },
+  questionCard: {
+    backgroundColor: '#151A22',
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    minHeight: 220,
+    gap: 10,
+    overflow: 'hidden',
+  },
+  mascotCorner: { position: 'absolute', top: 4, right: 4, opacity: 0.96 },
+  modeBadge: {
+    color: '#2DD4BF',
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
+  wordDisplay: { color: '#F9FAFB', fontSize: 32, fontWeight: '700' },
+  meaningDisplay: { color: '#F9FAFB', fontSize: 22, fontWeight: '700', marginBottom: 4 },
+  contextText: { color: '#9CA3AF', fontSize: 13, fontStyle: 'italic', lineHeight: 18 },
+  contextBlock: {
+    borderLeftWidth: 2,
+    borderLeftColor: 'rgba(255,255,255,0.10)',
+    paddingLeft: 10,
+  },
+  contextBlockText: { color: '#9CA3AF', fontSize: 13, fontStyle: 'italic', lineHeight: 20 },
+  aiText: { color: '#9CA3AF', fontSize: 13, lineHeight: 20 },
+
+  // ボタン
+  primaryBtn: {
+    backgroundColor: '#2DD4BF',
+    borderRadius: 12,
+    paddingVertical: 15,
+    alignItems: 'center',
+    width: '100%',
+  },
+  primaryBtnText: { color: '#0E1116', fontWeight: '700', fontSize: 16 },
+  ghostBtn: { paddingVertical: 14, alignItems: 'center' },
+  ghostBtnText: { color: '#6B7280', fontSize: 15 },
+
+  ratingWrap: { gap: 10 },
+  ratingAgain: {
+    backgroundColor: '#EF4444',
+    borderRadius: 12,
+    paddingVertical: 15,
+    alignItems: 'center',
+  },
+  ratingHard: {
+    backgroundColor: '#F59E0B',
+    borderRadius: 12,
+    paddingVertical: 15,
+    alignItems: 'center',
+  },
+  ratingGood: {
+    backgroundColor: '#2DD4BF',
+    borderRadius: 12,
+    paddingVertical: 15,
+    alignItems: 'center',
+  },
+  ratingBtnText: { color: '#fff', fontWeight: '700', fontSize: 16 },
+
+  // 保存エラー
+  saveErrorBox: {
+    backgroundColor: 'rgba(239,68,68,0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(239,68,68,0.28)',
+    borderRadius: 14,
+    padding: 20,
+    gap: 12,
+  },
+  saveErrorTitle: { color: '#EF4444', fontSize: 15, fontWeight: '700' },
+  saveErrorSub: { color: '#9CA3AF', fontSize: 13, lineHeight: 20 },
+
+  // ステータス画面
+  loadingText: { color: '#9CA3AF', fontSize: 14 },
+  errorText: { color: '#EF4444', fontSize: 15, textAlign: 'center' },
+  emptyTitle: { color: '#F9FAFB', fontSize: 18, fontWeight: '700', textAlign: 'center' },
+  emptySub: { color: '#9CA3AF', fontSize: 13, textAlign: 'center' },
+
+  // 完了画面
+  doneTitle: { color: '#F9FAFB', fontSize: 22, fontWeight: '500' },
+  batchInfo: { color: '#9CA3AF', fontSize: 13 },
+  statsRow: { flexDirection: 'row', gap: 12, width: '100%' },
+  statCard: {
+    flex: 1,
+    backgroundColor: '#151A22',
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+  },
+  statNum: { fontSize: 26, fontWeight: '700' },
+  statLbl: { color: '#9CA3AF', fontSize: 11, marginTop: 4, textAlign: 'center' },
+  accuracyCard: {
+    backgroundColor: '#151A22',
+    borderRadius: 12,
+    padding: 20,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    width: '100%',
+  },
+  accuracyNum: {
+    fontSize: 36,
+    fontWeight: '700',
+    color: '#2DD4BF',
+    letterSpacing: -1.5,
+  },
+  accuracyLbl: { color: '#9CA3AF', fontSize: 13, marginTop: 4 },
+});

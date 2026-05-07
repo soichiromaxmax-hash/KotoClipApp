@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "KotoClipApp",
-    "slug": "KotoClipApp",
+    "name": "KotoClip",
+    "slug": "kotoclip",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -9,7 +9,12 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": false,
+      "bundleIdentifier": "jp.kotoclip.app",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "LSApplicationQueriesSchemes": ["instagram", "twitter", "line", "tiktok", "fb", "linkedin"]
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -27,15 +32,23 @@
     },
     "plugins": [
       "expo-router",
+      "./plugins/withShareExtension",
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "KotoClipが達成カードを共有するために写真ライブラリへのアクセスを使用します。",
+          "savePhotosPermission": "KotoClipが達成カードをカメラロールに保存するために使用します。"
+        }
+      ],
       [
         "expo-splash-screen",
         {
           "image": "./assets/images/splash-icon.png",
-          "imageWidth": 200,
+          "imageWidth": 280,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff",
+          "backgroundColor": "#151A22",
           "dark": {
-            "backgroundColor": "#000000"
+            "backgroundColor": "#151A22"
           }
         }
       ]
@@ -43,6 +56,27 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "f90b1ad4-f8a9-4345-84f5-e1a5d443dbad",
+        "build": {
+          "experimental": {
+            "ios": {
+              "appExtensions": [
+                {
+                  "targetName": "ShareExtension",
+                  "bundleIdentifier": "jp.kotoclip.app.share",
+                  "entitlements": {
+                    "com.apple.security.application-groups": ["group.jp.kotoclip.app"]
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
     }
   }
 }
