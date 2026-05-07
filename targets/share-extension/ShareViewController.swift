@@ -5,16 +5,35 @@ private let APP_GROUP = "group.jp.kotoclip.app"
 private let API_BASE  = "https://kotoclip.onrender.com/api"
 private let TEAL      = Color(red: 0.176, green: 0.831, blue: 0.749)
 
+// MARK: - Models
+
+private struct LookupResult {
+    let meaning: String
+    let aiExample: String
+    let aiExampleNative: String
+    let aiNotes: String
+}
+
 // MARK: - State
 private enum ShareState: Equatable {
     case loading
-    case preview(meaning: String)
+    case preview(result: LookupResult)
     case adding
     case success
-    case noToken
-    case loggingIn
-    case loginError(String)
+    case noToken(result: LookupResult)
+    case loggingIn(result: LookupResult)
+    case loginError(result: LookupResult, message: String)
     case failure(String)
+
+    static func == (lhs: ShareState, rhs: ShareState) -> Bool {
+        switch (lhs, rhs) {
+        case (.loading, .loading): return true
+        case (.adding, .adding): return true
+        case (.success, .success): return true
+        case (.failure(let a), .failure(let b)): return a == b
+        default: return false
+        }
+    }
 }
 
 // MARK: - ViewModel
@@ -31,22 +50,39 @@ private class ShareVM: ObservableObject {
     }
 
     func load() {
-        guard storedToken() != nil else { state = .noToken; return }
         state = .loading
         Task {
             do {
-                let meaning = try await lookup(word: word)
-                state = .preview(meaning: meaning)
-            } catch let err as URLError where err.code == .userAuthenticationRequired {
-                state = .noToken
+                let result = try await lookup(word: word)
+                state = .preview(result: result)
             } catch {
                 state = .failure("翻訳を取得できませんでした")
             }
         }
     }
 
-    func login(email: String, password: String) {
-        state = .loggingIn
+    func add(result: LookupResult) {
+        guard let token = storedToken() else {
+            state = .noToken(result: result)
+            return
+        }
+        state = .adding
+        Task {
+            do {
+                try await post(word: word, meaning: result.meaning, token: token)
+                state = .success
+                try? await Task.sleep(nanoseconds: 1_400_000_000)
+                complete()
+            } catch let err as URLError where err.code == .userAuthenticationRequired {
+                state = .noToken(result: result)
+            } catch {
+                state = .failure("追加に失敗しました。もう一度お試しください。")
+            }
+        }
+    }
+
+    func login(email: String, password: String, pendingResult: LookupResult) {
+        state = .loggingIn(result: pendingResult)
         Task {
             do {
                 guard let url = URL(string: "\(API_BASE)/auth/login") else { throw URLError(.badURL) }
@@ -57,38 +93,21 @@ private class ShareVM: ObservableObject {
                 let (data, res) = try await URLSession.shared.data(for: req)
                 guard let http = res as? HTTPURLResponse else { throw URLError(.badServerResponse) }
                 if http.statusCode == 401 || http.statusCode == 400 {
-                    state = .loginError("メールアドレスまたはパスワードが違います")
+                    state = .loginError(result: pendingResult, message: "メールアドレスまたはパスワードが違います")
                     return
                 }
                 guard http.statusCode < 300 else { throw URLError(.badServerResponse) }
                 let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
                 guard let access = json?["access_token"] as? String else {
-                    state = .loginError("ログインに失敗しました")
+                    state = .loginError(result: pendingResult, message: "ログインに失敗しました")
                     return
                 }
                 let refresh = (json?["refresh_token"] as? String) ?? ""
                 saveTokens(access: access, refresh: refresh)
-                // ログイン成功 → 単語を検索
-                load()
+                // ログイン成功 → そのまま単語を追加
+                add(result: pendingResult)
             } catch {
-                state = .loginError("接続に失敗しました。ネットワークを確認してください。")
-            }
-        }
-    }
-
-    func add(meaning: String) {
-        guard storedToken() != nil else { state = .noToken; return }
-        state = .adding
-        Task {
-            do {
-                try await post(word: word, meaning: meaning)
-                state = .success
-                try? await Task.sleep(nanoseconds: 1_400_000_000)
-                complete()
-            } catch let err as URLError where err.code == .userAuthenticationRequired {
-                state = .failure("ログインが切れています。アプリを開いてください。")
-            } catch {
-                state = .failure("追加に失敗しました。もう一度お試しください。")
+                state = .loginError(result: pendingResult, message: "接続に失敗しました。ネットワークを確認してください。")
             }
         }
     }
@@ -96,12 +115,9 @@ private class ShareVM: ObservableObject {
     func cancel() { complete() }
 
     // MARK: - Token helpers
-    // App Group が未作成でも動作するよう、extension 固有の UserDefaults.standard をフォールバックに使う
 
     private func storedToken() -> String? {
-        // App Group 優先（メインアプリとのトークン共有）
         if let t = UserDefaults(suiteName: APP_GROUP)?.string(forKey: "vocab_token"), !t.isEmpty { return t }
-        // フォールバック: 拡張自身の標準 UserDefaults
         return UserDefaults.standard.string(forKey: "koto_ext_token")
     }
 
@@ -119,7 +135,7 @@ private class ShareVM: ObservableObject {
         UserDefaults.standard.set(refresh, forKey: "koto_ext_refresh")
     }
 
-    private func refreshToken() async throws -> String {
+    private func refreshToken(current: String) async throws -> String {
         guard let refresh = storedRefresh(), !refresh.isEmpty else {
             throw URLError(.userAuthenticationRequired)
         }
@@ -141,9 +157,9 @@ private class ShareVM: ObservableObject {
         return newAccess
     }
 
-    // 401 時に refresh → retry する汎用フェッチ
-    private func authedData(url: URL, method: String = "GET", body: Data? = nil) async throws -> Data {
-        guard var token = storedToken() else { throw URLError(.userAuthenticationRequired) }
+    // 401 時に refresh → retry する認証付きフェッチ
+    private func authedData(url: URL, method: String = "GET", body: Data? = nil, token: String) async throws -> Data {
+        var currentToken = token
 
         func makeRequest(_ t: String) -> URLRequest {
             var r = URLRequest(url: url, timeoutInterval: 30)
@@ -156,10 +172,10 @@ private class ShareVM: ObservableObject {
             return r
         }
 
-        let (data, res) = try await URLSession.shared.data(for: makeRequest(token))
+        let (data, res) = try await URLSession.shared.data(for: makeRequest(currentToken))
         if let http = res as? HTTPURLResponse, http.statusCode == 401 {
-            token = try await refreshToken()
-            let (retryData, retryRes) = try await URLSession.shared.data(for: makeRequest(token))
+            currentToken = try await refreshToken(current: currentToken)
+            let (retryData, retryRes) = try await URLSession.shared.data(for: makeRequest(currentToken))
             guard let http2 = retryRes as? HTTPURLResponse, http2.statusCode < 300 else {
                 throw URLError(.userAuthenticationRequired)
             }
@@ -173,23 +189,34 @@ private class ShareVM: ObservableObject {
 
     // MARK: - API calls
 
-    private func lookup(word: String) async throws -> String {
+    // 認証不要のパブリックエンドポイント
+    private func lookup(word: String) async throws -> LookupResult {
         var comps = URLComponents(string: "\(API_BASE)/lookup")!
         comps.queryItems = [URLQueryItem(name: "word", value: word)]
         guard let url = comps.url else { throw URLError(.badURL) }
-        let data = try await authedData(url: url)
+        var req = URLRequest(url: url, timeoutInterval: 30)
+        req.httpMethod = "GET"
+        let (data, res) = try await URLSession.shared.data(for: req)
+        guard let http = res as? HTTPURLResponse, http.statusCode < 300 else {
+            throw URLError(.badServerResponse)
+        }
         let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
-        return (json?["meaning"] as? String) ?? word
+        return LookupResult(
+            meaning:         (json?["meaning"] as? String) ?? word,
+            aiExample:       (json?["ai_example"] as? String) ?? "",
+            aiExampleNative: (json?["ai_example_native"] as? String) ?? "",
+            aiNotes:         (json?["ai_notes"] as? String) ?? ""
+        )
     }
 
-    private func post(word: String, meaning: String) async throws {
+    private func post(word: String, meaning: String, token: String) async throws {
         guard let url = URL(string: "\(API_BASE)/words") else { throw URLError(.badURL) }
         let body = try JSONSerialization.data(withJSONObject: [
             "word": word,
             "meaning": meaning,
             "source_type": "share_extension",
         ])
-        _ = try await authedData(url: url, method: "POST", body: body)
+        _ = try await authedData(url: url, method: "POST", body: body, token: token)
     }
 }
 
@@ -226,14 +253,22 @@ private struct ShareView: View {
 
             Group {
                 switch vm.state {
-                case .loading:              LoadingView(label: "翻訳を取得中...")
-                case .preview(let m):       PreviewView(word: word, meaning: m, vm: vm)
-                case .adding:               LoadingView(label: "追加しています...")
-                case .success:              SuccessView()
-                case .noToken:              LoginView(vm: vm)
-                case .loggingIn:            LoadingView(label: "ログイン中...")
-                case .loginError(let m):    LoginView(vm: vm, errorMessage: m)
-                case .failure(let m):       FailView(message: m, vm: vm)
+                case .loading:
+                    LoadingView(label: "翻訳を取得中...")
+                case .preview(let result):
+                    PreviewView(word: word, result: result, vm: vm)
+                case .adding:
+                    LoadingView(label: "追加しています...")
+                case .success:
+                    SuccessView()
+                case .noToken(let result):
+                    LoginView(vm: vm, pendingResult: result)
+                case .loggingIn:
+                    LoadingView(label: "ログイン中...")
+                case .loginError(let result, let msg):
+                    LoginView(vm: vm, pendingResult: result, errorMessage: msg)
+                case .failure(let m):
+                    FailView(message: m, vm: vm)
                 }
             }
             .padding(.horizontal, 20)
@@ -259,18 +294,39 @@ private struct LoadingView: View {
 
 private struct PreviewView: View {
     let word: String
-    let meaning: String
+    let result: LookupResult
     let vm: ShareVM
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: 10) {
                 Text(word)
                     .font(.title2).bold()
                     .foregroundColor(.primary)
-                Text(meaning)
+                Text(result.meaning)
                     .font(.body)
                     .foregroundColor(.secondary)
+
+                if !result.aiExample.isEmpty {
+                    Divider()
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(result.aiExample)
+                            .font(.subheadline)
+                            .foregroundColor(.primary)
+                        if !result.aiExampleNative.isEmpty {
+                            Text(result.aiExampleNative)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                }
+
+                if !result.aiNotes.isEmpty {
+                    Text(result.aiNotes)
+                        .font(.caption)
+                        .foregroundColor(TEAL)
+                        .padding(.top, 2)
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(14)
@@ -278,7 +334,7 @@ private struct PreviewView: View {
             .cornerRadius(12)
 
             Button {
-                vm.add(meaning: meaning)
+                vm.add(result: result)
             } label: {
                 Text("単語帳に追加")
                     .font(.headline).bold()
@@ -305,33 +361,31 @@ private struct SuccessView: View {
     }
 }
 
-private struct MessageView: View {
-    let icon: String
-    let msg: String
-    var body: some View {
-        VStack(spacing: 14) {
-            Image(systemName: icon)
-                .font(.system(size: 48))
-                .foregroundColor(.orange)
-            Text(msg)
-                .font(.subheadline)
-                .multilineTextAlignment(.center)
-                .foregroundColor(.secondary)
-        }
-        .padding(.top, 20)
-    }
-}
-
 private struct LoginView: View {
     let vm: ShareVM
+    let pendingResult: LookupResult
     var errorMessage: String? = nil
     @State private var email: String = ""
     @State private var password: String = ""
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("KotoClipにログイン")
-                .font(.headline).bold()
+            // 単語の訳を先に表示しておく
+            VStack(alignment: .leading, spacing: 4) {
+                Text(vm.word)
+                    .font(.headline).bold()
+                    .foregroundColor(.primary)
+                Text(pendingResult.meaning)
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(12)
+            .background(Color(.secondarySystemBackground))
+            .cornerRadius(10)
+
+            Text("単語帳に追加するにはログインしてください")
+                .font(.subheadline).bold()
                 .foregroundColor(.primary)
             if let err = errorMessage {
                 Text(err)
@@ -352,9 +406,13 @@ private struct LoginView: View {
                 .background(Color(.secondarySystemBackground))
                 .cornerRadius(8)
             Button {
-                vm.login(email: email.trimmingCharacters(in: .whitespaces), password: password)
+                vm.login(
+                    email: email.trimmingCharacters(in: .whitespaces),
+                    password: password,
+                    pendingResult: pendingResult
+                )
             } label: {
-                Text("ログイン")
+                Text("ログインして追加")
                     .font(.headline).bold()
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 13)

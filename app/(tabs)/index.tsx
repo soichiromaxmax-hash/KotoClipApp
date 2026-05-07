@@ -40,7 +40,7 @@ const EMPTY_STATS: Stats = {
   wild_known_count: 0,
 };
 
-function withTimeout<T>(promise: Promise<T>, fallback: T, ms = 6000): Promise<T> {
+function withTimeout<T>(promise: Promise<T>, fallback: T, ms = 15000): Promise<T> {
   return new Promise((resolve) => {
     const timer = setTimeout(() => resolve(fallback), ms);
     promise
