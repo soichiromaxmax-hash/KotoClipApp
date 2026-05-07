@@ -10,6 +10,7 @@ import {
   FlatList,
   ActivityIndicator,
   Alert,
+  Linking,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,18 +18,15 @@ import { useAuth } from '@/context/auth';
 import { api } from '@/lib/api';
 
 const NOTIF_ROWS = [
-  { key: 'notification_daily_enabled',       label: '毎日の学習リマインダー',   sub: '設定時刻に1日1回' },
-  { key: 'notification_streak_enabled',      label: 'ストリーク危機警告',       sub: '当日未学習の場合、21:00固定' },
-  { key: 'notification_milestone_enabled',   label: 'マイルストーン通知',       sub: '定着語数が節目に達したとき' },
-  { key: 'notification_weekly_enabled',      label: '週次サマリー',             sub: '毎週月曜 9:00' },
-  { key: 'notification_reunion_enabled',     label: '偶然の再会通知',           sub: '学習後7日以内に再会したとき' },
-  { key: 'notification_anniversary_enabled', label: '記念日通知',               sub: '登録から1ヶ月・1年' },
+  { key: 'notification_daily_enabled',     label: '毎日の学習リマインダー', sub: '設定時刻に1日1回' },
+  { key: 'notification_streak_enabled',    label: 'ストリーク通知',         sub: '連続学習を継続中のとき' },
+  { key: 'notification_milestone_enabled', label: 'マイルストーン通知',     sub: '定着語数が節目に達したとき' },
+  { key: 'notification_weekly_enabled',    label: '週次サマリー',           sub: '毎週月曜 9:00' },
 ];
 
 const TIME_OPTIONS: string[] = [];
-for (let h = 6; h <= 22; h++) {
+for (let h = 0; h <= 23; h++) {
   for (const m of [0, 30]) {
-    if (h === 22 && m === 30) break;
     TIME_OPTIONS.push(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
   }
 }
@@ -146,12 +144,16 @@ export default function SettingsScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* 注意書き */}
-        <View style={s.noticeBox}>
-          <Text style={s.noticeText}>
-            iOSの通知許可が必要です。設定アプリ → KotoClip → 通知から許可してください。時刻変更後は再起動が必要な場合があります。
-          </Text>
-        </View>
+        {/* iOS通知許可リンク */}
+        <TouchableOpacity
+          style={s.notifPermissionBtn}
+          onPress={() => Linking.openURL('app-settings:')}
+          activeOpacity={0.75}
+        >
+          <Ionicons name="settings-outline" size={16} color="#2DD4BF" />
+          <Text style={s.notifPermissionText}>iOSの通知設定を開く</Text>
+          <Ionicons name="chevron-forward" size={14} color="#4B5563" style={{ marginLeft: 'auto' }} />
+        </TouchableOpacity>
 
         {saved && (
           <Text style={s.savedText}>保存しました</Text>
@@ -352,6 +354,25 @@ const s = StyleSheet.create({
     borderColor: 'rgba(156,103,22,0.20)',
   },
   noticeText: { fontSize: 12, color: '#A07830', lineHeight: 18 },
+
+  notifPermissionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginHorizontal: 16,
+    marginTop: 12,
+    backgroundColor: 'rgba(45,212,191,0.07)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(45,212,191,0.18)',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  notifPermissionText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#2DD4BF',
+  },
 
   savedText: {
     textAlign: 'center',

@@ -272,21 +272,21 @@ export default function HomeScreen() {
                 {/* 2カラムグリッド */}
                 <View style={s.ctaGrid}>
                   <TouchableOpacity
-                    style={s.secondaryCard}
+                    style={[s.secondaryCard, s.secondaryCardAlt]}
                     onPress={() => router.push('/flashcard' as any)}
                     activeOpacity={0.8}
                   >
                     <Text style={s.secondaryIcon}>🃏</Text>
-                    <Text style={s.secondaryTitle}>フラッシュカード</Text>
+                    <Text style={[s.secondaryTitle, s.secondaryTitleAlt]}>フラッシュカード</Text>
                     <Text style={s.secondarySub}>カードをめくって確認</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    style={[s.secondaryCard, s.secondaryCardAlt]}
+                    style={s.secondaryCard}
                     onPress={() => router.push('/(tabs)/study' as any)}
                     activeOpacity={0.8}
                   >
                     <Text style={s.secondaryIcon}>✏️</Text>
-                    <Text style={[s.secondaryTitle, s.secondaryTitleAlt]}>クイズ練習</Text>
+                    <Text style={s.secondaryTitle}>クイズ練習</Text>
                     <Text style={s.secondarySub}>4択で実力チェック</Text>
                   </TouchableOpacity>
                 </View>
