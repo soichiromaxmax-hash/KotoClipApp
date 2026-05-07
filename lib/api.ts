@@ -145,9 +145,6 @@ export const api = {
     };
   },
   getDue:            (limit = 20)         => _fetch(`/study/due?limit=${limit}`),
-  getQuestion: (wordId: number, qType: 'choice' | 'reverse' | 'context_choice') =>
-    _fetch(`/study/question/${wordId}?q_type=${qType}`),
-
   getAllWords:        (limit?: number, random = false) => {
     const p = new URLSearchParams();
     if (limit)  p.set('limit', String(limit));
@@ -161,7 +158,6 @@ export const api = {
   getTodayEncounters: ()                  => _fetch('/wild/today'),
   getTimeline:       (id: number)         => _fetch(`/words/${id}/timeline`),
   getSettings:       ()                   => _fetch('/settings'),
-  getGoal:           ()                   => _fetch('/goal'),
   lookup: (word: string) => _fetch(`/lookup?word=${encodeURIComponent(word)}`),
 
   addWord: (payload: object) =>
@@ -184,7 +180,4 @@ export const api = {
 
   updateSetting: (key: string, value: string | number) =>
     _fetch('/settings', { method: 'POST', body: JSON.stringify({ key, value: String(value) }) }),
-
-  setGoal: (goal: number) =>
-    _fetch('/goal', { method: 'PUT', body: JSON.stringify({ goal }) }),
 };

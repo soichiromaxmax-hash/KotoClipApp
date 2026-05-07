@@ -62,6 +62,7 @@ export default function SettingsScreen() {
     setSettings((s) => ({ ...(s ?? {}), [key]: value }));
     try {
       await api.updateSetting(key, value);
+      setError('');
       flashSaved();
     } catch (e: any) {
       setSettings((s) => ({ ...(s ?? {}), [key]: prevValue }));
@@ -342,18 +343,6 @@ const s = StyleSheet.create({
   timeValue: { fontSize: 16, color: '#E9EDF2' },
   timeValueDisabled: { color: '#6B7280' },
   timeChevron: { fontSize: 20, color: '#6B7280' },
-
-  // 注意
-  noticeBox: {
-    marginHorizontal: 16,
-    marginTop: 12,
-    padding: 12,
-    backgroundColor: 'rgba(245,184,75,0.08)',
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(156,103,22,0.20)',
-  },
-  noticeText: { fontSize: 12, color: '#A07830', lineHeight: 18 },
 
   notifPermissionBtn: {
     flexDirection: 'row',

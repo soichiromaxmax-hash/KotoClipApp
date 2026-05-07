@@ -31,8 +31,8 @@ interface Word {
   _q_type?: 'choice' | 'reverse';
 }
 
-interface ServerQuestion {
-  type: 'choice' | 'reverse' | 'context_choice';
+interface Question {
+  type: 'choice' | 'reverse';
   prompt: string;
   prompt_hint: string | null;
   choices: string[];
@@ -56,53 +56,27 @@ function shuffle<T>(arr: T[]): T[] {
 }
 
 const FALLBACK_MEANINGS = [
-  '重要な',
-  '予想する',
-  '改善する',
-  '維持する',
-  '影響する',
-  '確認する',
-  '増加する',
-  '減少する',
-  '提案する',
-  '達成する',
-  '避ける',
-  '含む',
-  '必要とする',
-  '判断する',
-  '比較する',
-  '説明する',
+  '重要な', '予想する', '改善する', '維持する', '影響する', '確認する',
+  '増加する', '減少する', '提案する', '達成する', '避ける', '含む',
+  '必要とする', '判断する', '比較する', '説明する',
 ];
 
 const FALLBACK_WORDS = [
-  'improve',
-  'require',
-  'compare',
-  'avoid',
-  'include',
-  'achieve',
-  'maintain',
-  'increase',
-  'reduce',
-  'suggest',
-  'confirm',
-  'affect',
-  'assume',
-  'decide',
-  'explain',
-  'notice',
+  'improve', 'require', 'compare', 'avoid', 'include', 'achieve',
+  'maintain', 'increase', 'reduce', 'suggest', 'confirm', 'affect',
+  'assume', 'decide', 'explain', 'notice',
 ];
 
 function uniqueNonEmpty(values: (string | undefined | null)[]) {
   const seen = new Set<string>();
   const out: string[] = [];
-  values.forEach((value) => {
+  for (const value of values) {
     const clean = String(value ?? '').trim();
     const key = clean.toLowerCase();
-    if (!clean || seen.has(key)) return;
+    if (!clean || seen.has(key)) continue;
     seen.add(key);
     out.push(clean);
-  });
+  }
   return out;
 }
 
@@ -111,34 +85,22 @@ function ensureFourChoices(answer: string, candidates: string[], fallback: strin
   return shuffle([answer, ...pool.slice(0, 3)]);
 }
 
-function buildLocalQuestion(
-  word: Word,
-  type: 'choice' | 'reverse',
-  pool: Word[],
-): ServerQuestion {
+function buildQuestion(word: Word, type: 'choice' | 'reverse', pool: Word[]): Question {
+  const others = pool.filter((w) => w.id !== word.id);
   if (type === 'reverse') {
     return {
       type,
       prompt: word.meaning,
       prompt_hint: null,
-      choices: ensureFourChoices(
-        word.word,
-        pool.filter((w) => w.id !== word.id).map((w) => w.word),
-        FALLBACK_WORDS,
-      ),
+      choices: ensureFourChoices(word.word, others.map((w) => w.word), FALLBACK_WORDS),
       answer: word.word,
     };
   }
-
   return {
     type: 'choice',
     prompt: word.word,
     prompt_hint: word.context ? word.context.slice(0, 80) : null,
-    choices: ensureFourChoices(
-      word.meaning,
-      pool.filter((w) => w.id !== word.id).map((w) => w.meaning),
-      FALLBACK_MEANINGS,
-    ),
+    choices: ensureFourChoices(word.meaning, others.map((w) => w.meaning), FALLBACK_MEANINGS),
     answer: word.meaning,
   };
 }
@@ -159,13 +121,13 @@ function ProgressBar({ current, total }: { current: number; total: number }) {
   );
 }
 
-// ─── 汎用4択（自由練習: choice / reverse / context_choice）────────────────
+// ─── 4択問題（choice / reverse 共通） ──────────────────────────────────────
 
-function ChoiceQuestion4({
+function QuizQuestion({
   question,
   onAnswer,
 }: {
-  question: ServerQuestion;
+  question: Question;
   onAnswer: (rating: 'good' | 'again', correct: boolean) => void;
 }) {
   const [selected, setSelected] = useState<string | null>(null);
@@ -176,8 +138,6 @@ function ChoiceQuestion4({
     const correct = choice === question.answer;
     setTimeout(() => onAnswer(correct ? 'good' : 'again', correct), 600);
   };
-
-  const badgeLabel = question.type === 'reverse' ? 'Word' : 'Meaning';
 
   const getBtnStyle = (choice: string) => {
     if (selected === null) return styles.choiceBtn;
@@ -192,7 +152,7 @@ function ChoiceQuestion4({
         <View style={styles.mascotCorner} pointerEvents="none">
           <KotoBird size={60} />
         </View>
-        <Text style={styles.modeBadge}>{badgeLabel}</Text>
+        <Text style={styles.modeBadge}>{question.type === 'reverse' ? 'Word' : 'Meaning'}</Text>
         <Text style={styles.wordDisplay}>{question.prompt}</Text>
         {question.prompt_hint ? (
           <Text style={styles.contextText}>{question.prompt_hint}</Text>
@@ -215,69 +175,11 @@ function ChoiceQuestion4({
   );
 }
 
-// ─── 4択問題 ────────────────────────────────────────────────────────────────
-
-function ChoiceQuestion({
-  word,
-  choices,
-  onAnswer,
-}: {
-  word: Word;
-  choices: string[];
-  onAnswer: (rating: 'good' | 'again', correct: boolean) => void;
-}) {
-  const [selected, setSelected] = useState<string | null>(null);
-
-  const handlePress = (choice: string) => {
-    if (selected !== null) return;
-    setSelected(choice);
-    const correct = choice === word.meaning;
-    setTimeout(() => onAnswer(correct ? 'good' : 'again', correct), 600);
-  };
-
-  const getBtnStyle = (choice: string) => {
-    if (selected === null) return styles.choiceBtn;
-    if (choice === word.meaning) return [styles.choiceBtn, styles.choiceCorrect];
-    if (choice === selected) return [styles.choiceBtn, styles.choiceWrong];
-    return [styles.choiceBtn, styles.choiceDim];
-  };
-
-  return (
-    <View style={styles.questionWrap}>
-      <View style={styles.questionCard}>
-        <View style={styles.mascotCorner} pointerEvents="none">
-          <KotoBird size={60} />
-        </View>
-        <Text style={styles.modeBadge}>Meaning</Text>
-        <Text style={styles.wordDisplay}>{word.word}</Text>
-        {word.context ? (
-          <Text style={styles.contextText}>{word.context.slice(0, 80)}</Text>
-        ) : null}
-      </View>
-      <View style={styles.choicesGrid}>
-        {choices.map((c, i) => (
-          <TouchableOpacity
-            key={i}
-            style={getBtnStyle(c)}
-            onPress={() => handlePress(c)}
-            disabled={selected !== null}
-            activeOpacity={0.75}
-          >
-            <Text style={styles.choiceBtnText}>{c}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-    </View>
-  );
-}
-
-
 // ─── 結果画面 ───────────────────────────────────────────────────────────────
 
 function ResultScreen({
   correct,
   wrong,
-  mode,
   onFree,
 }: {
   correct: number;
@@ -324,8 +226,7 @@ export default function StudyScreen() {
   const [phase, setPhase] = useState<Phase>('loading');
   const [queue, setQueue] = useState<Word[]>([]);
   const [idx, setIdx] = useState(0);
-  const [choices, setChoices] = useState<string[]>([]);
-  const [serverQuestion, setServerQuestion] = useState<ServerQuestion | null>(null);
+  const [question, setQuestion] = useState<Question | null>(null);
   const [feedback, setFeedback] = useState<{ correct: boolean; msg: string } | null>(null);
   const [correct, setCorrect] = useState(0);
   const [wrong, setWrong] = useState(0);
@@ -339,7 +240,7 @@ export default function StudyScreen() {
   const masteredWordRef = useRef<Word | null>(null);
   const correctRef = useRef(0);
   const wrongRef = useRef(0);
-  const choicePoolRef = useRef<Word[]>([]);
+  const poolRef = useRef<Word[]>([]);
 
   useEffect(() => {
     loadQueue(mode);
@@ -351,7 +252,7 @@ export default function StudyScreen() {
     setFeedback(null);
     setCorrect(0);
     setWrong(0);
-    setServerQuestion(null);
+    setQuestion(null);
     setSharePayload(null);
     setSaveError(null);
     masteredWordRef.current = null;
@@ -366,62 +267,18 @@ export default function StudyScreen() {
         setPhase('empty');
         return;
       }
-
-      let entries: Word[];
-      if (m === 'free') {
-        entries = shuffle(words).slice(0, 10).map((w) => ({ ...w, _q_type: pickFreeType([]) }));
-      } else {
-        entries = shuffle(words).slice(0, 10);
-      }
-      choicePoolRef.current = entries;
-
+      const entries = shuffle(words).slice(0, 10).map((w) => ({
+        ...w,
+        _q_type: m === 'free' ? pickFreeType([]) : undefined,
+      }));
+      poolRef.current = entries;
       setQueue(entries);
       setIdx(0);
-      await loadChoices(entries[0], m);
+      setQuestion(buildQuestion(entries[0], entries[0]._q_type ?? 'choice', entries));
       setPhase('question');
     } catch (e: any) {
       setErrorMsg(e?.message ?? 'エラーが発生しました');
       setPhase('error');
-    }
-  }
-
-  async function loadChoices(word: Word, m: Mode) {
-    setServerQuestion(null);
-    if (m === 'free' && word._q_type) {
-      try {
-        const q = buildLocalQuestion(word, word._q_type, choicePoolRef.current);
-        const extra = choicePoolRef.current.filter((w) => w.id !== word.id);
-        const candidates = q.type === 'reverse'
-          ? extra.map((w) => w.word)
-          : extra.map((w) => w.meaning);
-        setServerQuestion({
-          ...q,
-          choices: ensureFourChoices(
-            q.answer,
-            [...q.choices, ...candidates],
-            q.type === 'reverse' ? FALLBACK_WORDS : FALLBACK_MEANINGS,
-          ),
-        });
-      } catch {
-        setServerQuestion({
-          type: 'choice',
-          prompt: word.word,
-          prompt_hint: null,
-          choices: ensureFourChoices(word.meaning, [], FALLBACK_MEANINGS),
-          answer: word.meaning,
-        });
-      }
-    } else {
-      try {
-        const extra = choicePoolRef.current.filter((w) => w.id !== word.id);
-        setChoices(ensureFourChoices(
-          word.meaning,
-          extra.map((w) => w.meaning),
-          FALLBACK_MEANINGS,
-        ));
-      } catch {
-        setChoices(ensureFourChoices(word.meaning, [], FALLBACK_MEANINGS));
-      }
     }
   }
 
@@ -441,9 +298,8 @@ export default function StudyScreen() {
   async function onAnswer(rating: 'good' | 'again', isCorrect: boolean) {
     const word = queue[idx];
     const elapsed = Math.max(1, Math.round(((Date.now() - startTime.current) / 1000 / 86400) * 10) / 10);
-    const correctAnswer = serverQuestion?.answer ?? word.meaning;
+    const correctAnswer = question?.answer ?? word.meaning;
 
-    // 5回目の正解 → 習得とみなして記録（セッション中1件のみ）
     if (isCorrect && (word.reps ?? 0) >= 4 && !masteredWordRef.current) {
       masteredWordRef.current = word;
     }
@@ -520,27 +376,24 @@ export default function StudyScreen() {
     const nextIdx = idx + 1;
     if (nextIdx >= queue.length) {
       setPhase('result');
-      checkShareTriggers(); // 非ブロッキング：result表示後にプロンプト表示
+      checkShareTriggers();
       return;
     }
+    const nextWord = queue[nextIdx];
     setIdx(nextIdx);
     setFeedback(null);
-    setServerQuestion(null);
-    setPhase('loading');
-    await loadChoices(queue[nextIdx], mode);
+    setQuestion(buildQuestion(nextWord, nextWord._q_type ?? 'choice', poolRef.current));
     startTime.current = Date.now();
     setPhase('question');
   }
 
   const word = queue[idx] as Word | undefined;
-  const isFree = mode === 'free';
 
   return (
     <SafeAreaView style={styles.root}>
       {sharePayload && (
         <SharePrompt payload={sharePayload} onClose={() => setSharePayload(null)} />
       )}
-      {/* モード切り替え */}
       <View style={styles.modeBar}>
         {(['scheduled', 'free'] as Mode[]).map((m) => (
           <TouchableOpacity
@@ -555,7 +408,6 @@ export default function StudyScreen() {
         ))}
       </View>
 
-      {/* 進捗ヘッダー */}
       {(phase === 'question' || phase === 'feedback') && queue.length > 0 && (
         <View style={styles.header}>
           <ProgressBar current={idx} total={queue.length} />
@@ -564,7 +416,6 @@ export default function StudyScreen() {
       )}
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {/* ローディング */}
         {phase === 'loading' && (
           <View style={styles.centered}>
             <KotoBird size={76} />
@@ -572,7 +423,6 @@ export default function StudyScreen() {
           </View>
         )}
 
-        {/* エラー */}
         {phase === 'error' && (
           <View style={styles.centered}>
             <Text style={styles.errorText}>{errorMsg}</Text>
@@ -582,7 +432,6 @@ export default function StudyScreen() {
           </View>
         )}
 
-        {/* 復習ゼロ */}
         {phase === 'empty' && (
           <View style={styles.centered}>
             <KotoBird size={82} />
@@ -594,54 +443,43 @@ export default function StudyScreen() {
           </View>
         )}
 
-        {/* 問題 */}
-        {phase === 'question' && word && isFree && serverQuestion && (
-          <ChoiceQuestion4 key={`${word.id}-${serverQuestion.type}`} question={serverQuestion} onAnswer={onAnswer} />
-        )}
-        {phase === 'question' && word && !isFree && (
-          <ChoiceQuestion key={word.id} word={word} choices={choices} onAnswer={onAnswer} />
-        )}
-
-        {/* フィードバック */}
-        {phase === 'feedback' && (
+        {(phase === 'question' || phase === 'feedback') && word && question && (
           <>
-            {saveError ? (
-              <View style={styles.saveErrorBox}>
-                <Text style={styles.saveErrorTitle}>復習結果を保存できませんでした</Text>
-                <Text style={styles.saveErrorSub}>
-                  通信状態を確認してもう一度お試しください。
-                </Text>
-                <TouchableOpacity style={styles.primaryBtn} onPress={retryReview}>
-                  <Text style={styles.primaryBtnText}>再試行</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.ghostBtn} onPress={skipSaveError}>
-                  <Text style={styles.ghostBtnText}>後でやり直す</Text>
-                </TouchableOpacity>
-              </View>
-            ) : (
-              <>
-                {word && isFree && serverQuestion && (
-                  <ChoiceQuestion4 key={`fb-${word.id}`} question={serverQuestion} onAnswer={() => {}} />
-                )}
-                {word && !isFree && (
-                  <ChoiceQuestion key={`fb-${word.id}`} word={word} choices={choices} onAnswer={() => {}} />
-                )}
-                {feedback && (
-                  <View style={[styles.feedbackBar, feedback.correct ? styles.feedbackCorrect : styles.feedbackWrong]}>
-                    <Text style={styles.feedbackText}>{feedback.msg}</Text>
-                  </View>
-                )}
-                <TouchableOpacity style={styles.primaryBtn} onPress={next}>
-                  <Text style={styles.primaryBtnText}>
-                    {idx + 1 >= queue.length ? '結果を見る' : '次へ'}
-                  </Text>
-                </TouchableOpacity>
-              </>
+            <QuizQuestion
+              key={`${word.id}-${question.type}-${phase}`}
+              question={question}
+              onAnswer={phase === 'question' ? onAnswer : () => {}}
+            />
+            {phase === 'feedback' && (
+              saveError ? (
+                <View style={styles.saveErrorBox}>
+                  <Text style={styles.saveErrorTitle}>復習結果を保存できませんでした</Text>
+                  <Text style={styles.saveErrorSub}>通信状態を確認してもう一度お試しください。</Text>
+                  <TouchableOpacity style={styles.primaryBtn} onPress={retryReview}>
+                    <Text style={styles.primaryBtnText}>再試行</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.ghostBtn} onPress={skipSaveError}>
+                    <Text style={styles.ghostBtnText}>後でやり直す</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <>
+                  {feedback && (
+                    <View style={[styles.feedbackBar, feedback.correct ? styles.feedbackCorrect : styles.feedbackWrong]}>
+                      <Text style={styles.feedbackText}>{feedback.msg}</Text>
+                    </View>
+                  )}
+                  <TouchableOpacity style={styles.primaryBtn} onPress={next}>
+                    <Text style={styles.primaryBtnText}>
+                      {idx + 1 >= queue.length ? '結果を見る' : '次へ'}
+                    </Text>
+                  </TouchableOpacity>
+                </>
+              )
             )}
           </>
         )}
 
-        {/* 結果 */}
         {phase === 'result' && (
           <ResultScreen
             correct={correct}
@@ -672,12 +510,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.06)',
   },
-  modeTab: {
-    flex: 1,
-    paddingVertical: 8,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
+  modeTab: { flex: 1, paddingVertical: 8, borderRadius: 8, alignItems: 'center' },
   modeTabActive: { backgroundColor: '#263041' },
   modeTabText: { color: '#6B7280', fontWeight: '600', fontSize: 14 },
   modeTabTextActive: { color: '#2DD4BF' },
@@ -722,12 +555,7 @@ const styles = StyleSheet.create({
     gap: 10,
     overflow: 'hidden',
   },
-  mascotCorner: {
-    position: 'absolute',
-    top: 4,
-    right: 4,
-    opacity: 0.96,
-  },
+  mascotCorner: { position: 'absolute', top: 4, right: 4, opacity: 0.96 },
   modeBadge: {
     color: '#2DD4BF',
     fontSize: 11,
@@ -737,8 +565,6 @@ const styles = StyleSheet.create({
   },
   wordDisplay: { color: '#F9FAFB', fontSize: 32, fontWeight: '700' },
   contextText: { color: '#9CA3AF', fontSize: 13, fontStyle: 'italic', lineHeight: 18 },
-  hintText: { color: '#9CA3AF', fontSize: 14 },
-  blankText: { color: '#F9FAFB', fontSize: 17, lineHeight: 26 },
 
   choicesGrid: { gap: 10 },
   choiceBtn: {
@@ -754,20 +580,9 @@ const styles = StyleSheet.create({
   choiceDim: { opacity: 0.4 },
   choiceBtnText: { color: '#F9FAFB', fontSize: 15 },
 
-  feedbackBar: {
-    borderRadius: 10,
-    padding: 14,
-    marginTop: 4,
-    borderWidth: 1,
-  },
-  feedbackCorrect: {
-    backgroundColor: 'rgba(34,197,94,0.10)',
-    borderColor: 'rgba(34,197,94,0.25)',
-  },
-  feedbackWrong: {
-    backgroundColor: 'rgba(239,68,68,0.10)',
-    borderColor: 'rgba(239,68,68,0.25)',
-  },
+  feedbackBar: { borderRadius: 10, padding: 14, marginTop: 4, borderWidth: 1 },
+  feedbackCorrect: { backgroundColor: 'rgba(34,197,94,0.10)', borderColor: 'rgba(34,197,94,0.25)' },
+  feedbackWrong: { backgroundColor: 'rgba(239,68,68,0.10)', borderColor: 'rgba(239,68,68,0.25)' },
   feedbackText: { color: '#F9FAFB', fontSize: 14, fontWeight: '600' },
 
   primaryBtn: {
@@ -779,11 +594,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   primaryBtnText: { color: '#0E1116', fontWeight: '700', fontSize: 16 },
-  ghostBtn: {
-    paddingVertical: 14,
-    alignItems: 'center',
-    width: '100%',
-  },
+  ghostBtn: { paddingVertical: 14, alignItems: 'center', width: '100%' },
   ghostBtnText: { color: '#6B7280', fontSize: 15 },
 
   saveErrorBox: {
@@ -794,19 +605,10 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(239,68,68,0.22)',
     gap: 12,
     alignItems: 'center',
+    marginTop: 14,
   },
-  saveErrorTitle: {
-    color: '#EF4444',
-    fontSize: 16,
-    fontWeight: '700',
-    textAlign: 'center',
-  },
-  saveErrorSub: {
-    color: '#9CA3AF',
-    fontSize: 13,
-    textAlign: 'center',
-    lineHeight: 20,
-  },
+  saveErrorTitle: { color: '#EF4444', fontSize: 16, fontWeight: '700', textAlign: 'center' },
+  saveErrorSub: { color: '#9CA3AF', fontSize: 13, textAlign: 'center', lineHeight: 20 },
 
   resultTitle: { color: '#F9FAFB', fontSize: 24, fontWeight: '500' },
   statsRow: { flexDirection: 'row', gap: 12 },

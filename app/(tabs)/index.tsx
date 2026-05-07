@@ -83,7 +83,6 @@ export default function HomeScreen() {
   }
 
   useFocusEffect(useCallback(() => {
-    let alive = true;
     if (refreshing.current) return;
     refreshing.current = true;
 
@@ -113,10 +112,10 @@ export default function HomeScreen() {
       })
       .finally(() => {
         refreshing.current = false;
-        setLoading(false); // alive に関わらず常に呼ぶ（React 18でunmount後は無視される）
+        setLoading(false);
       });
 
-    return () => { alive = false; };
+    return () => {};
   }, []));
 
   const reliable = stats?.reliable_count ?? 0;
