@@ -32,8 +32,13 @@ workflows:
             --scheme KotoClip
       - name: Submit to TestFlight
         script: |
+          echo "$APP_STORE_CONNECT_PRIVATE_KEY_B64" | base64 -d > /tmp/auth_key.p8
+          chmod 600 /tmp/auth_key.p8
           app-store-connect publish \
             --path build/ios/ipa/KotoClip.ipa \
+            --private-key @file:/tmp/auth_key.p8 \
+            --key-id $APP_STORE_CONNECT_KEY_IDENTIFIER \
+            --issuer-id $APP_STORE_CONNECT_ISSUER_ID \
             --testflight \
             --beta-group "App Store Connect Users"
     artifacts:
