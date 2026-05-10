@@ -2,9 +2,6 @@ import 'react-native-reanimated';
 import { useEffect, useState } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useFonts } from 'expo-font';
-import { LobsterTwo_700Bold } from '@expo-google-fonts/lobster-two';
-import { SpaceGrotesk_700Bold } from '@expo-google-fonts/space-grotesk';
 
 import { AuthProvider, useAuth } from '@/context/auth';
 import { SplashAnimation } from '@/components/SplashAnimation';
@@ -62,7 +59,7 @@ function RootLayoutNav() {
 
 export default function RootLayout() {
   const [splashDone, setSplashDone] = useState(false);
-  const [fontsLoaded] = useFonts({ LobsterTwo_700Bold, SpaceGrotesk_700Bold });
+  const fontsLoaded = true;
 
   return (
     <AuthProvider>
