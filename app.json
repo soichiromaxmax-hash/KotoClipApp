@@ -7,11 +7,11 @@
     "icon": "./assets/images/icon.png",
     "scheme": "kotoclipapp",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": false,
+    "newArchEnabled": true,
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "jp.kotoclip.app",
-      "buildNumber": "28",
+      "buildNumber": "29",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "LSApplicationQueriesSchemes": ["instagram", "twitter", "line", "tiktok", "fb", "linkedin"]
