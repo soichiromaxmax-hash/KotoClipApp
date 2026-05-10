@@ -40,12 +40,8 @@ workflows:
             --key-id $APP_STORE_CONNECT_KEY_IDENTIFIER \
             --issuer-id $APP_STORE_CONNECT_ISSUER_ID \
             --json 2>/dev/null \
-          | python3 -c "
-import sys, json
-data = json.load(sys.stdin)
-for item in data:
-    print(item.get('id',''))
-" | while read id; do
+          | python3 -c "import sys,json; [print(x.get('id','')) for x in json.load(sys.stdin)]" \
+          | while read id; do
             [ -n \"\$id\" ] && app-store-connect beta-app-review-submissions delete \"\$id\" \
               --private-key @file:/tmp/auth_key.p8 \
               --key-id $APP_STORE_CONNECT_KEY_IDENTIFIER \
