@@ -5,6 +5,9 @@ workflows:
     environment:
       groups:
         - ios-signing
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: jp.kotoclip.app
       node: 20
       xcode: latest
       cocoapods: default
@@ -13,15 +16,9 @@ workflows:
         script: npm install
       - name: Expo prebuild
         script: npx expo prebuild --platform ios --clean
-      - name: Fetch signing files
+      - name: Set up code signing
         script: |
           keychain initialize
-          app-store-connect fetch-signing-files jp.kotoclip.app \
-            --type IOS_APP_STORE \
-            --create
-          app-store-connect fetch-signing-files jp.kotoclip.app.share \
-            --type IOS_APP_STORE \
-            --create
           keychain add-certificates
           xcode-project use-profiles
       - name: Install CocoaPods
