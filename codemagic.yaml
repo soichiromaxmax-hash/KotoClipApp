@@ -30,14 +30,12 @@ workflows:
           xcode-project build-ipa \
             --workspace ios/KotoClip.xcworkspace \
             --scheme KotoClip
+      - name: Submit to TestFlight
+        script: |
+          app-store-connect publish \
+            --path build/ios/ipa/KotoClip.ipa \
+            --testflight \
+            --beta-group "App Store Connect Users"
     artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
-    publishing:
-      app_store_connect:
-        api_key: $APP_STORE_CONNECT_PRIVATE_KEY
-        key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
-        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
-        submit_to_testflight: true
-        beta_groups:
-          - App Store Connect Users
