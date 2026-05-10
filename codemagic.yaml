@@ -20,6 +20,8 @@ workflows:
         script: |
           keychain initialize
           keychain add-certificates
+          echo "=== Installed profiles ==="
+          ls ~/Library/MobileDevice/Provisioning\ Profiles/ || echo "No profiles found"
           xcode-project use-profiles
       - name: Install CocoaPods
         script: cd ios && pod install
