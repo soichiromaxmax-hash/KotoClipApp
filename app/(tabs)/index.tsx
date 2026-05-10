@@ -13,6 +13,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { api } from '@/lib/api';
 import { KotoBird } from '@/components/KotoBird';
+import { getCachedStats, getCachedWild, setCachedStats, setCachedWild, resetHomeCache } from '@/lib/homeCache';
 
 interface Stats {
   due: number;
@@ -55,26 +56,16 @@ function withTimeout<T>(promise: Promise<T>, fallback: T, ms = 15000): Promise<T
   });
 }
 
-// タブ切り替え時の再ローディングを防ぐモジュールレベルキャッシュ
-let _cachedStats: Stats | null = null;
-let _cachedWild: Encounter[] = [];
-
-export function resetHomeCache() {
-  _cachedStats = null;
-  _cachedWild = [];
-}
-
 export default function HomeScreen() {
   const router = useRouter();
-  const [stats, setStats] = useState<Stats | null>(_cachedStats);
-  const [wild, setWild] = useState<Encounter[]>(_cachedWild);
-  const [loading, setLoading] = useState(_cachedStats === null);
+  const [stats, setStats] = useState<Stats | null>(getCachedStats() as Stats | null);
+  const [wild, setWild] = useState<Encounter[]>(getCachedWild() as Encounter[]);
+  const [loading, setLoading] = useState(getCachedStats() === null);
   const [netError, setNetError] = useState(false);
   const refreshing = useRef(false);
 
   function retry() {
-    _cachedStats = null;
-    _cachedWild = [];
+    resetHomeCache();
     setStats(null);
     setWild([]);
     setNetError(false);
@@ -86,7 +77,7 @@ export default function HomeScreen() {
     if (refreshing.current) return;
     refreshing.current = true;
 
-    if (_cachedStats === null) setLoading(true);
+    if (getCachedStats() === null) setLoading(true);
 
     Promise.all([
       withTimeout<Stats | null>(api.getStats(), null),
@@ -96,15 +87,15 @@ export default function HomeScreen() {
         if (nextStats !== null) {
           // API 成功: キャッシュ・状態を必ず更新（unfocus中でもcomponentはマウント済みなので安全）
           const w = Array.isArray(nextWild) ? nextWild : [];
-          _cachedStats = nextStats;
-          _cachedWild = w;
+          setCachedStats(nextStats);
+          setCachedWild(w);
           setStats(nextStats);
           setWild(w);
           setNetError(false);
-        } else if (_cachedStats !== null) {
+        } else if (getCachedStats() !== null) {
           // API 失敗だがキャッシュあり: キャッシュを状態に反映
-          setStats(_cachedStats);
-          setWild(_cachedWild);
+          setStats(getCachedStats() as Stats | null);
+          setWild(getCachedWild() as Encounter[]);
         } else {
           // 初回ロードで API 失敗: エラー表示（空状態ではない）
           setNetError(true);

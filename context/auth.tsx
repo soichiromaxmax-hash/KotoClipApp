@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { api, setAuthExpiredHandler } from '@/lib/api';
-import { resetHomeCache } from '@/app/(tabs)/index';
+import { resetHomeCache } from '@/lib/homeCache';
 
 type AuthState = 'loading' | 'authenticated' | 'unauthenticated';
 
