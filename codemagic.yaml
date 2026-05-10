@@ -34,6 +34,23 @@ workflows:
         script: |
           echo "$APP_STORE_CONNECT_PRIVATE_KEY_B64" | base64 -d > /tmp/auth_key.p8
           chmod 600 /tmp/auth_key.p8
+          # Cancel any existing beta review submissions to unblock new submission
+          app-store-connect beta-app-review-submissions list \
+            --private-key @file:/tmp/auth_key.p8 \
+            --key-id $APP_STORE_CONNECT_KEY_IDENTIFIER \
+            --issuer-id $APP_STORE_CONNECT_ISSUER_ID \
+            --json 2>/dev/null \
+          | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+for item in data:
+    print(item.get('id',''))
+" | while read id; do
+            [ -n \"\$id\" ] && app-store-connect beta-app-review-submissions delete \"\$id\" \
+              --private-key @file:/tmp/auth_key.p8 \
+              --key-id $APP_STORE_CONNECT_KEY_IDENTIFIER \
+              --issuer-id $APP_STORE_CONNECT_ISSUER_ID 2>/dev/null || true
+          done
           app-store-connect publish \
             --path build/ios/ipa/KotoClip.ipa \
             --private-key @file:/tmp/auth_key.p8 \
