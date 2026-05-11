@@ -27,9 +27,15 @@ workflows:
         script: cd ios && pod install
       - name: Build IPA
         script: |
-          xcode-project --log-stream stdout build-ipa \
+          xcode-project build-ipa \
             --workspace ios/KotoClip.xcworkspace \
             --scheme KotoClip
+          BUILD_EXIT=$?
+          if [ $BUILD_EXIT -ne 0 ]; then
+            echo "=== XCODEBUILD LOG ==="
+            cat /tmp/xcodebuild_logs/*.log 2>/dev/null || echo "No log file found"
+            exit $BUILD_EXIT
+          fi
       - name: Submit to TestFlight
         script: |
           echo "$APP_STORE_CONNECT_PRIVATE_KEY_B64" | base64 -d > /tmp/auth_key.p8
