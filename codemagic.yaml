@@ -45,6 +45,10 @@ workflows:
                   )
               if path.name == 'SwiftUIHostingView.swift':
                   text = text.replace(
+                      'internal protocol AnyExpoSwiftUIHostingView {',
+                      '@MainActor internal protocol AnyExpoSwiftUIHostingView {'
+                  )
+                  text = text.replace(
                       'public final class HostingView<Props: ViewProps, ContentView: View<Props>>: ExpoView, @MainActor AnyExpoSwiftUIHostingView {',
                       '@MainActor public final class HostingView<Props: ViewProps, ContentView: View<Props>>: ExpoView, AnyExpoSwiftUIHostingView {'
                   )
@@ -52,6 +56,11 @@ workflows:
                   text = text.replace(
                       'extension ExpoSwiftUI.SwiftUIVirtualView: @MainActor ExpoSwiftUI.ViewWrapper {',
                       '@MainActor extension ExpoSwiftUI.SwiftUIVirtualView: ExpoSwiftUI.ViewWrapper {'
+                  )
+              if path.name == 'JSLoggerModule.swift':
+                  text = text.replace(
+                      'public final class JSLoggerModule: Module {',
+                      'public final class JSLoggerModule: Module, @unchecked Sendable {'
                   )
               if path.name == 'PersistentFileLog.swift':
                   text = text.replace(
@@ -90,37 +99,6 @@ workflows:
                   text = text.replace(
                       '@_implicitSelfCapture _ closure: @escaping (A0, repeat each A) async throws -> R',
                       '@_implicitSelfCapture _ closure: @Sendable @escaping (A0, repeat each A) async throws -> R'
-                  )
-              if path.name == 'EventListenersFactories.swift':
-                  text = text.replace(
-                      '@_implicitSelfCapture _ closure: @escaping () -> Void',
-                      '@_implicitSelfCapture _ closure: @Sendable @escaping () -> Void'
-                  )
-              if path.name == 'ObjectFactories.swift':
-                  text = text.replace(
-                      'public func OnStartObserving(_ event: String? = nil, @_implicitSelfCapture _ closure: @escaping () -> Void) -> EventObservingDefinition {',
-                      'public func OnStartObserving(_ event: String? = nil, @_implicitSelfCapture _ closure: @Sendable @escaping () -> Void) -> EventObservingDefinition {'
-                  )
-                  text = text.replace(
-                      'public func OnStopObserving(_ event: String? = nil, @_implicitSelfCapture _ closure: @escaping () -> Void) -> EventObservingDefinition {',
-                      'public func OnStopObserving(_ event: String? = nil, @_implicitSelfCapture _ closure: @Sendable @escaping () -> Void) -> EventObservingDefinition {'
-                  )
-              if path.name == 'EventListener.swift':
-                  text = text.replace(
-                      'let call: (Any?, Any?) throws -> Void',
-                      'let call: @Sendable (Any?, Any?) throws -> Void'
-                  )
-                  text = text.replace(
-                      'init(_ name: EventName, _ listener: @escaping () -> Void) {',
-                      'init(_ name: EventName, _ listener: @Sendable @escaping () -> Void) {'
-                  )
-                  text = text.replace(
-                      'init<Sender>(_ name: EventName, _ listener: @escaping (Sender) -> Void) {',
-                      'init<Sender>(_ name: EventName, _ listener: @Sendable @escaping (Sender) -> Void) {'
-                  )
-                  text = text.replace(
-                      'init<Sender, PayloadType>(_ name: EventName, _ listener: @escaping (Sender, PayloadType?) -> Void) {',
-                      'init<Sender, PayloadType>(_ name: EventName, _ listener: @Sendable @escaping (Sender, PayloadType?) -> Void) {'
                   )
               if text != original:
                   path.write_text(text)
