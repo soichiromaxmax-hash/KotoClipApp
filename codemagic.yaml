@@ -82,6 +82,46 @@ workflows:
                       'typealias ClosureType = (Args) async throws -> ReturnType',
                       'typealias ClosureType = @Sendable (Args) async throws -> ReturnType'
                   )
+              if path.name == 'ConcurrentFunctionFactories.swift':
+                  text = text.replace(
+                      '@_implicitSelfCapture _ closure: @escaping () async throws -> R',
+                      '@_implicitSelfCapture _ closure: @Sendable @escaping () async throws -> R'
+                  )
+                  text = text.replace(
+                      '@_implicitSelfCapture _ closure: @escaping (A0, repeat each A) async throws -> R',
+                      '@_implicitSelfCapture _ closure: @Sendable @escaping (A0, repeat each A) async throws -> R'
+                  )
+              if path.name == 'EventListenersFactories.swift':
+                  text = text.replace(
+                      '@_implicitSelfCapture _ closure: @escaping () -> Void',
+                      '@_implicitSelfCapture _ closure: @Sendable @escaping () -> Void'
+                  )
+              if path.name == 'ObjectFactories.swift':
+                  text = text.replace(
+                      'public func OnStartObserving(_ event: String? = nil, @_implicitSelfCapture _ closure: @escaping () -> Void) -> EventObservingDefinition {',
+                      'public func OnStartObserving(_ event: String? = nil, @_implicitSelfCapture _ closure: @Sendable @escaping () -> Void) -> EventObservingDefinition {'
+                  )
+                  text = text.replace(
+                      'public func OnStopObserving(_ event: String? = nil, @_implicitSelfCapture _ closure: @escaping () -> Void) -> EventObservingDefinition {',
+                      'public func OnStopObserving(_ event: String? = nil, @_implicitSelfCapture _ closure: @Sendable @escaping () -> Void) -> EventObservingDefinition {'
+                  )
+              if path.name == 'EventListener.swift':
+                  text = text.replace(
+                      'let call: (Any?, Any?) throws -> Void',
+                      'let call: @Sendable (Any?, Any?) throws -> Void'
+                  )
+                  text = text.replace(
+                      'init(_ name: EventName, _ listener: @escaping () -> Void) {',
+                      'init(_ name: EventName, _ listener: @Sendable @escaping () -> Void) {'
+                  )
+                  text = text.replace(
+                      'init<Sender>(_ name: EventName, _ listener: @escaping (Sender) -> Void) {',
+                      'init<Sender>(_ name: EventName, _ listener: @Sendable @escaping (Sender) -> Void) {'
+                  )
+                  text = text.replace(
+                      'init<Sender, PayloadType>(_ name: EventName, _ listener: @escaping (Sender, PayloadType?) -> Void) {',
+                      'init<Sender, PayloadType>(_ name: EventName, _ listener: @Sendable @escaping (Sender, PayloadType?) -> Void) {'
+                  )
               if text != original:
                   path.write_text(text)
                   patched += 1
