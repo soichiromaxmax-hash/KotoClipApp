@@ -33,14 +33,6 @@
       "expo-router",
       "./plugins/withShareExtension",
       [
-        "expo-notifications",
-        {
-          "icon": "./assets/images/icon.png",
-          "color": "#2DD4BF",
-          "iosDisplayInForeground": true
-        }
-      ],
-      [
         "expo-splash-screen",
         {
           "image": "./assets/images/splash-icon.png",
