@@ -259,7 +259,7 @@ workflows:
           if patched == 0:
               raise SystemExit('Failed to patch expo-modules-core Swift files')
           PYEOF
-      - name: Patch expo-system-ui and splash screen for Swift 6 actor isolation
+      - name: Patch extra Expo iOS modules for Swift 6 actor isolation
         script: |
           python3 << 'PYEOF'
           from pathlib import Path
@@ -306,9 +306,41 @@ workflows:
                   splash_path.write_text(text)
                   patched += 1
 
+          symbols_path = Path('node_modules/expo-symbols/ios/SymbolEffects.swift')
+          if symbols_path.exists():
+              text = symbols_path.read_text()
+              original = text
+              text = text.replace(
+                  'internal protocol EffectAdding {',
+                  '@MainActor internal protocol EffectAdding {'
+              )
+              if text != original:
+                  symbols_path.write_text(text)
+                  patched += 1
+
+          sharing_path = Path('node_modules/expo-sharing/ios/SharingModule.swift')
+          if sharing_path.exists():
+              text = sharing_path.read_text()
+              original = text
+              text = text.replace(
+                  'public final class SharingModule: Module {',
+                  'public final class SharingModule: Module, @unchecked Sendable {'
+              )
+              text = text.replace(
+                  '      let activityController = UIActivityViewController(activityItems: [url], applicationActivities: nil)\n      activityController.title = options.dialogTitle\n\n      activityController.completionWithItemsHandler = { type, completed, _, _ in\n        // user shared an item\n        if type != nil && completed {\n          promise.resolve(nil)\n        }\n\n        // dismissed without action\n        if type == nil && !completed {\n          promise.resolve(nil)\n        }\n      }\n\n      guard let currentViewcontroller = appContext?.utilities?.currentViewController() else {\n        throw MissingCurrentViewControllerException()\n      }\n\n      // Apple docs state that `UIActivityViewController` must be presented in a\n      // popover on iPad https://developer.apple.com/documentation/uikit/uiactivityviewcontroller\n      if UIDevice.current.userInterfaceIdiom == .pad {\n        let rect = options.anchor\n        let viewFrame = currentViewcontroller.view.frame\n\n        activityController.popoverPresentationController?.sourceRect = CGRect(\n          x: rect?.x ?? viewFrame.midX,\n          y: rect?.y ?? viewFrame.maxY,\n          width: rect?.width ?? 0,\n          height: rect?.height ?? 0\n        )\n        activityController.popoverPresentationController?.sourceView = currentViewcontroller.view\n        activityController.modalPresentationStyle = .pageSheet\n      }\n\n      currentViewcontroller.present(activityController, animated: true)',
+                  '      try MainActor.assumeIsolated {\n        let activityController = UIActivityViewController(activityItems: [url], applicationActivities: nil)\n        activityController.title = options.dialogTitle\n\n        activityController.completionWithItemsHandler = { type, completed, _, _ in\n          // user shared an item\n          if type != nil && completed {\n            promise.resolve(nil)\n          }\n\n          // dismissed without action\n          if type == nil && !completed {\n            promise.resolve(nil)\n          }\n        }\n\n        guard let currentViewcontroller = appContext?.utilities?.currentViewController() else {\n          throw MissingCurrentViewControllerException()\n        }\n\n        // Apple docs state that `UIActivityViewController` must be presented in a\n        // popover on iPad https://developer.apple.com/documentation/uikit/uiactivityviewcontroller\n        if UIDevice.current.userInterfaceIdiom == .pad {\n          let rect = options.anchor\n          let viewFrame = currentViewcontroller.view.frame\n\n          activityController.popoverPresentationController?.sourceRect = CGRect(\n            x: rect?.x ?? viewFrame.midX,\n            y: rect?.y ?? viewFrame.maxY,\n            width: rect?.width ?? 0,\n            height: rect?.height ?? 0\n          )\n          activityController.popoverPresentationController?.sourceView = currentViewcontroller.view\n          activityController.modalPresentationStyle = .pageSheet\n        }\n\n        currentViewcontroller.present(activityController, animated: true)\n      }'
+              )
+              text = text.replace(
+                  '      return try await withThrowingTaskGroup(of: (Int, ExpoResolvedSharePayload).self) { [weak self] group in\n        guard let self else {\n          return []\n        }\n',
+                  '      return try await withThrowingTaskGroup(of: (Int, ExpoResolvedSharePayload).self) { group in\n'
+              )
+              if text != original:
+                  sharing_path.write_text(text)
+                  patched += 1
+
           print('extra expo iOS modules patched:', patched)
           if patched == 0:
-              raise SystemExit('Failed to patch expo-system-ui or expo-splash-screen')
+              raise SystemExit('Failed to patch extra Expo iOS modules')
           PYEOF
       - name: Disable react-native-screens gamma sources
         script: |
