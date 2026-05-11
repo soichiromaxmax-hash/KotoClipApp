@@ -76,6 +76,41 @@ workflows:
           xcode-project use-profiles
       - name: Install CocoaPods
         script: cd ios && pod install
+      - name: Force Swift 5.9 in Xcode projects
+        script: |
+          python3 << 'PYEOF'
+          from pathlib import Path
+          import re
+
+          files = [
+              Path('ios/Pods/Pods.xcodeproj/project.pbxproj'),
+              Path('ios/KotoClip.xcodeproj/project.pbxproj'),
+          ]
+
+          for path in files:
+              if not path.exists():
+                  print(f'skip missing: {path}')
+                  continue
+
+              text = path.read_text()
+              original = text
+
+              text = re.sub(r'SWIFT_VERSION = [^;]+;', 'SWIFT_VERSION = 5.9;', text)
+              text = re.sub(
+                  r'SWIFT_STRICT_CONCURRENCY = [^;]+;',
+                  'SWIFT_STRICT_CONCURRENCY = minimal;',
+                  text,
+              )
+
+              if 'OTHER_SWIFT_FLAGS = "$(inherited) -Xfrontend -disable-actor-data-race-checks";' not in text:
+                  text = text.replace(
+                      'SWIFT_VERSION = 5.9;',
+                      'SWIFT_VERSION = 5.9;\n\t\t\t\tOTHER_SWIFT_FLAGS = "$(inherited) -Xfrontend -disable-actor-data-race-checks";',
+                  )
+
+              path.write_text(text)
+              print(f'patched swift settings: {path} changed={text != original}')
+          PYEOF
       - name: Build IPA
         script: |
           set -eo pipefail
