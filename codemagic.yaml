@@ -338,6 +338,50 @@ workflows:
                   sharing_path.write_text(text)
                   patched += 1
 
+          web_browser_module_path = Path('node_modules/expo-web-browser/ios/WebBrowserModule.swift')
+          if web_browser_module_path.exists():
+              text = web_browser_module_path.read_text()
+              original = text
+              text = text.replace(
+                  '      self.currentWebBrowserSession = WebBrowserSession(url: url, options: options) { [promise] type in\n        promise.resolve(["type": type])\n        self.currentWebBrowserSession = nil\n      } didPresent: {\n        self.vcDidPresent = true\n      }\n\n      self.currentWebBrowserSession?.open()',
+                  '      MainActor.assumeIsolated {\n        self.currentWebBrowserSession = WebBrowserSession(url: url, options: options) { [promise] type in\n          promise.resolve(["type": type])\n          self.currentWebBrowserSession = nil\n        } didPresent: {\n          self.vcDidPresent = true\n        }\n\n        self.currentWebBrowserSession?.open()\n      }'
+              )
+              text = text.replace(
+                  '      currentWebBrowserSession?.dismiss { type in\n        self.currentWebBrowserSession = nil\n        promise.resolve(["type": type])\n      }',
+                  '      MainActor.assumeIsolated {\n        currentWebBrowserSession?.dismiss { type in\n          self.currentWebBrowserSession = nil\n          promise.resolve(["type": type])\n        }\n      }'
+              )
+              if text != original:
+                  web_browser_module_path.write_text(text)
+                  patched += 1
+
+          web_browser_session_path = Path('node_modules/expo-web-browser/ios/WebBrowserSession.swift')
+          if web_browser_session_path.exists():
+              text = web_browser_session_path.read_text()
+              original = text
+              text = text.replace(
+                  '  init(url: URL, options: WebBrowserOptions, onDismiss: @escaping (String) -> Void, didPresent: @escaping () -> Void) {',
+                  '  @MainActor init(url: URL, options: WebBrowserOptions, onDismiss: @escaping (String) -> Void, didPresent: @escaping () -> Void) {'
+              )
+              text = text.replace(
+                  '  func open() {',
+                  '  @MainActor func open() {'
+              )
+              text = text.replace(
+                  '  func dismiss(completion: ((String) -> Void)? = nil) {',
+                  '  @MainActor func dismiss(completion: ((String) -> Void)? = nil) {'
+              )
+              text = text.replace(
+                  '  func safariViewControllerDidFinish(_ controller: SFSafariViewController) {\n    finish(type: "cancel")\n  }',
+                  '  nonisolated func safariViewControllerDidFinish(_ controller: SFSafariViewController) {\n    onDismiss("cancel")\n  }'
+              )
+              text = text.replace(
+                  '  func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {\n    finish(type: "cancel")\n  }',
+                  '  nonisolated func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {\n    onDismiss("cancel")\n  }'
+              )
+              if text != original:
+                  web_browser_session_path.write_text(text)
+                  patched += 1
+
           print('extra expo iOS modules patched:', patched)
           if patched == 0:
               raise SystemExit('Failed to patch extra Expo iOS modules')
