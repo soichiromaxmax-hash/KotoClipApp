@@ -10,7 +10,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "jp.kotoclip.app",
-      "buildNumber": "42",
+      "buildNumber": "43",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "LSApplicationQueriesSchemes": ["instagram", "twitter", "line", "fb", "linkedin"]
@@ -32,7 +32,6 @@
     "plugins": [
       "expo-router",
       "./plugins/withShareExtension",
-      "./plugins/withSwiftConcurrency",
       [
         "expo-splash-screen",
         {

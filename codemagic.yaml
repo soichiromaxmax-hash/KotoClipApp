@@ -16,6 +16,31 @@ workflows:
         script: npm install
       - name: Expo prebuild
         script: npx expo prebuild --platform ios --clean
+      - name: Patch Podfile for Swift concurrency errors
+        script: |
+          python3 << 'PYEOF'
+          with open('ios/Podfile', 'r') as f:
+              lines = f.readlines()
+          inject = [
+              "  installer.pods_project.targets.each do |target|\n",
+              "    target.build_configurations.each do |config|\n",
+              "      config.build_settings['SWIFT_STRICT_CONCURRENCY'] = 'minimal'\n",
+              "      config.build_settings['SWIFT_VERSION'] = '5'\n",
+              "      config.build_settings['OTHER_SWIFT_FLAGS'] = '$(inherited) -Xfrontend -disable-actor-data-race-checks'\n",
+              "    end\n",
+              "  end\n",
+          ]
+          result = []
+          patched = False
+          for line in lines:
+              result.append(line)
+              if 'post_install do |installer|' in line and not patched:
+                  result.extend(inject)
+                  patched = True
+          with open('ios/Podfile', 'w') as f:
+              f.writelines(result)
+          print('Podfile patched:', patched)
+          PYEOF
       - name: Set up code signing
         script: |
           keychain initialize
