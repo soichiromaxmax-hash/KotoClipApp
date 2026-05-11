@@ -59,13 +59,58 @@ workflows:
                   )
               if path.name == 'DynamicSwiftUIViewType.swift':
                   text = text.replace(
+                      '      return view.contentView',
+                      '      return MainActor.assumeIsolated { view.contentView }'
+                  )
+                  text = text.replace(
+                      '       let innerView = provider.getWrappedView() as? ViewType {',
+                      '       let innerView = MainActor.assumeIsolated({ provider.getWrappedView() }) as? ViewType {'
+                  )
+                  text = text.replace(
                       '    return view.getContentView()',
                       '    return MainActor.assumeIsolated { view.getContentView() }'
+                  )
+              if path.name == 'ExpoSwiftUI.swift':
+                  text = text.replace(
+                      '  public protocol ViewWrapper {',
+                      '  @MainActor public protocol ViewWrapper {'
+                  )
+              if path.name == 'SwiftUIVirtualView.swift':
+                  text = text.replace(
+                      '  final class SwiftUIVirtualView<Props: ViewProps, ContentView: View<Props>>: SwiftUIVirtualViewObjC, ExpoSwiftUIView {',
+                      '  @MainActor final class SwiftUIVirtualView<Props: ViewProps, ContentView: View<Props>>: SwiftUIVirtualViewObjC, ExpoSwiftUIView {'
+                  )
+                  text = text.replace(
+                      'extension ExpoSwiftUI.SwiftUIVirtualView: @MainActor ExpoSwiftUI.ViewWrapper {',
+                      '@MainActor extension ExpoSwiftUI.SwiftUIVirtualView: ExpoSwiftUI.ViewWrapper {'
+                  )
+              if path.name == 'SwiftUIViewFrameObserver.swift':
+                  text = text.replace(
+                      '        callback(CGRect(origin: view.frame.origin, size: newValue.size))',
+                      '        let origin = MainActor.assumeIsolated { view.frame.origin }\n        callback(CGRect(origin: origin, size: newValue.size))'
                   )
               if path.name == 'JSLoggerModule.swift':
                   text = text.replace(
                       'public final class JSLoggerModule: Module {',
                       'public final class JSLoggerModule: Module, @unchecked Sendable {'
+                  )
+              if path.name == 'URLAuthenticationChallengeForwardSender.swift':
+                  text = text.replace(
+                      'internal final class URLAuthenticationChallengeForwardSender: NSObject, URLAuthenticationChallengeSender {',
+                      'internal final class URLAuthenticationChallengeForwardSender: NSObject, URLAuthenticationChallengeSender, @unchecked Sendable {'
+                  )
+                  text = text.replace(
+                      '  let completionHandler: (URLSession.AuthChallengeDisposition, URLCredential?) -> Void',
+                      '  let completionHandler: @Sendable (URLSession.AuthChallengeDisposition, URLCredential?) -> Void'
+                  )
+                  text = text.replace(
+                      '  init(completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {',
+                      '  init(completionHandler: @Sendable @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {'
+                  )
+              if path.name == 'URLSessionSessionDelegateProxy.swift':
+                  text = text.replace(
+                      'public final class URLSessionSessionDelegateProxy: NSObject, URLSessionDataDelegate {',
+                      'public final class URLSessionSessionDelegateProxy: NSObject, URLSessionDataDelegate, @unchecked Sendable {'
                   )
               if path.name == 'PersistentFileLog.swift':
                   text = text.replace(
