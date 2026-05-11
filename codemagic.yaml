@@ -27,25 +27,49 @@ workflows:
         script: cd ios && pod install
       - name: Build IPA
         script: |
-          xcode-project build-ipa \
-            --workspace ios/KotoClip.xcworkspace \
-            --scheme KotoClip
-          BUILD_EXIT=$?
-          if [ $BUILD_EXIT -ne 0 ]; then
-            echo "=== XCODEBUILD LOG ==="
-            cat /tmp/xcodebuild_logs/*.log 2>/dev/null || echo "No log file found"
-            exit $BUILD_EXIT
-          fi
+          set -eo pipefail
+          ARCHIVE_PATH=/tmp/KotoClip.xcarchive
+
+          # Archive — 全出力がそのまま Codemagic ログに流れる
+          xcodebuild \
+            -workspace ios/KotoClip.xcworkspace \
+            -scheme KotoClip \
+            -archivePath "$ARCHIVE_PATH" \
+            archive \
+            COMPILER_INDEX_STORE_ENABLE=NO \
+            DEVELOPMENT_TEAM=9U2YJ4XL4K \
+            CODE_SIGN_IDENTITY="Apple Distribution" \
+            CODE_SIGN_STYLE=Manual
+
+          # ExportOptions.plist
+          cat > /tmp/ExportOptions.plist << 'PLIST'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key>
+            <string>app-store-connect</string>
+            <key>teamID</key>
+            <string>9U2YJ4XL4K</string>
+          </dict>
+          </plist>
+          PLIST
+
+          # Export IPA
+          mkdir -p build/ios/ipa
+          xcodebuild \
+            -exportArchive \
+            -archivePath "$ARCHIVE_PATH" \
+            -exportOptionsPlist /tmp/ExportOptions.plist \
+            -exportPath build/ios/ipa
       - name: Submit to TestFlight
         script: |
           echo "$APP_STORE_CONNECT_PRIVATE_KEY_B64" | base64 -d > /tmp/auth_key.p8
           chmod 600 /tmp/auth_key.p8
           app-store-connect publish \
-            --path build/ios/ipa/KotoClip.ipa \
+            --path build/ios/ipa/*.ipa \
             --private-key @file:/tmp/auth_key.p8 \
             --key-id $APP_STORE_CONNECT_KEY_IDENTIFIER \
             --issuer-id $APP_STORE_CONNECT_ISSUER_ID
     artifacts:
       - build/ios/ipa/*.ipa
-      - /tmp/xcodebuild_logs/*.log
-      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.log
