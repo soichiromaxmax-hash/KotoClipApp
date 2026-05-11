@@ -43,7 +43,8 @@
             "backgroundColor": "#151A22"
           }
         }
-      ]
+      ],
+      "./plugins/withoutPushEntitlement"
     ],
     "experiments": {
       "typedRoutes": true
