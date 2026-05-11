@@ -51,12 +51,14 @@ workflows:
             installer.pods_project.targets.each do |target|
               target.build_configurations.each do |config|
                 config.build_settings['SWIFT_VERSION'] = '6.0'
+                config.build_settings['SWIFT_STRICT_CONCURRENCY'] = 'minimal'
               end
             end
             installer.aggregate_targets.each do |aggregate_target|
               aggregate_target.user_project.native_targets.each do |target|
                 target.build_configurations.each do |config|
                   config.build_settings['SWIFT_VERSION'] = '6.0'
+                  config.build_settings['SWIFT_STRICT_CONCURRENCY'] = 'minimal'
                 end
               end
               aggregate_target.user_project.save
@@ -115,6 +117,9 @@ workflows:
               text = path.read_text()
               original = text
               text = re.sub(r'SWIFT_VERSION = [^;]+;', 'SWIFT_VERSION = 6.0;', text)
+              text = re.sub(r'SWIFT_STRICT_CONCURRENCY = [^;]+;', 'SWIFT_STRICT_CONCURRENCY = minimal;', text)
+              if 'SWIFT_STRICT_CONCURRENCY = minimal;' not in text:
+                  text = text.replace('SWIFT_VERSION = 6.0;', 'SWIFT_VERSION = 6.0;\n\t\t\t\tSWIFT_STRICT_CONCURRENCY = minimal;')
               path.write_text(text)
               print(f'patched swift version: {path} changed={text != original}')
           PYEOF
