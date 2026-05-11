@@ -55,22 +55,21 @@ workflows:
               if path.name == 'SwiftUIVirtualView.swift':
                   text = text.replace(
                       '    override func updateProps(_ rawProps: [String: Any]) {',
-                      '    @MainActor override func updateProps(_ rawProps: [String: Any]) {'
+                      '    override func updateProps(_ rawProps: [String: Any]) {\n      MainActor.assumeIsolated {'
                   )
                   text = text.replace(
                       '    override func mountChildComponentView(_ childComponentView: UIView, index: Int) {',
-                      '    @MainActor override func mountChildComponentView(_ childComponentView: UIView, index: Int) {'
+                      '    override func mountChildComponentView(_ childComponentView: UIView, index: Int) {\n      MainActor.assumeIsolated {'
                   )
                   text = text.replace(
                       '    override func unmountChildComponentView(_ childComponentView: UIView, index: Int) {',
-                      '    @MainActor override func unmountChildComponentView(_ childComponentView: UIView, index: Int) {'
+                      '    override func unmountChildComponentView(_ childComponentView: UIView, index: Int) {\n      MainActor.assumeIsolated {'
                   )
                   text = text.replace(
                       '    override func removeFromSuperview() {',
-                      '    @MainActor override func removeFromSuperview() {'
+                      '    override func removeFromSuperview() {\n      MainActor.assumeIsolated {'
                   )
                   text = text.replace(
-                      '  @MainActor final class SwiftUIVirtualView<Props: ViewProps, ContentView: View<Props>>: SwiftUIVirtualViewObjC, ExpoSwiftUIView {',
                       '  final class SwiftUIVirtualView<Props: ViewProps, ContentView: View<Props>>: SwiftUIVirtualViewObjC, ExpoSwiftUIView {'
                   )
                   text = text.replace(
@@ -80,6 +79,22 @@ workflows:
                   text = text.replace(
                       '  func getWrappedView() -> Any {',
                       '  @MainActor func getWrappedView() -> Any {'
+                  )
+                  text = text.replace(
+                      '      } catch let error {\n        log.error("Updating props for \\(self) has failed: \\(error.localizedDescription)")\n      }\n    }',
+                      '      } catch let error {\n        log.error("Updating props for \\(self) has failed: \\(error.localizedDescription)")\n      }\n      }\n    }'
+                  )
+                  text = text.replace(
+                      '      props.children = children\n      props.objectWillChange.send()\n    }',
+                      '      props.children = children\n      props.objectWillChange.send()\n      }\n    }'
+                  )
+                  text = text.replace(
+                      '        props.objectWillChange.send()\n      }\n    }',
+                      '        props.objectWillChange.send()\n      }\n      }\n    }'
+                  )
+                  text = text.replace(
+                      '      super.removeFromSuperview()\n    }',
+                      '      super.removeFromSuperview()\n      }\n    }'
                   )
               if path.name == 'DynamicSwiftUIViewType.swift':
                   text = text.replace(
@@ -98,15 +113,6 @@ workflows:
                   text = text.replace(
                       '  public protocol ViewWrapper {',
                       '  @MainActor public protocol ViewWrapper {'
-                  )
-              if path.name == 'SwiftUIVirtualView.swift':
-                  text = text.replace(
-                      '  final class SwiftUIVirtualView<Props: ViewProps, ContentView: View<Props>>: SwiftUIVirtualViewObjC, ExpoSwiftUIView {',
-                      '  @MainActor final class SwiftUIVirtualView<Props: ViewProps, ContentView: View<Props>>: SwiftUIVirtualViewObjC, ExpoSwiftUIView {'
-                  )
-                  text = text.replace(
-                      'extension ExpoSwiftUI.SwiftUIVirtualView: @MainActor ExpoSwiftUI.ViewWrapper {',
-                      '@MainActor extension ExpoSwiftUI.SwiftUIVirtualView: ExpoSwiftUI.ViewWrapper {'
                   )
               if path.name == 'SwiftUIViewFrameObserver.swift':
                   text = text.replace(
