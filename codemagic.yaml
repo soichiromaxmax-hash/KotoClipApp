@@ -16,6 +16,51 @@ workflows:
     scripts:
       - name: Install dependencies
         script: npm install
+      - name: Patch expo-modules-core for Swift 6 concurrency
+        script: |
+          python3 << 'PYEOF'
+          from pathlib import Path
+
+          root = Path('node_modules/expo-modules-core/ios')
+          patched = 0
+
+          for path in root.rglob('*.swift'):
+              text = path.read_text()
+              original = text
+              text = text.replace('import UIKit', '@preconcurrency import UIKit')
+              text = text.replace('import SwiftUI', '@preconcurrency import SwiftUI')
+              if path.name == 'ExpoReactDelegate.swift':
+                  text = text.replace(
+                      'public class ExpoReactDelegate: NSObject {',
+                      '@MainActor public class ExpoReactDelegate: NSObject {'
+                  )
+                  text = text.replace(
+                      '.first(where: { _ in true }) ?? UIViewController()',
+                      '.first(where: { _ in true }) ?? MainActor.assumeIsolated { UIViewController() }'
+                  )
+              if path.name == 'ViewDefinition.swift':
+                  text = text.replace(
+                      'extension UIView: @MainActor AnyArgument {',
+                      '@MainActor extension UIView: AnyArgument {'
+                  )
+              if path.name == 'SwiftUIHostingView.swift':
+                  text = text.replace(
+                      'public final class HostingView<Props: ViewProps, ContentView: View<Props>>: ExpoView, @MainActor AnyExpoSwiftUIHostingView {',
+                      '@MainActor public final class HostingView<Props: ViewProps, ContentView: View<Props>>: ExpoView, AnyExpoSwiftUIHostingView {'
+                  )
+              if path.name == 'SwiftUIVirtualView.swift':
+                  text = text.replace(
+                      'extension ExpoSwiftUI.SwiftUIVirtualView: @MainActor ExpoSwiftUI.ViewWrapper {',
+                      '@MainActor extension ExpoSwiftUI.SwiftUIVirtualView: ExpoSwiftUI.ViewWrapper {'
+                  )
+              if text != original:
+                  path.write_text(text)
+                  patched += 1
+
+          print('expo-modules-core patched files:', patched)
+          if patched == 0:
+              raise SystemExit('Failed to patch expo-modules-core Swift files')
+          PYEOF
       - name: Disable react-native-screens gamma sources
         script: |
           python3 << 'PYEOF'
