@@ -57,6 +57,11 @@ workflows:
                       'extension ExpoSwiftUI.SwiftUIVirtualView: @MainActor ExpoSwiftUI.ViewWrapper {',
                       '@MainActor extension ExpoSwiftUI.SwiftUIVirtualView: ExpoSwiftUI.ViewWrapper {'
                   )
+              if path.name == 'DynamicSwiftUIViewType.swift':
+                  text = text.replace(
+                      '    return view.getContentView()',
+                      '    return MainActor.assumeIsolated { view.getContentView() }'
+                  )
               if path.name == 'JSLoggerModule.swift':
                   text = text.replace(
                       'public final class JSLoggerModule: Module {',
@@ -99,6 +104,24 @@ workflows:
                   text = text.replace(
                       '@_implicitSelfCapture _ closure: @escaping (A0, repeat each A) async throws -> R',
                       '@_implicitSelfCapture _ closure: @Sendable @escaping (A0, repeat each A) async throws -> R'
+                  )
+              if path.name == 'EventObservingDefinition.swift':
+                  text = text.replace(
+                      'public typealias ClosureType = () -> Void',
+                      'public typealias ClosureType = @Sendable () -> Void'
+                  )
+                  text = text.replace(
+                      'init(type: EventObservingType, event: String?, _ closure: @escaping ClosureType) {',
+                      'init(type: EventObservingType, event: String?, _ closure: @Sendable @escaping ClosureType) {'
+                  )
+              if path.name == 'ObjectFactories.swift':
+                  text = text.replace(
+                      'public func OnStartObserving(_ event: String? = nil, @_implicitSelfCapture _ closure: @escaping () -> Void) -> EventObservingDefinition {',
+                      'public func OnStartObserving(_ event: String? = nil, @_implicitSelfCapture _ closure: @Sendable @escaping () -> Void) -> EventObservingDefinition {'
+                  )
+                  text = text.replace(
+                      'public func OnStopObserving(_ event: String? = nil, @_implicitSelfCapture _ closure: @escaping () -> Void) -> EventObservingDefinition {',
+                      'public func OnStopObserving(_ event: String? = nil, @_implicitSelfCapture _ closure: @Sendable @escaping () -> Void) -> EventObservingDefinition {'
                   )
               if text != original:
                   path.write_text(text)
