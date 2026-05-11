@@ -70,8 +70,16 @@ workflows:
                       '    @MainActor override func removeFromSuperview() {'
                   )
                   text = text.replace(
+                      '  @MainActor final class SwiftUIVirtualView<Props: ViewProps, ContentView: View<Props>>: SwiftUIVirtualViewObjC, ExpoSwiftUIView {',
+                      '  final class SwiftUIVirtualView<Props: ViewProps, ContentView: View<Props>>: SwiftUIVirtualViewObjC, ExpoSwiftUIView {'
+                  )
+                  text = text.replace(
                       'extension ExpoSwiftUI.SwiftUIVirtualView: @MainActor ExpoSwiftUI.ViewWrapper {',
                       '@MainActor extension ExpoSwiftUI.SwiftUIVirtualView: ExpoSwiftUI.ViewWrapper {'
+                  )
+                  text = text.replace(
+                      '  func getWrappedView() -> Any {',
+                      '  @MainActor func getWrappedView() -> Any {'
                   )
               if path.name == 'DynamicSwiftUIViewType.swift':
                   text = text.replace(
@@ -80,7 +88,7 @@ workflows:
                   )
                   text = text.replace(
                       '    if let provider = appContext.findView(withTag: viewTag, ofType: ExpoSwiftUI.ViewWrapper.self),\n       let innerView = provider.getWrappedView() as? ViewType {\n      return innerView\n    }',
-                      '    if let provider = appContext.findView(withTag: viewTag, ofType: ExpoSwiftUI.ViewWrapper.self),\n       let innerView: ViewType = MainActor.assumeIsolated({ provider.getWrappedView() as? ViewType }) {\n      return innerView\n    }'
+                      '    if let provider = appContext.findView(withTag: viewTag, ofType: ExpoSwiftUI.ViewWrapper.self) {\n      if let innerView: ViewType = MainActor.assumeIsolated({ provider.getWrappedView() as? ViewType }) {\n        return innerView\n      }\n    }'
                   )
                   text = text.replace(
                       '    return view.getContentView()',
@@ -152,10 +160,6 @@ workflows:
                       'public typealias ClosureType = () -> Void',
                       'public typealias ClosureType = @Sendable () -> Void'
                   )
-                  text = text.replace(
-                      'init(type: EventObservingType, event: String?, _ closure: @escaping ClosureType) {',
-                      'init(type: EventObservingType, event: String?, _ closure: @escaping ClosureType) {'
-                  )
               if path.name == 'ConcurrentFunctionDefinition.swift':
                   text = text.replace(
                       'typealias ClosureType = (Args) async throws -> ReturnType',
@@ -189,6 +193,27 @@ workflows:
                       'public func OnStopObserving(_ event: String? = nil, @_implicitSelfCapture _ closure: @Sendable @escaping () -> Void) -> EventObservingDefinition {'
                   )
               if path.name == 'ExpoRequestInterceptorProtocol.swift':
+                  text = text.replace(
+                      '    completionHandler: @escaping (URLSession.ResponseDisposition) -> Void',
+                      '    completionHandler: @Sendable @escaping (URLSession.ResponseDisposition) -> Void'
+                  )
+                  text = text.replace(
+                      '    completionHandler: @escaping (URLRequest?) -> Void',
+                      '    completionHandler: @Sendable @escaping (URLRequest?) -> Void'
+                  )
+                  text = text.replace(
+                      '    completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void',
+                      '    completionHandler: @Sendable @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void'
+                  )
+              if path.name == 'URLSessionSessionDelegateProxy.swift':
+                  text = text.replace(
+                      '    completionHandler: @escaping (URLSession.ResponseDisposition) -> Void',
+                      '    completionHandler: @Sendable @escaping (URLSession.ResponseDisposition) -> Void'
+                  )
+                  text = text.replace(
+                      '    completionHandler: @escaping (URLRequest?) -> Void',
+                      '    completionHandler: @Sendable @escaping (URLRequest?) -> Void'
+                  )
                   text = text.replace(
                       '    completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void',
                       '    completionHandler: @Sendable @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void'
