@@ -17,9 +17,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AuthState>('loading');
 
   useEffect(() => {
-    api.getStoredToken().then((token) => {
-      if (token) api.syncTokensToSharedStorage();
+    api.getStoredToken().then(async (token) => {
+      if (token) await api.syncTokensToSharedStorage().catch(() => {});
       setState(token ? 'authenticated' : 'unauthenticated');
+    }).catch(() => {
+      setState('unauthenticated');
     });
 
     setAuthExpiredHandler(() => setState('unauthenticated'));

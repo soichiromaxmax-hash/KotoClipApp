@@ -15,22 +15,38 @@ async function getRefreshToken() {
 async function saveTokens(access: string, refresh: string) {
   await AsyncStorage.setItem('vocab_token', access);
   await AsyncStorage.setItem('vocab_refresh', refresh);
-  SharedStorage.setItem('vocab_token', access);
-  SharedStorage.setItem('vocab_refresh', refresh);
+  safeSharedStorageSet('vocab_token', access);
+  safeSharedStorageSet('vocab_refresh', refresh);
 }
 
 async function syncTokensToSharedStorage() {
   const access = await getToken();
   const refresh = await getRefreshToken();
-  if (access) SharedStorage.setItem('vocab_token', access);
-  if (refresh) SharedStorage.setItem('vocab_refresh', refresh);
+  if (access) safeSharedStorageSet('vocab_token', access);
+  if (refresh) safeSharedStorageSet('vocab_refresh', refresh);
 }
 
 async function clearTokens() {
   await AsyncStorage.removeItem('vocab_token');
   await AsyncStorage.removeItem('vocab_refresh');
-  SharedStorage.removeItem('vocab_token');
-  SharedStorage.removeItem('vocab_refresh');
+  safeSharedStorageRemove('vocab_token');
+  safeSharedStorageRemove('vocab_refresh');
+}
+
+function safeSharedStorageSet(key: string, value: string) {
+  try {
+    SharedStorage.setItem(key, value);
+  } catch {
+    // The share extension token bridge is best-effort; never crash the main app.
+  }
+}
+
+function safeSharedStorageRemove(key: string) {
+  try {
+    SharedStorage.removeItem(key);
+  } catch {
+    // The share extension token bridge is best-effort; never crash the main app.
+  }
 }
 
 async function refreshAccessToken(): Promise<string | null> {

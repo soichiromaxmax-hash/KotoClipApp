@@ -1,17 +1,16 @@
-import 'react-native-reanimated';
 import { useEffect, useState } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useFonts, LobsterTwo_700Bold } from '@expo-google-fonts/lobster-two';
+import { SpaceGrotesk_700Bold } from '@expo-google-fonts/space-grotesk';
 
 import { AuthProvider, useAuth } from '@/context/auth';
-import { SplashAnimation } from '@/components/SplashAnimation';
 import { Onboarding, hasSeenOnboarding } from '@/components/Onboarding';
 
 // Render.com のコールドスタート対策: アプリ起動時にバックグラウンドでサーバーを起こす
 function useRenderWarmup() {
   useEffect(() => {
-    fetch('https://kotoclip.onrender.com/api/lookup?word=hello', { signal: AbortSignal.timeout(30000) })
-      .catch(() => {});
+    fetch('https://kotoclip.onrender.com/api/lookup?word=hello').catch(() => {});
   }, []);
 }
 
@@ -58,15 +57,17 @@ function RootLayoutNav() {
 }
 
 export default function RootLayout() {
-  const [splashDone, setSplashDone] = useState(false);
-  const fontsLoaded = true;
+  const [fontsLoaded, fontError] = useFonts({
+    LobsterTwo_700Bold,
+    SpaceGrotesk_700Bold,
+  });
+
+  const appReady = fontsLoaded || !!fontError;
+  if (!appReady) return null;
 
   return (
     <AuthProvider>
       <RootLayoutNav />
-      {!splashDone && (
-        <SplashAnimation fontsLoaded={!!fontsLoaded} onFinish={() => setSplashDone(true)} />
-      )}
     </AuthProvider>
   );
 }
