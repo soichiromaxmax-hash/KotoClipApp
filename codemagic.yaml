@@ -110,6 +110,15 @@ workflows:
                       '    return view.getContentView()',
                       '    return MainActor.assumeIsolated { view.getContentView() }'
                   )
+              if path.name == 'DynamicRawType.swift':
+                  text = text.replace(
+                      '    if let objectBuilder = result as? JavaScriptObjectBuilder {',
+                      '    if let objectBuilder = result as? JavaScriptObjectBuilder {\n      let objectBuilderBox = NonisolatedUnsafeVar(objectBuilder)'
+                  )
+                  text = text.replace(
+                      '        return try objectBuilder.build(appContext: appContext)',
+                      '        return try objectBuilderBox.value.build(appContext: appContext)'
+                  )
               if path.name == 'ExpoSwiftUI.swift':
                   text = text.replace(
                       '  public protocol ViewWrapper {',
