@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts, LobsterTwo_700Bold } from '@expo-google-fonts/lobster-two';
@@ -10,7 +10,7 @@ import { Onboarding, hasSeenOnboarding } from '@/components/Onboarding';
 // Render.com のコールドスタート対策: アプリ起動時にバックグラウンドでサーバーを起こす
 function useRenderWarmup() {
   useEffect(() => {
-    fetch('https://kotoclip.onrender.com/api/lookup?word=hello').catch(() => {});
+    fetch('https://kotoclip.onrender.com').catch(() => {});
   }, []);
 }
 
@@ -19,6 +19,7 @@ function RootLayoutNav() {
   const router = useRouter();
   const segments = useSegments();
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const onboardingChecked = useRef(false);
   useRenderWarmup();
 
   useEffect(() => {
@@ -30,7 +31,8 @@ function RootLayoutNav() {
       router.replace('/auth/login' as any);
     } else if (state === 'authenticated' && inAuth) {
       router.replace('/(tabs)' as any);
-    } else if (state === 'authenticated' && !inAuth) {
+    } else if (state === 'authenticated' && !inAuth && !onboardingChecked.current) {
+      onboardingChecked.current = true;
       hasSeenOnboarding().then((seen) => {
         if (!seen) setShowOnboarding(true);
       });
@@ -44,7 +46,6 @@ function RootLayoutNav() {
         <Stack.Screen name="auth" />
         <Stack.Screen name="word" />
         <Stack.Screen name="flashcard" />
-        <Stack.Screen name="add" />
         <Stack.Screen name="how-to" />
       </Stack>
       <StatusBar style="light" />

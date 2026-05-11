@@ -10,8 +10,7 @@ import {
   SafeAreaView,
   ActivityIndicator,
 } from 'react-native';
-import { useFocusEffect } from 'expo-router/react-navigation';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { api } from '@/lib/api';
 import { KotoBird } from '@/components/KotoBird';
 
@@ -59,19 +58,30 @@ export default function WordsScreen() {
   const [sort, setSort] = useState<SortKey>('created_desc');
   const [busyIds, setBusyIds] = useState<Record<number, boolean>>({});
 
+  const [netError, setNetError] = useState(false);
   const initialized = useRef(false);
 
-  useFocusEffect(useCallback(() => {
+  function fetchWords() {
     let alive = true;
     if (!initialized.current) setLoading(true);
     api.listWords().then((data) => {
-      if (alive && Array.isArray(data)) {
+      if (!alive) return;
+      if (Array.isArray(data)) {
         setWords(data);
         initialized.current = true;
+        setNetError(false);
       }
-      if (alive) setLoading(false);
-    }).catch(() => { if (alive) setLoading(false); });
+      setLoading(false);
+    }).catch(() => {
+      if (!alive) return;
+      setLoading(false);
+      if (!initialized.current) setNetError(true);
+    });
     return () => { alive = false; };
+  }
+
+  useFocusEffect(useCallback(() => {
+    return fetchWords();
   }, []));
 
   async function toggleFavorite(w: Word) {
@@ -201,6 +211,18 @@ export default function WordsScreen() {
 
       {loading ? (
         <ActivityIndicator color="#2DD4BF" style={{ marginTop: 40 }} />
+      ) : netError ? (
+        <View style={styles.emptyFull}>
+          <Text style={styles.emptyTitle}>読み込みに失敗しました</Text>
+          <Text style={styles.emptySub}>通信状態を確認してもう一度お試しください。</Text>
+          <TouchableOpacity
+            style={styles.emptyBtn}
+            onPress={() => { setNetError(false); fetchWords(); }}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.emptyBtnText}>再試行</Text>
+          </TouchableOpacity>
+        </View>
       ) : words.length === 0 ? (
         <View style={styles.emptyFull}>
           <KotoBird size={100} />
@@ -208,7 +230,7 @@ export default function WordsScreen() {
           <Text style={styles.emptySub}>単語を追加して学習を始めましょう。</Text>
           <TouchableOpacity
             style={styles.emptyBtn}
-            onPress={() => router.push('/add' as any)}
+            onPress={() => router.push('/(tabs)/add' as any)}
             activeOpacity={0.8}
           >
             <Text style={styles.emptyBtnText}>最初の単語を追加する</Text>

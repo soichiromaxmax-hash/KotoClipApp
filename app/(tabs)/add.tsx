@@ -29,7 +29,6 @@ export default function AddWordScreen() {
     setLoading(true);
     setStatus({ type: 'info', msg: 'AI解説を取得中...' });
     setAiPanel(null);
-    setContext('');
     try {
       const res = await api.lookup(word.trim());
       if (res.meaning) {

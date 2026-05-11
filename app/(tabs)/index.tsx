@@ -9,8 +9,7 @@ import {
   SafeAreaView,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useFocusEffect } from 'expo-router/react-navigation';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { api } from '@/lib/api';
 import { KotoBird } from '@/components/KotoBird';
 import { getCachedStats, getCachedWild, setCachedStats, setCachedWild, resetHomeCache } from '@/lib/homeCache';
@@ -31,17 +30,8 @@ interface Encounter {
   result: string;
 }
 
-const EMPTY_STATS: Stats = {
-  due: 0,
-  total: 0,
-  mastered: 0,
-  streak: 0,
-  reliable_count: 0,
-  today_count: 0,
-  wild_known_count: 0,
-};
 
-function withTimeout<T>(promise: Promise<T>, fallback: T, ms = 15000): Promise<T> {
+function withTimeout<T>(promise: Promise<T>, fallback: T, ms = 35000): Promise<T> {
   return new Promise((resolve) => {
     const timer = setTimeout(() => resolve(fallback), ms);
     promise
@@ -64,16 +54,7 @@ export default function HomeScreen() {
   const [netError, setNetError] = useState(false);
   const refreshing = useRef(false);
 
-  function retry() {
-    resetHomeCache();
-    setStats(null);
-    setWild([]);
-    setNetError(false);
-    setLoading(true);
-    refreshing.current = false;
-  }
-
-  useFocusEffect(useCallback(() => {
+  const doFetch = useCallback(() => {
     if (refreshing.current) return;
     refreshing.current = true;
 
@@ -85,7 +66,6 @@ export default function HomeScreen() {
     ])
       .then(([nextStats, nextWild]) => {
         if (nextStats !== null) {
-          // API 成功: キャッシュ・状態を必ず更新（unfocus中でもcomponentはマウント済みなので安全）
           const w = Array.isArray(nextWild) ? nextWild : [];
           setCachedStats(nextStats);
           setCachedWild(w);
@@ -93,11 +73,9 @@ export default function HomeScreen() {
           setWild(w);
           setNetError(false);
         } else if (getCachedStats() !== null) {
-          // API 失敗だがキャッシュあり: キャッシュを状態に反映
           setStats(getCachedStats() as Stats | null);
           setWild(getCachedWild() as Encounter[]);
         } else {
-          // 初回ロードで API 失敗: エラー表示（空状態ではない）
           setNetError(true);
         }
       })
@@ -105,9 +83,22 @@ export default function HomeScreen() {
         refreshing.current = false;
         setLoading(false);
       });
+  }, []);
 
+  function retry() {
+    resetHomeCache();
+    setStats(null);
+    setWild([]);
+    setNetError(false);
+    setLoading(true);
+    refreshing.current = false;
+    doFetch();
+  }
+
+  useFocusEffect(useCallback(() => {
+    doFetch();
     return () => {};
-  }, []));
+  }, [doFetch]));
 
   const reliable = stats?.reliable_count ?? 0;
   const total    = stats?.total ?? 0;
@@ -146,7 +137,7 @@ export default function HomeScreen() {
             <Text style={s.emptySub}>単語を追加して、語彙力アップの旅を始めましょう。</Text>
             <TouchableOpacity
               style={s.emptyPrimary}
-              onPress={() => router.push('/add' as any)}
+              onPress={() => router.push('/(tabs)/add' as any)}
               activeOpacity={0.8}
             >
               <Text style={s.emptyPrimaryText}>最初の単語を追加する</Text>
@@ -284,7 +275,7 @@ export default function HomeScreen() {
                 {/* 手動追加カード */}
                 <TouchableOpacity
                   style={s.addCard}
-                  onPress={() => router.push('/add' as any)}
+                  onPress={() => router.push('/(tabs)/add' as any)}
                   activeOpacity={0.82}
                 >
                   <Text style={s.addTitle}>手動で単語を追加する</Text>

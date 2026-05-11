@@ -30,7 +30,7 @@ export default function LoginScreen() {
   }
 
   async function handleSubmit() {
-    if (!email.trim() || !password) return;
+    if (loading || !email.trim() || !password) return;
     setLoading(true);
     setError('');
     try {

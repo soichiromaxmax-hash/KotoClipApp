@@ -10,10 +10,10 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "jp.kotoclip.app",
-      "buildNumber": "36",
+      "buildNumber": "39",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "LSApplicationQueriesSchemes": ["instagram", "twitter", "line", "tiktok", "fb", "linkedin"]
+        "LSApplicationQueriesSchemes": ["instagram", "twitter", "line", "fb", "linkedin"]
       }
     },
     "android": {
@@ -33,10 +33,11 @@
       "expo-router",
       "./plugins/withShareExtension",
       [
-        "expo-media-library",
+        "expo-notifications",
         {
-          "photosPermission": "KotoClipが達成カードを共有するために写真ライブラリへのアクセスを使用します。",
-          "savePhotosPermission": "KotoClipが達成カードをカメラロールに保存するために使用します。"
+          "icon": "./assets/images/icon.png",
+          "color": "#2DD4BF",
+          "iosDisplayInForeground": true
         }
       ],
       [

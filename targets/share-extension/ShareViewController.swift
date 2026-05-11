@@ -69,7 +69,7 @@ private class ShareVM: ObservableObject {
         state = .adding
         Task {
             do {
-                try await post(word: word, meaning: result.meaning, token: token)
+                try await post(word: word, meaning: result.meaning, context: result.aiExample, aiExampleNative: result.aiExampleNative, aiNotes: result.aiNotes, token: token)
                 state = .success
                 try? await Task.sleep(nanoseconds: 1_400_000_000)
                 complete()
@@ -209,11 +209,13 @@ private class ShareVM: ObservableObject {
         )
     }
 
-    private func post(word: String, meaning: String, token: String) async throws {
+    private func post(word: String, meaning: String, context: String, aiExampleNative: String, aiNotes: String, token: String) async throws {
         guard let url = URL(string: "\(API_BASE)/words") else { throw URLError(.badURL) }
         let body = try JSONSerialization.data(withJSONObject: [
             "word": word,
             "meaning": meaning,
+            "context": context,
+            "ai_explanation": [aiExampleNative, aiNotes].filter { !$0.isEmpty }.joined(separator: "\n"),
             "source_type": "share_extension",
         ])
         _ = try await authedData(url: url, method: "POST", body: body, token: token)

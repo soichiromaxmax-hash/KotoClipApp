@@ -24,7 +24,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setState('unauthenticated');
     });
 
-    setAuthExpiredHandler(() => setState('unauthenticated'));
+    setAuthExpiredHandler(() => { resetHomeCache(); setState('unauthenticated'); });
   }, []);
 
   async function login(email: string, password: string) {

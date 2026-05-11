@@ -16,6 +16,15 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/context/auth';
 import { api } from '@/lib/api';
+import {
+  requestPermission,
+  getPermissionStatus,
+  scheduleDailyReminder,
+  cancelDailyReminder,
+  scheduleWeeklySummary,
+  cancelWeeklySummary,
+  syncNotifications,
+} from '@/lib/notifications';
 
 const NOTIF_ROWS = [
   { key: 'notification_daily_enabled',     label: '毎日の学習リマインダー', sub: '設定時刻に1日1回' },
@@ -43,6 +52,11 @@ function Toggle({ on, onPress }: { on: boolean; onPress: () => void }) {
   );
 }
 
+function isOn(settings: Record<string, any> | null, key: string) {
+  const v = settings?.[key];
+  return v === undefined || v === null || Boolean(v);
+}
+
 export default function SettingsScreen() {
   const { logout } = useAuth();
   const router = useRouter();
@@ -50,11 +64,15 @@ export default function SettingsScreen() {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
   const [showTimePicker, setShowTimePicker] = useState(false);
+  const [notifPerm, setNotifPerm] = useState<'granted' | 'denied' | 'undetermined' | null>(null);
 
   useEffect(() => {
     api.getSettings().then((s) => {
-      setSettings(s && typeof s === 'object' ? s : {});
+      const data = s && typeof s === 'object' ? s : {};
+      setSettings(data);
+      syncNotifications(data).catch(() => {});
     }).catch(() => setSettings({}));
+    getPermissionStatus().then(setNotifPerm);
   }, []);
 
   async function saveSetting(key: string, value: string | number) {
@@ -70,8 +88,39 @@ export default function SettingsScreen() {
     }
   }
 
-  function toggle(key: string) {
-    saveSetting(key, settings?.[key] ? 0 : 1);
+  async function toggle(key: string) {
+    const currentlyOn = isOn(settings, key);
+    const next = currentlyOn ? 0 : 1;
+    saveSetting(key, next);
+
+    if (next === 1) {
+      const perm = await requestPermission();
+      setNotifPerm(perm);
+    }
+
+    if (key === 'notification_daily_enabled') {
+      if (next === 1) {
+        const time = settings?.notification_daily_time || '08:00';
+        scheduleDailyReminder(time).catch(() => {});
+      } else {
+        cancelDailyReminder().catch(() => {});
+      }
+    }
+    if (key === 'notification_weekly_enabled') {
+      if (next === 1) {
+        scheduleWeeklySummary().catch(() => {});
+      } else {
+        cancelWeeklySummary().catch(() => {});
+      }
+    }
+  }
+
+  async function handleRequestPermission() {
+    const perm = await requestPermission();
+    setNotifPerm(perm);
+    if (perm !== 'granted') {
+      Linking.openURL('app-settings:');
+    }
   }
 
   function flashSaved() {
@@ -115,6 +164,23 @@ export default function SettingsScreen() {
 
         {/* 通知設定 */}
         <Text style={s.sectionHeader}>通知設定</Text>
+
+        {/* 通知許可バナー */}
+        {notifPerm !== 'granted' && (
+          <TouchableOpacity
+            style={s.permBanner}
+            onPress={handleRequestPermission}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="notifications-off-outline" size={18} color="#F59E0B" />
+            <View style={s.permBannerText}>
+              <Text style={s.permBannerTitle}>通知が許可されていません</Text>
+              <Text style={s.permBannerSub}>タップして通知を有効にする</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={14} color="#F59E0B" />
+          </TouchableOpacity>
+        )}
+
         <View style={[s.card, s.cardNoPad]}>
           {NOTIF_ROWS.map((row, i) => (
             <View
@@ -125,7 +191,7 @@ export default function SettingsScreen() {
                 <Text style={s.notifLabel}>{row.label}</Text>
                 <Text style={s.notifSub}>{row.sub}</Text>
               </View>
-              <Toggle on={!!settings[row.key]} onPress={() => toggle(row.key)} />
+              <Toggle on={isOn(settings, row.key)} onPress={() => toggle(row.key)} />
             </View>
           ))}
         </View>
@@ -134,18 +200,16 @@ export default function SettingsScreen() {
         <View style={[s.card, { marginTop: 12 }]}>
           <Text style={s.sectionTitle}>リマインダー時刻</Text>
           <TouchableOpacity
-            style={[s.timeRow, !settings.notification_daily_enabled && s.timeRowDisabled]}
-            onPress={() => settings.notification_daily_enabled && setShowTimePicker(true)}
-            activeOpacity={settings.notification_daily_enabled ? 0.7 : 1}
+            style={s.timeRow}
+            onPress={() => setShowTimePicker(true)}
+            activeOpacity={0.7}
           >
-            <Text style={[s.timeValue, !settings.notification_daily_enabled && s.timeValueDisabled]}>
-              {currentTime}
-            </Text>
+            <Text style={s.timeValue}>{currentTime}</Text>
             <Text style={s.timeChevron}>›</Text>
           </TouchableOpacity>
         </View>
 
-        {/* iOS通知許可リンク */}
+        {/* iOS通知設定リンク */}
         <TouchableOpacity
           style={s.notifPermissionBtn}
           onPress={() => Linking.openURL('app-settings:')}
@@ -203,6 +267,9 @@ export default function SettingsScreen() {
                 style={[s.timeOption, item === currentTime && s.timeOptionActive]}
                 onPress={() => {
                   saveSetting('notification_daily_time', item);
+                  if (isOn(settings, 'notification_daily_enabled')) {
+                    scheduleDailyReminder(item).catch(() => {});
+                  }
                   setShowTimePicker(false);
                 }}
               >
@@ -288,6 +355,24 @@ const s = StyleSheet.create({
     marginTop: 20,
     marginBottom: 8,
   },
+
+  // 通知許可バナー
+  permBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginHorizontal: 16,
+    marginBottom: 10,
+    backgroundColor: 'rgba(245,158,11,0.10)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(245,158,11,0.30)',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  permBannerText: { flex: 1 },
+  permBannerTitle: { fontSize: 13, fontWeight: '700', color: '#F59E0B' },
+  permBannerSub: { fontSize: 11, color: '#B45309', marginTop: 1 },
 
   // 通知
   notifRow: {

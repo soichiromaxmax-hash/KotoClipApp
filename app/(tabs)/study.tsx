@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { api } from '@/lib/api';
 import { KotoBird } from '@/components/KotoBird';
+import { resetHomeCache } from '@/lib/homeCache';
+import { sendMilestoneNotification, sendStreakNotification, getPermissionStatus } from '@/lib/notifications';
 import {
   SharePayload,
   checkStreakShare,
@@ -242,12 +244,7 @@ export default function StudyScreen() {
   const wrongRef = useRef(0);
   const poolRef = useRef<Word[]>([]);
 
-  useEffect(() => {
-    loadQueue(mode);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode]);
-
-  async function loadQueue(m: Mode) {
+  const loadQueue = useCallback(async (m: Mode) => {
     setPhase('loading');
     setFeedback(null);
     setCorrect(0);
@@ -263,6 +260,7 @@ export default function StudyScreen() {
         ? await api.getAllWords(10, true)
         : await api.getDue(10);
       if (!Array.isArray(words) || words.length === 0) {
+        resetHomeCache();
         setQueue([]);
         setPhase('empty');
         return;
@@ -280,7 +278,11 @@ export default function StudyScreen() {
       setErrorMsg(e?.message ?? 'エラーが発生しました');
       setPhase('error');
     }
-  }
+  }, []);
+
+  useEffect(() => {
+    loadQueue(mode);
+  }, [mode, loadQueue]);
 
   function applyResult(isCorrect: boolean, correctAnswer: string) {
     if (isCorrect) {
@@ -372,11 +374,32 @@ export default function StudyScreen() {
     }
   }
 
+  async function checkNotificationTriggers() {
+    try {
+      const perm = await getPermissionStatus();
+      if (perm !== 'granted') return;
+      const stats = await api.getStats();
+      const mastered = stats.mastered ?? 0;
+      const streak = stats.streak ?? 0;
+      const milestones = [10, 25, 50, 100, 200, 500];
+      if (milestones.includes(mastered)) {
+        sendMilestoneNotification(mastered).catch(() => {});
+      }
+      if (streak > 0 && streak % 7 === 0) {
+        sendStreakNotification(streak).catch(() => {});
+      }
+    } catch {
+      // 非クリティカル
+    }
+  }
+
   async function next() {
     const nextIdx = idx + 1;
     if (nextIdx >= queue.length) {
+      resetHomeCache();
       setPhase('result');
       checkShareTriggers();
+      checkNotificationTriggers();
       return;
     }
     const nextWord = queue[nextIdx];
@@ -459,7 +482,7 @@ export default function StudyScreen() {
                     <Text style={styles.primaryBtnText}>再試行</Text>
                   </TouchableOpacity>
                   <TouchableOpacity style={styles.ghostBtn} onPress={skipSaveError}>
-                    <Text style={styles.ghostBtnText}>後でやり直す</Text>
+                    <Text style={styles.ghostBtnText}>スキップ（保存されません）</Text>
                   </TouchableOpacity>
                 </View>
               ) : (

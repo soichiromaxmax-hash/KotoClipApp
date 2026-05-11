@@ -1,10 +1,11 @@
 import { ComponentProps } from 'react';
+import { OpaqueColorValue } from 'react-native';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
 
-function TabIcon({ name, color }: { name: IconName; color: string; focused: boolean }) {
+function TabIcon({ name, color }: { name: IconName; color: string | OpaqueColorValue; focused: boolean }) {
   return (
     <Ionicons name={name} size={24} color={color} />
   );
