@@ -27,7 +27,7 @@ workflows:
         script: cd ios && pod install
       - name: Build IPA
         script: |
-          xcode-project build-ipa \
+          xcode-project --log-stream stdout build-ipa \
             --workspace ios/KotoClip.xcworkspace \
             --scheme KotoClip
       - name: Submit to TestFlight
