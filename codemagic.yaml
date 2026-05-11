@@ -55,7 +55,7 @@ workflows:
               if path.name == 'SwiftUIVirtualView.swift':
                   text = text.replace(
                       '    override func updateProps(_ rawProps: [String: Any]) {',
-                      '    override func updateProps(_ rawProps: [String: Any]) {\n      MainActor.assumeIsolated {'
+                      '    override func updateProps(_ rawProps: [String: Any]) {\n      let rawPropsBox = NonisolatedUnsafeVar(rawProps)\n      MainActor.assumeIsolated {'
                   )
                   text = text.replace(
                       '    override func mountChildComponentView(_ childComponentView: UIView, index: Int) {',
@@ -92,6 +92,10 @@ workflows:
                   text = text.replace(
                       '      super.removeFromSuperview()\n    }',
                       '      super.removeFromSuperview()\n      }\n    }'
+                  )
+                  text = text.replace(
+                      '        try props.updateRawProps(rawProps, appContext: appContext)',
+                      '        try props.updateRawProps(rawPropsBox.value, appContext: appContext)'
                   )
               if path.name == 'DynamicSwiftUIViewType.swift':
                   text = text.replace(
@@ -167,6 +171,23 @@ workflows:
                   text = text.replace(
                       'typealias ClosureType = (Args) async throws -> ReturnType',
                       'typealias ClosureType = @Sendable (Args) async throws -> ReturnType'
+                  )
+              if path.name == 'SharedObject.swift':
+                  text = text.replace(
+                      'open class SharedObject: AnySharedObject {',
+                      'open class SharedObject: AnySharedObject, @unchecked Sendable {'
+                  )
+                  text = text.replace(
+                      '    runtime.schedule { [weak self, weak appContext] in',
+                      '    let selfBox = NonisolatedUnsafeVar(self as SharedObject?)\n    let argumentPairsBox = NonisolatedUnsafeVar(argumentPairs)\n    runtime.schedule { [weak appContext] in'
+                  )
+                  text = text.replace(
+                      '      guard let appContext, let runtime = try? appContext.runtime, let jsObject = self?.getJavaScriptObject() else {',
+                      '      guard let appContext, let runtime = try? appContext.runtime, let jsObject = selfBox.value?.getJavaScriptObject() else {'
+                  )
+                  text = text.replace(
+                      '      let arguments = argumentPairs.map { argument, dynamicType in',
+                      '      let arguments = argumentPairsBox.value.map { argument, dynamicType in'
                   )
               if path.name == 'ConcurrentFunctionFactories.swift':
                   text = text.replace(
