@@ -25,7 +25,7 @@ workflows:
               "  installer.pods_project.targets.each do |target|\n",
               "    target.build_configurations.each do |config|\n",
               "      config.build_settings['SWIFT_STRICT_CONCURRENCY'] = 'minimal'\n",
-              "      config.build_settings['SWIFT_VERSION'] = '5'\n",
+              "      config.build_settings['SWIFT_VERSION'] = '5.9'\n",
               "      config.build_settings['OTHER_SWIFT_FLAGS'] = '$(inherited) -Xfrontend -disable-actor-data-race-checks'\n",
               "    end\n",
               "  end\n",

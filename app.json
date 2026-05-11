@@ -10,7 +10,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "jp.kotoclip.app",
-      "buildNumber": "43",
+      "buildNumber": "44",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "LSApplicationQueriesSchemes": ["instagram", "twitter", "line", "fb", "linkedin"]
