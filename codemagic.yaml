@@ -19,27 +19,44 @@ workflows:
       - name: Patch Podfile for Swift concurrency errors
         script: |
           python3 << 'PYEOF'
-          with open('ios/Podfile', 'r') as f:
-              lines = f.readlines()
-          inject = [
-              "  installer.pods_project.targets.each do |target|\n",
-              "    target.build_configurations.each do |config|\n",
-              "      config.build_settings['SWIFT_STRICT_CONCURRENCY'] = 'minimal'\n",
-              "      config.build_settings['SWIFT_VERSION'] = '5.9'\n",
-              "      config.build_settings['OTHER_SWIFT_FLAGS'] = '$(inherited) -Xfrontend -disable-actor-data-race-checks'\n",
-              "    end\n",
-              "  end\n",
-          ]
-          result = []
+          from pathlib import Path
+
+          podfile_path = Path('ios/Podfile')
+          podfile = podfile_path.read_text()
+
+          marker = "# KotoClip Swift 5.9 fix"
+          inject = """  {marker}
+            installer.pods_project.targets.each do |target|
+              target.build_configurations.each do |config|
+                config.build_settings['SWIFT_STRICT_CONCURRENCY'] = 'minimal'
+                config.build_settings['SWIFT_VERSION'] = '5.9'
+                config.build_settings['OTHER_SWIFT_FLAGS'] = '$(inherited) -Xfrontend -disable-actor-data-race-checks'
+              end
+            end
+            installer.aggregate_targets.each do |aggregate_target|
+              aggregate_target.user_project.native_targets.each do |target|
+                target.build_configurations.each do |config|
+                  config.build_settings['SWIFT_VERSION'] = '5.9'
+                end
+              end
+              aggregate_target.user_project.save
+            end
+          """.format(marker=marker)
+
           patched = False
-          for line in lines:
-              result.append(line)
-              if 'post_install do |installer|' in line and not patched:
-                  result.extend(inject)
-                  patched = True
-          with open('ios/Podfile', 'w') as f:
-              f.writelines(result)
+          if marker in podfile:
+              patched = True
+          elif 'post_install do |installer|' in podfile:
+              podfile = podfile.replace('post_install do |installer|', 'post_install do |installer|\\n' + inject, 1)
+              patched = True
+          else:
+              podfile += "\\npost_install do |installer|\\n" + inject + "end\\n"
+              patched = True
+
+          podfile_path.write_text(podfile)
           print('Podfile patched:', patched)
+          if not patched or marker not in podfile:
+              raise SystemExit('Failed to patch Podfile with Swift 5.9 fix')
           PYEOF
       - name: Set up code signing
         script: |
