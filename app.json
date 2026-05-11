@@ -32,6 +32,7 @@
     "plugins": [
       "expo-router",
       "./plugins/withShareExtension",
+      "./plugins/withSwiftConcurrency",
       [
         "expo-splash-screen",
         {

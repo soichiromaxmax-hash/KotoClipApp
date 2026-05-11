@@ -23,18 +23,6 @@ workflows:
           echo "=== Installed profiles ==="
           ls ~/Library/MobileDevice/Provisioning\ Profiles/ || echo "No profiles found"
           xcode-project use-profiles
-      - name: Patch Podfile for Xcode 16.4 Swift concurrency
-        script: |
-          cat >> ios/Podfile << 'RUBY'
-
-          post_install do |installer|
-            installer.pods_project.targets.each do |target|
-              target.build_configurations.each do |config|
-                config.build_settings['SWIFT_STRICT_CONCURRENCY'] = 'minimal'
-              end
-            end
-          end
-          RUBY
       - name: Install CocoaPods
         script: cd ios && pod install
       - name: Build IPA
