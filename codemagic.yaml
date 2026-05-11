@@ -119,15 +119,6 @@ workflows:
                       '        return try objectBuilder.build(appContext: appContext)',
                       '        return try objectBuilderBox.value.build(appContext: appContext)'
                   )
-              if path.name == 'ExpoSystemUIModule.swift':
-                  text = text.replace(
-                      '    EXUtilities.performSynchronously {\n      // Get the root view controller of the delegate window.\n      if let window = UIApplication.shared.delegate?.window, let backgroundColor = window?.rootViewController?.view.backgroundColor?.cgColor {\n        color = EXUtilities.hexString(with: backgroundColor)\n      }\n    }',
-                      '    EXUtilities.performSynchronously {\n      MainActor.assumeIsolated {\n        // Get the root view controller of the delegate window.\n        if let window = UIApplication.shared.delegate?.window, let backgroundColor = window?.rootViewController?.view.backgroundColor?.cgColor {\n          color = EXUtilities.hexString(with: backgroundColor)\n        }\n      }\n    }'
-                  )
-                  text = text.replace(
-                      '    EXUtilities.performSynchronously {\n      if color == nil {\n        if let window = UIApplication.shared.delegate?.window {\n          // Uses required reason API based on the following reason: CA92.1\n          UserDefaults.standard.removeObject(forKey: colorKey)\n          let interfaceStyle = window?.traitCollection.userInterfaceStyle\n          window?.backgroundColor = nil\n\n          switch interfaceStyle {\n          case .dark:\n            window?.rootViewController?.view.backgroundColor = .black\n          case .light:\n            window?.rootViewController?.view.backgroundColor = .white\n          default:\n            window?.rootViewController?.view.backgroundColor = .white\n          }\n        }\n        return\n      }\n      UserDefaults.standard.set(color, forKey: colorKey)\n      let backgroundColor = EXUtilities.uiColor(color)\n      // Set the app-wide window, this could have future issues when running multiple React apps,\n      // i.e. dev client can\'t use expo-system-ui.\n      // Without setting the window backgroundColor, native-stack modals will show the wrong color.\n      if let window = UIApplication.shared.delegate?.window {\n        window?.backgroundColor = backgroundColor\n        window?.rootViewController?.view.backgroundColor = backgroundColor\n      }\n    }',
-                      '    EXUtilities.performSynchronously {\n      MainActor.assumeIsolated {\n        if color == nil {\n          if let window = UIApplication.shared.delegate?.window {\n            // Uses required reason API based on the following reason: CA92.1\n            UserDefaults.standard.removeObject(forKey: colorKey)\n            let interfaceStyle = window?.traitCollection.userInterfaceStyle\n            window?.backgroundColor = nil\n\n            switch interfaceStyle {\n            case .dark:\n              window?.rootViewController?.view.backgroundColor = .black\n            case .light:\n              window?.rootViewController?.view.backgroundColor = .white\n            default:\n              window?.rootViewController?.view.backgroundColor = .white\n            }\n          }\n          return\n        }\n        UserDefaults.standard.set(color, forKey: colorKey)\n        let backgroundColor = EXUtilities.uiColor(color)\n        // Set the app-wide window, this could have future issues when running multiple React apps,\n        // i.e. dev client can\'t use expo-system-ui.\n        // Without setting the window backgroundColor, native-stack modals will show the wrong color.\n        if let window = UIApplication.shared.delegate?.window {\n          window?.backgroundColor = backgroundColor\n          window?.rootViewController?.view.backgroundColor = backgroundColor\n        }\n      }\n    }'
-                  )
               if path.name == 'ExpoSwiftUI.swift':
                   text = text.replace(
                       '  public protocol ViewWrapper {',
@@ -267,6 +258,57 @@ workflows:
           print('expo-modules-core patched files:', patched)
           if patched == 0:
               raise SystemExit('Failed to patch expo-modules-core Swift files')
+          PYEOF
+      - name: Patch expo-system-ui and splash screen for Swift 6 actor isolation
+        script: |
+          python3 << 'PYEOF'
+          from pathlib import Path
+
+          patched = 0
+
+          system_ui_path = Path('node_modules/expo-system-ui/ios/ExpoSystemUI/ExpoSystemUIModule.swift')
+          if system_ui_path.exists():
+              text = system_ui_path.read_text()
+              original = text
+              text = text.replace(
+                  '    EXUtilities.performSynchronously {\n      // Get the root view controller of the delegate window.\n      if let window = UIApplication.shared.delegate?.window, let backgroundColor = window?.rootViewController?.view.backgroundColor?.cgColor {\n        color = EXUtilities.hexString(with: backgroundColor)\n      }\n    }',
+                  '    EXUtilities.performSynchronously {\n      MainActor.assumeIsolated {\n        // Get the root view controller of the delegate window.\n        if let window = UIApplication.shared.delegate?.window, let backgroundColor = window?.rootViewController?.view.backgroundColor?.cgColor {\n          color = EXUtilities.hexString(with: backgroundColor)\n        }\n      }\n    }'
+              )
+              text = text.replace(
+                  '    EXUtilities.performSynchronously {\n      if color == nil {\n        if let window = UIApplication.shared.delegate?.window {\n          // Uses required reason API based on the following reason: CA92.1\n          UserDefaults.standard.removeObject(forKey: colorKey)\n          let interfaceStyle = window?.traitCollection.userInterfaceStyle\n          window?.backgroundColor = nil\n\n          switch interfaceStyle {\n          case .dark:\n            window?.rootViewController?.view.backgroundColor = .black\n          case .light:\n            window?.rootViewController?.view.backgroundColor = .white\n          default:\n            window?.rootViewController?.view.backgroundColor = .white\n          }\n        }\n        return\n      }\n      UserDefaults.standard.set(color, forKey: colorKey)\n      let backgroundColor = EXUtilities.uiColor(color)\n      // Set the app-wide window, this could have future issues when running multiple React apps,\n      // i.e. dev client can\'t use expo-system-ui.\n      // Without setting the window backgroundColor, native-stack modals will show the wrong color.\n      if let window = UIApplication.shared.delegate?.window {\n        window?.backgroundColor = backgroundColor\n        window?.rootViewController?.view.backgroundColor = backgroundColor\n      }\n    }',
+                  '    EXUtilities.performSynchronously {\n      MainActor.assumeIsolated {\n        if color == nil {\n          if let window = UIApplication.shared.delegate?.window {\n            // Uses required reason API based on the following reason: CA92.1\n            UserDefaults.standard.removeObject(forKey: colorKey)\n            let interfaceStyle = window?.traitCollection.userInterfaceStyle\n            window?.backgroundColor = nil\n\n            switch interfaceStyle {\n            case .dark:\n              window?.rootViewController?.view.backgroundColor = .black\n            case .light:\n              window?.rootViewController?.view.backgroundColor = .white\n            default:\n              window?.rootViewController?.view.backgroundColor = .white\n            }\n          }\n          return\n        }\n        UserDefaults.standard.set(color, forKey: colorKey)\n        let backgroundColor = EXUtilities.uiColor(color)\n        // Set the app-wide window, this could have future issues when running multiple React apps,\n        // i.e. dev client can\'t use expo-system-ui.\n        // Without setting the window backgroundColor, native-stack modals will show the wrong color.\n        if let window = UIApplication.shared.delegate?.window {\n          window?.backgroundColor = backgroundColor\n          window?.rootViewController?.view.backgroundColor = backgroundColor\n        }\n      }\n    }'
+              )
+              if text != original:
+                  system_ui_path.write_text(text)
+                  patched += 1
+
+          splash_path = Path('node_modules/expo-splash-screen/ios/SplashScreenManager.swift')
+          if splash_path.exists():
+              text = splash_path.read_text()
+              original = text
+              text = text.replace(
+                  'class SplashScreenManager: NSObject, RCTReloadListener {',
+                  '@MainActor class SplashScreenManager: NSObject, RCTReloadListener {'
+              )
+              text = text.replace(
+                  '@objc static let shared = SplashScreenManager()',
+                  '@objc nonisolated(unsafe) static let shared = SplashScreenManager()'
+              )
+              text = text.replace(
+                  '  private func isLoadingViewVisible() -> Bool {',
+                  '  nonisolated(unsafe) private func isLoadingViewVisible() -> Bool {'
+              )
+              text = text.replace(
+                  '    guard let loadingView else {\n      return false\n    }\n\n    return !loadingView.isHidden',
+                  '    return MainActor.assumeIsolated {\n      guard let loadingView else {\n        return false\n      }\n\n      return !loadingView.isHidden\n    }'
+              )
+              if text != original:
+                  splash_path.write_text(text)
+                  patched += 1
+
+          print('extra expo iOS modules patched:', patched)
+          if patched == 0:
+              raise SystemExit('Failed to patch expo-system-ui or expo-splash-screen')
           PYEOF
       - name: Disable react-native-screens gamma sources
         script: |
