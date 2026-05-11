@@ -7,7 +7,9 @@ workflows:
         - ios-signing
       ios_signing:
         distribution_type: app_store
-        bundle_identifier: jp.kotoclip.app
+        bundle_identifiers:
+          - jp.kotoclip.app
+          - jp.kotoclip.app.share
       node: 20
       xcode: 16.2
       cocoapods: default
