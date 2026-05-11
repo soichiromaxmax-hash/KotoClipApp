@@ -29,8 +29,7 @@ workflows:
         script: |
           xcode-project build-ipa \
             --workspace ios/KotoClip.xcworkspace \
-            --scheme KotoClip \
-            --xcode-build-args "-verbose"
+            --scheme KotoClip
       - name: Submit to TestFlight
         script: |
           echo "$APP_STORE_CONNECT_PRIVATE_KEY_B64" | base64 -d > /tmp/auth_key.p8
