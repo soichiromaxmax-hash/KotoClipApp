@@ -54,6 +54,22 @@ workflows:
                   )
               if path.name == 'SwiftUIVirtualView.swift':
                   text = text.replace(
+                      '    override func updateProps(_ rawProps: [String: Any]) {',
+                      '    @MainActor override func updateProps(_ rawProps: [String: Any]) {'
+                  )
+                  text = text.replace(
+                      '    override func mountChildComponentView(_ childComponentView: UIView, index: Int) {',
+                      '    @MainActor override func mountChildComponentView(_ childComponentView: UIView, index: Int) {'
+                  )
+                  text = text.replace(
+                      '    override func unmountChildComponentView(_ childComponentView: UIView, index: Int) {',
+                      '    @MainActor override func unmountChildComponentView(_ childComponentView: UIView, index: Int) {'
+                  )
+                  text = text.replace(
+                      '    override func removeFromSuperview() {',
+                      '    @MainActor override func removeFromSuperview() {'
+                  )
+                  text = text.replace(
                       'extension ExpoSwiftUI.SwiftUIVirtualView: @MainActor ExpoSwiftUI.ViewWrapper {',
                       '@MainActor extension ExpoSwiftUI.SwiftUIVirtualView: ExpoSwiftUI.ViewWrapper {'
                   )
@@ -63,8 +79,8 @@ workflows:
                       '      return MainActor.assumeIsolated { view.contentView }'
                   )
                   text = text.replace(
-                      '       let innerView = provider.getWrappedView() as? ViewType {',
-                      '       let innerView = MainActor.assumeIsolated({ provider.getWrappedView() }) as? ViewType {'
+                      '    if let provider = appContext.findView(withTag: viewTag, ofType: ExpoSwiftUI.ViewWrapper.self),\n       let innerView = provider.getWrappedView() as? ViewType {\n      return innerView\n    }',
+                      '    if let provider = appContext.findView(withTag: viewTag, ofType: ExpoSwiftUI.ViewWrapper.self),\n       let innerView: ViewType = MainActor.assumeIsolated({ provider.getWrappedView() as? ViewType }) {\n      return innerView\n    }'
                   )
                   text = text.replace(
                       '    return view.getContentView()',
@@ -136,6 +152,10 @@ workflows:
                       'public typealias ClosureType = () -> Void',
                       'public typealias ClosureType = @Sendable () -> Void'
                   )
+                  text = text.replace(
+                      'init(type: EventObservingType, event: String?, _ closure: @escaping ClosureType) {',
+                      'init(type: EventObservingType, event: String?, _ closure: @escaping ClosureType) {'
+                  )
               if path.name == 'ConcurrentFunctionDefinition.swift':
                   text = text.replace(
                       'typealias ClosureType = (Args) async throws -> ReturnType',
@@ -156,8 +176,8 @@ workflows:
                       'public typealias ClosureType = @Sendable () -> Void'
                   )
                   text = text.replace(
-                      'init(type: EventObservingType, event: String?, _ closure: @escaping ClosureType) {',
-                      'init(type: EventObservingType, event: String?, _ closure: @Sendable @escaping ClosureType) {'
+                      'init(type: EventObservingType, event: String?, _ closure: @Sendable @escaping ClosureType) {',
+                      'init(type: EventObservingType, event: String?, _ closure: @escaping ClosureType) {'
                   )
               if path.name == 'ObjectFactories.swift':
                   text = text.replace(
@@ -167,6 +187,11 @@ workflows:
                   text = text.replace(
                       'public func OnStopObserving(_ event: String? = nil, @_implicitSelfCapture _ closure: @escaping () -> Void) -> EventObservingDefinition {',
                       'public func OnStopObserving(_ event: String? = nil, @_implicitSelfCapture _ closure: @Sendable @escaping () -> Void) -> EventObservingDefinition {'
+                  )
+              if path.name == 'ExpoRequestInterceptorProtocol.swift':
+                  text = text.replace(
+                      '    completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void',
+                      '    completionHandler: @Sendable @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void'
                   )
               if text != original:
                   path.write_text(text)
