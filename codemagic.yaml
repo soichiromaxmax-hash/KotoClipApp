@@ -23,6 +23,7 @@ workflows:
 
           podfile_path = Path('ios/Podfile')
           podfile = podfile_path.read_text()
+          lines = podfile.splitlines()
 
           marker = "# KotoClip Swift 5.9 fix"
           inject = """  {marker}
@@ -46,12 +47,20 @@ workflows:
           patched = False
           if marker in podfile:
               patched = True
-          elif 'post_install do |installer|' in podfile:
-              podfile = podfile.replace('post_install do |installer|', 'post_install do |installer|\\n' + inject, 1)
-              patched = True
           else:
-              podfile += "\\npost_install do |installer|\\n" + inject + "end\\n"
-              patched = True
+              result = []
+              inserted = False
+              for line in lines:
+                  result.append(line)
+                  if (not inserted) and line.strip() == 'post_install do |installer|':
+                      result.extend(inject.splitlines())
+                      inserted = True
+              if inserted:
+                  podfile = "\n".join(result) + "\n"
+                  patched = True
+              else:
+                  podfile = podfile.rstrip() + "\n\npost_install do |installer|\n" + inject + "\nend\n"
+                  patched = True
 
           podfile_path.write_text(podfile)
           print('Podfile patched:', patched)
