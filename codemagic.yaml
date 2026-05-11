@@ -53,6 +53,35 @@ workflows:
                       'extension ExpoSwiftUI.SwiftUIVirtualView: @MainActor ExpoSwiftUI.ViewWrapper {',
                       '@MainActor extension ExpoSwiftUI.SwiftUIVirtualView: ExpoSwiftUI.ViewWrapper {'
                   )
+              if path.name == 'PersistentFileLog.swift':
+                  text = text.replace(
+                      'public typealias PersistentFileLogFilter = (String) -> Bool',
+                      'public typealias PersistentFileLogFilter = @Sendable (String) -> Bool'
+                  )
+                  text = text.replace(
+                      'public typealias PersistentFileLogCompletionHandler = (Error?) -> Void',
+                      'public typealias PersistentFileLogCompletionHandler = @Sendable (Error?) -> Void'
+                  )
+              if path.name == 'LoggerTimer.swift':
+                  text = text.replace(
+                      'typealias LoggerTimerStopBlock = () -> Double',
+                      'typealias LoggerTimerStopBlock = @Sendable () -> Double'
+                  )
+              if path.name == 'Logger.swift':
+                  text = text.replace(
+                      'public typealias LoggerTimerFormatterBlock = (_ duration: Double) -> String',
+                      'public typealias LoggerTimerFormatterBlock = @Sendable (_ duration: Double) -> String'
+                  )
+              if path.name == 'EventObservingDefinition.swift':
+                  text = text.replace(
+                      'public typealias ClosureType = () -> Void',
+                      'public typealias ClosureType = @Sendable () -> Void'
+                  )
+              if path.name == 'ConcurrentFunctionDefinition.swift':
+                  text = text.replace(
+                      'typealias ClosureType = (Args) async throws -> ReturnType',
+                      'typealias ClosureType = @Sendable (Args) async throws -> ReturnType'
+                  )
               if text != original:
                   path.write_text(text)
                   patched += 1
