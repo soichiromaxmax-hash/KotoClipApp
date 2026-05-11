@@ -70,9 +70,6 @@ workflows:
                       '    override func removeFromSuperview() {\n      MainActor.assumeIsolated {'
                   )
                   text = text.replace(
-                      '  final class SwiftUIVirtualView<Props: ViewProps, ContentView: View<Props>>: SwiftUIVirtualViewObjC, ExpoSwiftUIView {'
-                  )
-                  text = text.replace(
                       'extension ExpoSwiftUI.SwiftUIVirtualView: @MainActor ExpoSwiftUI.ViewWrapper {',
                       '@MainActor extension ExpoSwiftUI.SwiftUIVirtualView: ExpoSwiftUI.ViewWrapper {'
                   )
