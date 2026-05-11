@@ -5,6 +5,9 @@ workflows:
     environment:
       groups:
         - ios-signing
+      vars:
+        RNS_GAMMA_ENABLED: "0"
+        RCT_NEW_ARCH_ENABLED: "0"
       ios_signing:
         distribution_type: app_store
         bundle_identifier: jp.kotoclip.app
@@ -15,7 +18,10 @@ workflows:
       - name: Install dependencies
         script: npm install
       - name: Expo prebuild
-        script: npx expo prebuild --platform ios --clean
+        script: |
+          export RNS_GAMMA_ENABLED=0
+          export RCT_NEW_ARCH_ENABLED=0
+          npx expo prebuild --platform ios --clean
       - name: Patch Podfile for Swift concurrency errors
         script: |
           python3 << 'PYEOF'
@@ -75,7 +81,10 @@ workflows:
           ls ~/Library/MobileDevice/Provisioning\ Profiles/ || echo "No profiles found"
           xcode-project use-profiles
       - name: Install CocoaPods
-        script: cd ios && pod install
+        script: |
+          export RNS_GAMMA_ENABLED=0
+          export RCT_NEW_ARCH_ENABLED=0
+          cd ios && pod install
       - name: Force Swift 5.9 in Xcode projects
         script: |
           python3 << 'PYEOF'
@@ -114,6 +123,8 @@ workflows:
       - name: Build IPA
         script: |
           set -eo pipefail
+          export RNS_GAMMA_ENABLED=0
+          export RCT_NEW_ARCH_ENABLED=0
           ARCHIVE_PATH=/tmp/KotoClip.xcarchive
 
           # Archive — 全出力がそのまま Codemagic ログに流れる
