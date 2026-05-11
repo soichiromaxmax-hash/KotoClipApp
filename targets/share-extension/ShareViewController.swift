@@ -5,6 +5,31 @@ private let APP_GROUP = "group.jp.kotoclip.app"
 private let API_BASE  = "https://kotoclip.onrender.com/api"
 private let TEAL      = Color(red: 0.176, green: 0.831, blue: 0.749)
 
+private func extractBestClip(from text: String) -> String {
+    let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+    if trimmed.isEmpty { return "" }
+
+    let separators = CharacterSet.whitespacesAndNewlines.union(.punctuationCharacters)
+    let tokens = trimmed
+        .components(separatedBy: separators)
+        .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+        .filter { !$0.isEmpty && $0.range(of: "[A-Za-z]", options: .regularExpression) != nil }
+
+    if tokens.count == 1, let only = tokens.first {
+        return only
+    }
+
+    if trimmed.count <= 80, !trimmed.contains("http") {
+        return trimmed
+    }
+
+    if let first = tokens.first {
+        return first
+    }
+
+    return ""
+}
+
 // MARK: - Models
 
 private struct LookupResult {
@@ -490,7 +515,7 @@ class ShareViewController: UIViewController {
                     } else {
                         text = (data as? String) ?? ""
                     }
-                    let clipped = self?.bestClip(from: text) ?? ""
+                    let clipped = extractBestClip(from: text)
                     guard !clipped.isEmpty else {
                         DispatchQueue.main.async { self?.cancel() }
                         return
@@ -501,27 +526,6 @@ class ShareViewController: UIViewController {
             }
         }
         cancel()
-    }
-
-    private func bestClip(from text: String) -> String {
-        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmed.isEmpty { return "" }
-
-        let separators = CharacterSet.whitespacesAndNewlines.union(.punctuationCharacters)
-        let tokens = trimmed
-            .components(separatedBy: separators)
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .filter { !$0.isEmpty && $0.range(of: "[A-Za-z]", options: .regularExpression) != nil }
-
-        if tokens.count == 1, let only = tokens.first {
-            return only
-        }
-
-        if trimmed.count <= 80, !trimmed.contains("http") {
-            return trimmed
-        }
-
-        return tokens.first ?? trimmed
     }
 
     private func cancel() {
