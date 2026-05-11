@@ -97,6 +97,27 @@ workflows:
         script: |
           export RNS_GAMMA_ENABLED=0
           cd ios && pod install
+      - name: Force Swift 5.9 in generated Xcode projects
+        script: |
+          python3 << 'PYEOF'
+          from pathlib import Path
+          import re
+
+          files = [
+              Path('ios/Pods/Pods.xcodeproj/project.pbxproj'),
+              Path('ios/KotoClip.xcodeproj/project.pbxproj'),
+          ]
+
+          for path in files:
+              if not path.exists():
+                  print(f'skip missing: {path}')
+                  continue
+              text = path.read_text()
+              original = text
+              text = re.sub(r'SWIFT_VERSION = [^;]+;', 'SWIFT_VERSION = 5.9;', text)
+              path.write_text(text)
+              print(f'patched swift version: {path} changed={text != original}')
+          PYEOF
       - name: Build IPA
         script: |
           set -eo pipefail
