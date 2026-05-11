@@ -91,7 +91,7 @@ function addXcodeTarget(config) {
       const name = cfg.buildSettings.PRODUCT_NAME;
       if (name !== EXT_NAME && name !== `"${EXT_NAME}"`) return;
       Object.assign(cfg.buildSettings, {
-        SWIFT_VERSION: '5.9',
+        SWIFT_VERSION: '6.0',
         IPHONEOS_DEPLOYMENT_TARGET: '16.0',
         TARGETED_DEVICE_FAMILY: '"1,2"',
         PRODUCT_BUNDLE_IDENTIFIER: `${bundleId}.share`,

@@ -50,13 +50,13 @@ workflows:
           inject = """  {marker}
             installer.pods_project.targets.each do |target|
               target.build_configurations.each do |config|
-                config.build_settings['SWIFT_VERSION'] = '5.9'
+                config.build_settings['SWIFT_VERSION'] = '6.0'
               end
             end
             installer.aggregate_targets.each do |aggregate_target|
               aggregate_target.user_project.native_targets.each do |target|
                 target.build_configurations.each do |config|
-                  config.build_settings['SWIFT_VERSION'] = '5.9'
+                  config.build_settings['SWIFT_VERSION'] = '6.0'
                 end
               end
               aggregate_target.user_project.save
@@ -84,7 +84,7 @@ workflows:
           podfile_path.write_text(podfile)
           print('Podfile patched:', patched)
           if not patched or marker not in podfile:
-              raise SystemExit('Failed to patch Podfile with Swift 5.9 fix')
+              raise SystemExit('Failed to patch Podfile with Swift 6.0 fix')
           PYEOF
       - name: Set up code signing
         script: |
@@ -97,7 +97,7 @@ workflows:
         script: |
           export RNS_GAMMA_ENABLED=0
           cd ios && pod install
-      - name: Force Swift 5.9 in generated Xcode projects
+      - name: Force Swift 6.0 in generated Xcode projects
         script: |
           python3 << 'PYEOF'
           from pathlib import Path
@@ -114,7 +114,7 @@ workflows:
                   continue
               text = path.read_text()
               original = text
-              text = re.sub(r'SWIFT_VERSION = [^;]+;', 'SWIFT_VERSION = 5.9;', text)
+              text = re.sub(r'SWIFT_VERSION = [^;]+;', 'SWIFT_VERSION = 6.0;', text)
               path.write_text(text)
               print(f'patched swift version: {path} changed={text != original}')
           PYEOF
