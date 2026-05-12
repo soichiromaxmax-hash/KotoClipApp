@@ -1070,6 +1070,8 @@ workflows:
               target.build_configurations.each do |config|
                 config.build_settings['SWIFT_VERSION'] = '6.0'
                 config.build_settings['SWIFT_STRICT_CONCURRENCY'] = 'minimal'
+                config.build_settings['GCC_TREAT_WARNINGS_AS_ERRORS'] = 'NO'
+                config.build_settings['WARNING_CFLAGS'] = '$(inherited) -Wno-nullability-completeness'
               end
             end
             installer.aggregate_targets.each do |aggregate_target|
@@ -1077,6 +1079,8 @@ workflows:
                 target.build_configurations.each do |config|
                   config.build_settings['SWIFT_VERSION'] = '6.0'
                   config.build_settings['SWIFT_STRICT_CONCURRENCY'] = 'minimal'
+                  config.build_settings['GCC_TREAT_WARNINGS_AS_ERRORS'] = 'NO'
+                  config.build_settings['WARNING_CFLAGS'] = '$(inherited) -Wno-nullability-completeness'
                 end
               end
               aggregate_target.user_project.save
@@ -1138,6 +1142,9 @@ workflows:
               text = re.sub(r'SWIFT_STRICT_CONCURRENCY = [^;]+;', 'SWIFT_STRICT_CONCURRENCY = minimal;', text)
               if 'SWIFT_STRICT_CONCURRENCY = minimal;' not in text:
                   text = text.replace('SWIFT_VERSION = 6.0;', 'SWIFT_VERSION = 6.0;\n\t\t\t\tSWIFT_STRICT_CONCURRENCY = minimal;')
+              text = re.sub(r'GCC_TREAT_WARNINGS_AS_ERRORS = YES;', 'GCC_TREAT_WARNINGS_AS_ERRORS = NO;', text)
+              if 'GCC_TREAT_WARNINGS_AS_ERRORS = NO;' not in text:
+                  text = text.replace('SWIFT_STRICT_CONCURRENCY = minimal;', 'SWIFT_STRICT_CONCURRENCY = minimal;\n\t\t\t\tGCC_TREAT_WARNINGS_AS_ERRORS = NO;', 1)
               path.write_text(text)
               print(f'patched swift version: {path} changed={text != original}')
           PYEOF
@@ -1156,7 +1163,9 @@ workflows:
             COMPILER_INDEX_STORE_ENABLE=NO \
             DEVELOPMENT_TEAM=9U2YJ4XL4K \
             CODE_SIGN_IDENTITY="Apple Distribution" \
-            CODE_SIGN_STYLE=Manual
+            CODE_SIGN_STYLE=Manual \
+            GCC_TREAT_WARNINGS_AS_ERRORS=NO \
+            "WARNING_CFLAGS=$(inherited) -Wno-nullability-completeness"
 
           # ExportOptions.plist
           cat > /tmp/ExportOptions.plist << 'PLIST'

@@ -10,10 +10,16 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "jp.kotoclip.app",
-      "buildNumber": "44",
+      "buildNumber": "45",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "LSApplicationQueriesSchemes": ["instagram", "twitter", "line", "fb", "linkedin"]
+        "LSApplicationQueriesSchemes": [
+          "instagram",
+          "twitter",
+          "line",
+          "fb",
+          "linkedin"
+        ]
       }
     },
     "android": {
@@ -61,7 +67,9 @@
                   "targetName": "ShareExtension",
                   "bundleIdentifier": "jp.kotoclip.app.share",
                   "entitlements": {
-                    "com.apple.security.application-groups": ["group.jp.kotoclip.app"]
+                    "com.apple.security.application-groups": [
+                      "group.jp.kotoclip.app"
+                    ]
                   }
                 }
               ]
