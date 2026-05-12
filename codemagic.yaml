@@ -262,6 +262,7 @@ workflows:
       - name: Patch extra Expo iOS modules for Swift 6 actor isolation
         script: |
           python3 << 'PYEOF'
+          import re
           from pathlib import Path
 
           patched = 0
@@ -1030,17 +1031,22 @@ workflows:
                   web_auth_session_path.write_text(text)
                   patched += 1
 
-          fs_delegate_path = Path('node_modules/expo-file-system/ios/Legacy/EXSessionTasks/EXSessionTaskDelegate.h')
-          if fs_delegate_path.exists():
-              text = fs_delegate_path.read_text()
+          # Fix nullability annotations in expo-file-system ObjC headers
+          for h in Path('node_modules').rglob('EXSession*Delegate.h'):
+              print(f'[nullability] checking: {h}')
+              text = h.read_text(encoding='utf-8', errors='replace')
               original = text
-              text = text.replace(
-                  '- (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task didCompleteWithError:(NSError *)error;',
-                  '- (void)URLSession:(NSURLSession * _Nonnull)session task:(NSURLSessionTask * _Nonnull)task didCompleteWithError:(NSError * _Nullable)error;'
-              )
+              # NSURLSession and NSURLSessionTask are always non-null in delegate callbacks
+              text = re.sub(r'\(NSURLSession\s*\*\)', '(NSURLSession * _Nonnull)', text)
+              text = re.sub(r'\(NSURLSessionTask\s*\*\)', '(NSURLSessionTask * _Nonnull)', text)
+              # NSError in didCompleteWithError is nullable (nil = success)
+              text = re.sub(r'\(NSError\s*\*\)(\s*\w)', r'(NSError * _Nullable)\1', text)
               if text != original:
-                  fs_delegate_path.write_text(text)
+                  h.write_text(text, encoding='utf-8')
                   patched += 1
+                  print(f'[nullability] patched: {h.name}')
+              else:
+                  print(f'[nullability] no change: {h.name}')
 
           print('extra expo iOS modules patched:', patched)
           if patched == 0:
@@ -1083,7 +1089,11 @@ workflows:
                 config.build_settings['SWIFT_VERSION'] = '6.0'
                 config.build_settings['SWIFT_STRICT_CONCURRENCY'] = 'minimal'
                 config.build_settings['GCC_TREAT_WARNINGS_AS_ERRORS'] = 'NO'
-                config.build_settings['WARNING_CFLAGS'] = '$(inherited) -Wno-nullability-completeness'
+                config.build_settings['OTHER_CFLAGS'] = '$(inherited) -Wno-nullability-completeness -Wno-nullability'
+                if target.name.include?('ExpoFileSystem') || target.name.include?('expo-file-system')
+                  config.build_settings['GCC_WARN_ABOUT_MISSING_FIELD_INITIALIZERS'] = 'NO'
+                  config.build_settings['CLANG_WARN_NULLABLE_TO_NONNULL_CONVERSION'] = 'NO'
+                end
               end
             end
             installer.aggregate_targets.each do |aggregate_target|
@@ -1092,7 +1102,7 @@ workflows:
                   config.build_settings['SWIFT_VERSION'] = '6.0'
                   config.build_settings['SWIFT_STRICT_CONCURRENCY'] = 'minimal'
                   config.build_settings['GCC_TREAT_WARNINGS_AS_ERRORS'] = 'NO'
-                  config.build_settings['WARNING_CFLAGS'] = '$(inherited) -Wno-nullability-completeness'
+                  config.build_settings['OTHER_CFLAGS'] = '$(inherited) -Wno-nullability-completeness -Wno-nullability'
                 end
               end
               aggregate_target.user_project.save
@@ -1177,7 +1187,7 @@ workflows:
             CODE_SIGN_IDENTITY="Apple Distribution" \
             CODE_SIGN_STYLE=Manual \
             GCC_TREAT_WARNINGS_AS_ERRORS=NO \
-            "WARNING_CFLAGS=$(inherited) -Wno-nullability-completeness"
+            "OTHER_CFLAGS=$(inherited) -Wno-nullability-completeness -Wno-nullability"
 
           # ExportOptions.plist
           cat > /tmp/ExportOptions.plist << 'PLIST'
