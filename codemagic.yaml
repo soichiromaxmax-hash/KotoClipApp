@@ -566,6 +566,26 @@ workflows:
                   linking_registry_path.write_text(text)
                   patched += 1
 
+          linear_gradient_path = Path('node_modules/expo-linear-gradient/ios/LinearGradientLayer.swift')
+          if linear_gradient_path.exists():
+              text = linear_gradient_path.read_text()
+              original = text
+              text = text.replace(
+                  'var defaultStartPoint = CGPoint(x: 0.5, y: 0.0)',
+                  'let defaultStartPoint = CGPoint(x: 0.5, y: 0.0)'
+              )
+              text = text.replace(
+                  'var defaultEndPoint = CGPoint(x: 0.5, y: 1.0)',
+                  'let defaultEndPoint = CGPoint(x: 0.5, y: 1.0)'
+              )
+              text = text.replace(
+                  'var defaultLocations: [CGFloat] = []',
+                  'let defaultLocations: [CGFloat] = []'
+              )
+              if text != original:
+                  linear_gradient_path.write_text(text)
+                  patched += 1
+
           keep_awake_path = Path('node_modules/expo-keep-awake/ios/KeepAwakeModule.swift')
           if keep_awake_path.exists():
               text = keep_awake_path.read_text()
