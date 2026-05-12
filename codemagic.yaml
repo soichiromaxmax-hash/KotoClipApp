@@ -807,6 +807,10 @@ workflows:
               text = dom_webview_path.read_text()
               original = text
               text = text.replace(
+                  '  internal typealias SyncCompletionHandler = (String?) -> Void',
+                  '  internal typealias SyncCompletionHandler = @Sendable (String?) -> Void'
+              )
+              text = text.replace(
                   '    DispatchQueue.main.async { [weak self] in\n      self?.webView.evaluateJavaScript(script)\n    }',
                   '    DispatchQueue.main.async { [weak self] in\n      MainActor.assumeIsolated {\n        self?.webView.evaluateJavaScript(script)\n      }\n    }'
               )
