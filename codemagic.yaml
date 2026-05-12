@@ -479,24 +479,16 @@ workflows:
               text = notifications_categories_path.read_text()
               original = text
               text = text.replace(
+                  'actor CategoryManager {',
+                  '@MainActor final class CategoryManager {'
+              )
+              text = text.replace(
                   'open class CategoriesModule: Module {',
-                  'open class CategoriesModule: Module, @unchecked Sendable {'
+                  '@MainActor open class CategoriesModule: Module, @unchecked Sendable {'
               )
               text = text.replace(
                   '      let categories = await UNUserNotificationCenter.current().notificationCategories()\n      return filterAndSerializeCategories(categories)',
                   '      return await withCheckedContinuation { continuation in\n        UNUserNotificationCenter.current().getNotificationCategories { categories in\n          continuation.resume(returning: categories.map { CategoryRecord($0) })\n        }\n      }'
-              )
-              text = text.replace(
-                  '    let fresh = await UNUserNotificationCenter.current().notificationCategories()\n    categories = fresh\n    return fresh',
-                  '    let fresh = await withCheckedContinuation { continuation in\n      UNUserNotificationCenter.current().getNotificationCategories { categories in\n        continuation.resume(returning: categories)\n      }\n    }\n    categories = fresh\n    return fresh'
-              )
-              text = text.replace(
-                  '      return await withCheckedContinuation { continuation in\n        UNUserNotificationCenter.current().getNotificationCategories { categories in\n          continuation.resume(returning: categories.map { CategoryRecord($0) })\n        }\n      }',
-                  '      return await Task.detached {\n        let semaphore = DispatchSemaphore(value: 0)\n        var result: [CategoryRecord] = []\n        UNUserNotificationCenter.current().getNotificationCategories { categories in\n          result = categories.map { CategoryRecord($0) }\n          semaphore.signal()\n        }\n        semaphore.wait()\n        return result\n      }.value'
-              )
-              text = text.replace(
-                  '    let fresh = await withCheckedContinuation { continuation in\n      UNUserNotificationCenter.current().getNotificationCategories { categories in\n        continuation.resume(returning: categories)\n      }\n    }\n    categories = fresh\n    return fresh',
-                  '    let fresh = await Task.detached {\n      let semaphore = DispatchSemaphore(value: 0)\n      var fresh: Set<UNNotificationCategory> = []\n      UNUserNotificationCenter.current().getNotificationCategories { categories in\n        fresh = categories\n        semaphore.signal()\n      }\n      semaphore.wait()\n      return fresh\n    }.value\n    self.categories = fresh\n    return fresh'
               )
               if text != original:
                   notifications_categories_path.write_text(text)
