@@ -414,6 +414,130 @@ workflows:
                   web_browser_session_path.write_text(text)
                   patched += 1
 
+          notifications_badge_path = Path('node_modules/expo-notifications/ios/ExpoNotifications/Badge/BadgeModule.swift')
+          if notifications_badge_path.exists():
+              text = notifications_badge_path.read_text()
+              original = text
+              text = text.replace(
+                  '      return RCTSharedApplication()?.applicationIconBadgeNumber ?? 0',
+                  '      return MainActor.assumeIsolated {\n        RCTSharedApplication()?.applicationIconBadgeNumber ?? 0\n      }'
+              )
+              if text != original:
+                  notifications_badge_path.write_text(text)
+                  patched += 1
+
+          notifications_trigger_records_path = Path('node_modules/expo-notifications/ios/ExpoNotifications/Notifications/TriggerRecords.swift')
+          if notifications_trigger_records_path.exists():
+              text = notifications_trigger_records_path.read_text()
+              original = text
+              text = text.replace(
+                  'public struct CategoryRecord: Record {',
+                  'public struct CategoryRecord: Record, Sendable {'
+              )
+              if text != original:
+                  notifications_trigger_records_path.write_text(text)
+                  patched += 1
+
+          notifications_categories_path = Path('node_modules/expo-notifications/ios/ExpoNotifications/Notifications/Categories/CategoriesModule.swift')
+          if notifications_categories_path.exists():
+              text = notifications_categories_path.read_text()
+              original = text
+              text = text.replace(
+                  'open class CategoriesModule: Module {',
+                  'open class CategoriesModule: Module, @unchecked Sendable {'
+              )
+              text = text.replace(
+                  '      let categories = await UNUserNotificationCenter.current().notificationCategories()\n      return filterAndSerializeCategories(categories)',
+                  '      return await withCheckedContinuation { continuation in\n        UNUserNotificationCenter.current().getNotificationCategories { categories in\n          continuation.resume(returning: categories.map { CategoryRecord($0) })\n        }\n      }'
+              )
+              if text != original:
+                  notifications_categories_path.write_text(text)
+                  patched += 1
+
+          notifications_date_components_path = Path('node_modules/expo-notifications/ios/ExpoNotifications/Notifications/DateComponentsSerializer.swift')
+          if notifications_date_components_path.exists():
+              text = notifications_date_components_path.read_text()
+              original = text
+              text = text.replace(
+                  '    if #available(iOS 26.0, *) {\n      serializedComponents["isRepeatedDay"] = dateComponents.isRepeatedDay ?? false\n    }\n\n',
+                  ''
+              )
+              if text != original:
+                  notifications_date_components_path.write_text(text)
+                  patched += 1
+
+          notifications_handler_path = Path('node_modules/expo-notifications/ios/ExpoNotifications/Notifications/Handler/HandlerModule.swift')
+          if notifications_handler_path.exists():
+              text = notifications_handler_path.read_text()
+              original = text
+              text = text.replace(
+                  'open class HandlerModule: Module, NotificationDelegate, SingleNotificationHandlerTaskDelegate {',
+                  'open class HandlerModule: Module, NotificationDelegate, SingleNotificationHandlerTaskDelegate, @unchecked Sendable {'
+              )
+              if text != original:
+                  notifications_handler_path.write_text(text)
+                  patched += 1
+
+          notifications_center_manager_path = Path('node_modules/expo-notifications/ios/ExpoNotifications/Notifications/NotificationCenterManager.swift')
+          if notifications_center_manager_path.exists():
+              text = notifications_center_manager_path.read_text()
+              original = text
+              text = text.replace(
+                  'public class NotificationCenterManager: NSObject,',
+                  'public class NotificationCenterManager: NSObject, @unchecked Sendable,'
+              )
+              text = text.replace(
+                  '  public static let shared = NotificationCenterManager()',
+                  '  public nonisolated(unsafe) static let shared = NotificationCenterManager()'
+              )
+              if text != original:
+                  notifications_center_manager_path.write_text(text)
+                  patched += 1
+
+          notifications_presentation_path = Path('node_modules/expo-notifications/ios/ExpoNotifications/Notifications/Presenting/PresentationModule.swift')
+          if notifications_presentation_path.exists():
+              text = notifications_presentation_path.read_text()
+              original = text
+              text = text.replace(
+                  'open class PresentationModule: Module {',
+                  'open class PresentationModule: Module, @unchecked Sendable {'
+              )
+              if text != original:
+                  notifications_presentation_path.write_text(text)
+                  patched += 1
+
+          notifications_push_token_path = Path('node_modules/expo-notifications/ios/ExpoNotifications/PushToken/PushTokenModule.swift')
+          if notifications_push_token_path.exists():
+              text = notifications_push_token_path.read_text()
+              original = text
+              text = text.replace(
+                  'public class PushTokenModule: Module, NotificationDelegate {',
+                  'public class PushTokenModule: Module, NotificationDelegate, @unchecked Sendable {'
+              )
+              text = text.replace(
+                  '      UIApplication.shared.registerForRemoteNotifications()',
+                  '      MainActor.assumeIsolated {\n        UIApplication.shared.registerForRemoteNotifications()\n      }'
+              )
+              text = text.replace(
+                  '      UIApplication.shared.unregisterForRemoteNotifications()',
+                  '      MainActor.assumeIsolated {\n        UIApplication.shared.unregisterForRemoteNotifications()\n      }'
+              )
+              if text != original:
+                  notifications_push_token_path.write_text(text)
+                  patched += 1
+
+          notifications_scheduler_path = Path('node_modules/expo-notifications/ios/ExpoNotifications/Notifications/Scheduling/SchedulerModule.swift')
+          if notifications_scheduler_path.exists():
+              text = notifications_scheduler_path.read_text()
+              original = text
+              text = text.replace(
+                  'open class SchedulerModule: Module {',
+                  'open class SchedulerModule: Module, @unchecked Sendable {'
+              )
+              if text != original:
+                  notifications_scheduler_path.write_text(text)
+                  patched += 1
+
           print('extra expo iOS modules patched:', patched)
           if patched == 0:
               raise SystemExit('Failed to patch extra Expo iOS modules')
