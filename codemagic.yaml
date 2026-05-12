@@ -660,7 +660,19 @@ workflows:
               original = text
               text = text.replace(
                   'public class HapticsModule: Module {',
-                  '@MainActor public class HapticsModule: Module {'
+                  'public class HapticsModule: Module, @unchecked Sendable {'
+              )
+              text = text.replace(
+                  '    AsyncFunction("notificationAsync") { (notificationType: NotificationType) in\n      let generator = UINotificationFeedbackGenerator()\n      generator.prepare()\n      generator.notificationOccurred(notificationType.toFeedbackType())\n    }',
+                  '    AsyncFunction("notificationAsync") { (notificationType: NotificationType) in\n      MainActor.assumeIsolated {\n        let generator = UINotificationFeedbackGenerator()\n        generator.prepare()\n        generator.notificationOccurred(notificationType.toFeedbackType())\n      }\n    }'
+              )
+              text = text.replace(
+                  '    AsyncFunction("impactAsync") { (style: ImpactStyle) in\n      let generator = UIImpactFeedbackGenerator(style: style.toFeedbackStyle())\n      generator.prepare()\n      generator.impactOccurred()\n    }',
+                  '    AsyncFunction("impactAsync") { (style: ImpactStyle) in\n      MainActor.assumeIsolated {\n        let generator = UIImpactFeedbackGenerator(style: style.toFeedbackStyle())\n        generator.prepare()\n        generator.impactOccurred()\n      }\n    }'
+              )
+              text = text.replace(
+                  '    AsyncFunction("selectionAsync") {\n      let generator = UISelectionFeedbackGenerator()\n      generator.prepare()\n      generator.selectionChanged()\n    }',
+                  '    AsyncFunction("selectionAsync") {\n      MainActor.assumeIsolated {\n        let generator = UISelectionFeedbackGenerator()\n        generator.prepare()\n        generator.selectionChanged()\n      }\n    }'
               )
               if text != original:
                   haptics_path.write_text(text)
