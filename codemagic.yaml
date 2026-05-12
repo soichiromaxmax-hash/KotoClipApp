@@ -1094,6 +1094,10 @@ workflows:
                   config.build_settings['GCC_WARN_ABOUT_MISSING_FIELD_INITIALIZERS'] = 'NO'
                   config.build_settings['CLANG_WARN_NULLABLE_TO_NONNULL_CONVERSION'] = 'NO'
                 end
+                if target.name == 'React-RCTSwiftUI' || target.name == 'RCTSwiftUI'
+                  config.build_settings['DEFINES_MODULE'] = 'YES'
+                  config.build_settings['PRODUCT_MODULE_NAME'] = 'RCTSwiftUI'
+                end
               end
             end
             installer.aggregate_targets.each do |aggregate_target|
