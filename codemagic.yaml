@@ -830,6 +830,154 @@ workflows:
                   keep_awake_path.write_text(text)
                   patched += 1
 
+          expo_head_module_path = Path('node_modules/expo-router/ios/ExpoHeadModule.swift')
+          if expo_head_module_path.exists():
+              text = expo_head_module_path.read_text()
+              original = text
+              text = text.replace(
+                  'var launchedActivity: NSUserActivity?',
+                  'nonisolated(unsafe) var launchedActivity: NSUserActivity?'
+              )
+              text = text.replace(
+                  'internal class InvalidSchemeException: Exception {',
+                  'internal class InvalidSchemeException: Exception, @unchecked Sendable {'
+              )
+              if text != original:
+                  expo_head_module_path.write_text(text)
+                  patched += 1
+
+          link_preview_action_view_path = Path('node_modules/expo-router/ios/LinkPreview/LinkPreviewNativeActionView.swift')
+          if link_preview_action_view_path.exists():
+              text = link_preview_action_view_path.read_text()
+              original = text
+              text = text.replace(
+                  'class LinkPreviewNativeActionView: RouterViewWithLogger, LinkPreviewMenuUpdatable {',
+                  'class LinkPreviewNativeActionView: RouterViewWithLogger, @preconcurrency LinkPreviewMenuUpdatable {'
+              )
+              text = text.replace(
+                  '          if instance[keyPath: storageKeyPath].updateAction {\n            instance.updateUiAction()\n          }\n          if instance[keyPath: storageKeyPath].updateMenu {\n            instance.updateMenu()\n          }',
+                  '          MainActor.assumeIsolated {\n            if instance[keyPath: storageKeyPath].updateAction {\n              instance.updateUiAction()\n            }\n            if instance[keyPath: storageKeyPath].updateMenu {\n              instance.updateMenu()\n            }\n          }'
+              )
+              if text != original:
+                  link_preview_action_view_path.write_text(text)
+                  patched += 1
+
+          link_preview_native_view_path = Path('node_modules/expo-router/ios/LinkPreview/LinkPreviewNativeView.swift')
+          if link_preview_native_view_path.exists():
+              text = link_preview_native_view_path.read_text()
+              original = text
+              text = text.replace(
+                  'class NativeLinkPreviewView: RouterViewWithLogger, UIContextMenuInteractionDelegate,\n  RNSDismissibleModalProtocol, LinkPreviewMenuUpdatable {',
+                  'class NativeLinkPreviewView: RouterViewWithLogger, UIContextMenuInteractionDelegate,\n  @preconcurrency RNSDismissibleModalProtocol, @preconcurrency LinkPreviewMenuUpdatable {'
+              )
+              if text != original:
+                  link_preview_native_view_path.write_text(text)
+                  patched += 1
+
+          link_zoom_transition_path = Path('node_modules/expo-router/ios/LinkPreview/LinkZoomTransition.swift')
+          if link_zoom_transition_path.exists():
+              text = link_zoom_transition_path.read_text()
+              original = text
+              text = text.replace(
+                  'class LinkZoomTransitionSource: LinkZoomExpoView, LinkPreviewIndirectTriggerProtocol {',
+                  'class LinkZoomTransitionSource: LinkZoomExpoView, @preconcurrency LinkPreviewIndirectTriggerProtocol {'
+              )
+              if text != original:
+                  link_zoom_transition_path.write_text(text)
+                  patched += 1
+
+          link_preview_navigation_path = Path('node_modules/expo-router/ios/LinkPreview/LinkPreviewNativeNavigation.swift')
+          if link_preview_navigation_path.exists():
+              text = link_preview_navigation_path.read_text()
+              original = text
+              text = text.replace(
+                  'internal class LinkPreviewNativeNavigation {',
+                  '@MainActor internal class LinkPreviewNativeNavigation {'
+              )
+              if text != original:
+                  link_preview_navigation_path.write_text(text)
+                  patched += 1
+
+          rnscreens_tab_compat_path = Path('node_modules/expo-router/ios/LinkPreview/RNScreensTabCompat.swift')
+          if rnscreens_tab_compat_path.exists():
+              text = rnscreens_tab_compat_path.read_text()
+              original = text
+              text = text.replace(
+                  'enum RNScreensTabCompat {',
+                  '@MainActor enum RNScreensTabCompat {'
+              )
+              if text != original:
+                  rnscreens_tab_compat_path.write_text(text)
+                  patched += 1
+
+          router_font_utils_path = Path('node_modules/expo-router/ios/Toolbar/RouterFontUtils.swift')
+          if router_font_utils_path.exists():
+              text = router_font_utils_path.read_text()
+              original = text
+              text = text.replace(
+                  '  static func setTitleStyle(fromConfig titleStyle: TitleStyle, for item: UIBarButtonItem) {',
+                  '  @MainActor static func setTitleStyle(fromConfig titleStyle: TitleStyle, for item: UIBarButtonItem) {'
+              )
+              text = text.replace(
+                  '  static func clearTitleStyle(for item: UIBarButtonItem) {',
+                  '  @MainActor static func clearTitleStyle(for item: UIBarButtonItem) {'
+              )
+              if text != original:
+                  router_font_utils_path.write_text(text)
+                  patched += 1
+
+          router_toolbar_host_view_path = Path('node_modules/expo-router/ios/Toolbar/RouterToolbarHostView.swift')
+          if router_toolbar_host_view_path.exists():
+              text = router_toolbar_host_view_path.read_text()
+              original = text
+              text = text.replace(
+                  'class RouterToolbarHostView: RouterViewWithLogger, LinkPreviewMenuUpdatable {',
+                  'class RouterToolbarHostView: RouterViewWithLogger, @preconcurrency LinkPreviewMenuUpdatable {'
+              )
+              text = text.replace(
+                  '            if #available(iOS 26.0, *) {\n              if let hidesSharedBackground = menu.hidesSharedBackground {\n                item.hidesSharedBackground = hidesSharedBackground\n              }\n              if let sharesBackground = menu.sharesBackground {\n                item.sharesBackground = sharesBackground\n              }\n            }',
+                  '            #if compiler(>=6.2)\n            if #available(iOS 26.0, *) {\n              if let hidesSharedBackground = menu.hidesSharedBackground {\n                item.hidesSharedBackground = hidesSharedBackground\n              }\n              if let sharesBackground = menu.sharesBackground {\n                item.sharesBackground = sharesBackground\n              }\n            }\n            #endif'
+              )
+              if text != original:
+                  router_toolbar_host_view_path.write_text(text)
+                  patched += 1
+
+          router_toolbar_item_view_path = Path('node_modules/expo-router/ios/Toolbar/RouterToolbarItemView.swift')
+          if router_toolbar_item_view_path.exists():
+              text = router_toolbar_item_view_path.read_text()
+              original = text
+              text = text.replace(
+                  '      item = controller.navigationItem.searchBarPlacementBarButtonItem',
+                  '#if compiler(>=6.2)\n      item = controller.navigationItem.searchBarPlacementBarButtonItem\n#else\n      currentBarButtonItem = nil\n      return\n#endif'
+              )
+              text = text.replace(
+                  '    if #available(iOS 26.0, *) {\n      item.hidesSharedBackground = hidesSharedBackground\n      item.sharesBackground = sharesBackground\n    }',
+                  '    #if compiler(>=6.2)\n    if #available(iOS 26.0, *) {\n      item.hidesSharedBackground = hidesSharedBackground\n      item.sharesBackground = sharesBackground\n    }\n    #endif'
+              )
+              text = text.replace(
+                  '    if #available(iOS 26.0, *) {\n      if let badgeConfig = badgeConfiguration {\n        var badge = UIBarButtonItem.Badge.indicator()\n        if let value = badgeConfig.value {\n          badge = .string(value)\n        }\n        if let backgroundColor = badgeConfig.backgroundColor {\n          badge.backgroundColor = backgroundColor\n        }\n        if let foregroundColor = badgeConfig.color {\n          badge.foregroundColor = foregroundColor\n        }\n        if badgeConfig.fontFamily != nil || badgeConfig.fontSize != nil\n          || badgeConfig.fontWeight != nil {\n          let font = RouterFontUtils.convertTitleStyleToFont(\n            TitleStyle(\n              fontFamily: badgeConfig.fontFamily,\n              fontSize: badgeConfig.fontSize,\n              fontWeight: badgeConfig.fontWeight\n            ))\n          badge.font = font\n        }\n        item.badge = badge\n      } else {\n        item.badge = nil\n      }\n    }',
+                  '    #if compiler(>=6.2)\n    if #available(iOS 26.0, *) {\n      if let badgeConfig = badgeConfiguration {\n        var badge = UIBarButtonItem.Badge.indicator()\n        if let value = badgeConfig.value {\n          badge = .string(value)\n        }\n        if let backgroundColor = badgeConfig.backgroundColor {\n          badge.backgroundColor = backgroundColor\n        }\n        if let foregroundColor = badgeConfig.color {\n          badge.foregroundColor = foregroundColor\n        }\n        if badgeConfig.fontFamily != nil || badgeConfig.fontSize != nil\n          || badgeConfig.fontWeight != nil {\n          let font = RouterFontUtils.convertTitleStyleToFont(\n            TitleStyle(\n              fontFamily: badgeConfig.fontFamily,\n              fontSize: badgeConfig.fontSize,\n              fontWeight: badgeConfig.fontWeight\n            ))\n          badge.font = font\n        }\n        item.badge = badge\n      } else {\n        item.badge = nil\n      }\n    }\n    #endif'
+              )
+              text = text.replace(
+                  '        if instance[keyPath: storageKeyPath].needsFullRebuild {\n          instance.performRebuild()\n        } else {\n          instance.performUpdate()\n        }',
+                  '        MainActor.assumeIsolated {\n          if instance[keyPath: storageKeyPath].needsFullRebuild {\n            instance.performRebuild()\n          } else {\n            instance.performUpdate()\n          }\n        }'
+              )
+              if text != original:
+                  router_toolbar_item_view_path.write_text(text)
+                  patched += 1
+
+          router_toolbar_module_path = Path('node_modules/expo-router/ios/Toolbar/RouterToolbarModule.swift')
+          if router_toolbar_module_path.exists():
+              text = router_toolbar_module_path.read_text()
+              original = text
+              text = text.replace(
+                  '      if #available(iOS 26.0, *) {\n        return .prominent\n      } else {\n        return .done\n      }',
+                  '#if compiler(>=6.2)\n      if #available(iOS 26.0, *) {\n        return .prominent\n      }\n#endif\n      return .done'
+              )
+              if text != original:
+                  router_toolbar_module_path.write_text(text)
+                  patched += 1
+
           web_auth_session_path = Path('node_modules/expo-web-browser/ios/WebAuthSession.swift')
           if web_auth_session_path.exists():
               text = web_auth_session_path.read_text()
