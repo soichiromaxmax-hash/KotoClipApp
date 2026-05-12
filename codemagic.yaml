@@ -470,6 +470,10 @@ workflows:
                   '      let categories = await UNUserNotificationCenter.current().notificationCategories()\n      return filterAndSerializeCategories(categories)',
                   '      return await withCheckedContinuation { continuation in\n        UNUserNotificationCenter.current().getNotificationCategories { categories in\n          continuation.resume(returning: categories.map { CategoryRecord($0) })\n        }\n      }'
               )
+              text = text.replace(
+                  '    let fresh = await UNUserNotificationCenter.current().notificationCategories()\n    categories = fresh\n    return fresh',
+                  '    let fresh = await withCheckedContinuation { continuation in\n      UNUserNotificationCenter.current().getNotificationCategories { categories in\n        continuation.resume(returning: categories)\n      }\n    }\n    categories = fresh\n    return fresh'
+              )
               if text != original:
                   notifications_categories_path.write_text(text)
                   patched += 1
