@@ -375,6 +375,10 @@ workflows:
               text = web_browser_module_path.read_text()
               original = text
               text = text.replace(
+                  'final public class WebBrowserModule: Module {',
+                  'final public class WebBrowserModule: Module, @unchecked Sendable {'
+              )
+              text = text.replace(
                   '      self.currentWebBrowserSession = WebBrowserSession(url: url, options: options) { [promise] type in\n        promise.resolve(["type": type])\n        self.currentWebBrowserSession = nil\n      } didPresent: {\n        self.vcDidPresent = true\n      }\n\n      self.currentWebBrowserSession?.open()',
                   '      MainActor.assumeIsolated {\n        self.currentWebBrowserSession = WebBrowserSession(url: url, options: options) { [promise] type in\n          promise.resolve(["type": type])\n          self.currentWebBrowserSession = nil\n        } didPresent: {\n          self.vcDidPresent = true\n        }\n\n        self.currentWebBrowserSession?.open()\n      }'
               )
