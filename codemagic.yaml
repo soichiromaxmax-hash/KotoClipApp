@@ -622,6 +622,18 @@ workflows:
                   symbol_view_path.write_text(text)
                   patched += 1
 
+          haptics_path = Path('node_modules/expo-haptics/ios/HapticsModule.swift')
+          if haptics_path.exists():
+              text = haptics_path.read_text()
+              original = text
+              text = text.replace(
+                  'public class HapticsModule: Module {',
+                  '@MainActor public class HapticsModule: Module {'
+              )
+              if text != original:
+                  haptics_path.write_text(text)
+                  patched += 1
+
           image_view_path = Path('node_modules/expo-image/ios/ImageView.swift')
           if image_view_path.exists():
               text = image_view_path.read_text()
