@@ -706,10 +706,74 @@ workflows:
                   font_utils_path.write_text(text)
                   patched += 1
 
+          application_module_path = Path('node_modules/expo-application/ios/ApplicationModule.swift')
+          if application_module_path.exists():
+              text = application_module_path.read_text()
+              original = text
+              text = text.replace(
+                  '      return UIDevice.current.identifierForVendor?.uuidString',
+                  '      return MainActor.assumeIsolated {\n        UIDevice.current.identifierForVendor?.uuidString\n      }'
+              )
+              if text != original:
+                  application_module_path.write_text(text)
+                  patched += 1
+
+          dom_webview_registry_path = Path('node_modules/@expo/dom-webview/ios/DomWebViewRegistry.swift')
+          if dom_webview_registry_path.exists():
+              text = dom_webview_registry_path.read_text()
+              original = text
+              text = text.replace(
+                  'internal final class DomWebViewRegistry {',
+                  'internal final class DomWebViewRegistry: @unchecked Sendable {'
+              )
+              text = text.replace(
+                  '  static var shared = DomWebViewRegistry()',
+                  '  nonisolated(unsafe) static var shared = DomWebViewRegistry()'
+              )
+              if text != original:
+                  dom_webview_registry_path.write_text(text)
+                  patched += 1
+
+          file_picking_handler_path = Path('node_modules/expo-file-system/ios/FilePickingHandler.swift')
+          if file_picking_handler_path.exists():
+              text = file_picking_handler_path.read_text()
+              original = text
+              text = text.replace(
+                  '    if UIDevice.current.userInterfaceIdiom == .pad {\n      let viewFrame = currentVc.view.frame\n      picker.popoverPresentationController?.sourceRect = CGRect(\n        x: viewFrame.midX,\n        y: viewFrame.maxY,\n        width: 0,\n        height: 0\n      )\n      picker.popoverPresentationController?.sourceView = currentVc.view\n      picker.modalPresentationStyle = .pageSheet\n    }\n\n    currentVc.present(picker, animated: true)',
+                  '    MainActor.assumeIsolated {\n      if UIDevice.current.userInterfaceIdiom == .pad {\n        let viewFrame = currentVc.view.frame\n        picker.popoverPresentationController?.sourceRect = CGRect(\n          x: viewFrame.midX,\n          y: viewFrame.maxY,\n          width: 0,\n          height: 0\n        )\n        picker.popoverPresentationController?.sourceView = currentVc.view\n        picker.modalPresentationStyle = .pageSheet\n      }\n\n      currentVc.present(picker, animated: true)\n    }'
+              )
+              if text != original:
+                  file_picking_handler_path.write_text(text)
+                  patched += 1
+
+          log_box_wrapper_path = Path('node_modules/@expo/log-box/ios/ExpoLogBoxWebViewWrapper.swift')
+          if log_box_wrapper_path.exists():
+              text = log_box_wrapper_path.read_text()
+              original = text
+              text = text.replace(
+                  '        Task.detached {\n            await self.handleWebViewMessageAsync(message: message)\n        }',
+                  '        Task {\n            await self.handleWebViewMessageAsync(message: message)\n        }'
+              )
+              if text != original:
+                  log_box_wrapper_path.write_text(text)
+                  patched += 1
+
           image_view_path = Path('node_modules/expo-image/ios/ImageView.swift')
           if image_view_path.exists():
               text = image_view_path.read_text()
               original = text
+              text = text.replace(
+                  '      let scale = window?.screen.scale ?? UIScreen.main.scale',
+                  '      let scale = window?.screen.scale ?? MainActor.assumeIsolated { UIScreen.main.scale }'
+              )
+              text = text.replace(
+                  '    let scale = window?.screen.scale ?? UIScreen.main.scale',
+                  '    let scale = window?.screen.scale ?? MainActor.assumeIsolated { UIScreen.main.scale }'
+              )
+              text = text.replace(
+                  '    return window?.screen.scale as? Double ?? UIScreen.main.scale',
+                  '    return window?.screen.scale as? Double ?? MainActor.assumeIsolated { UIScreen.main.scale }'
+              )
               text = text.replace(
                   '  func applySymbolEffect() {',
                   '  @MainActor func applySymbolEffect() {'
