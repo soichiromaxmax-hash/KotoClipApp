@@ -382,6 +382,14 @@ workflows:
                   '      currentWebBrowserSession?.dismiss { type in\n        self.currentWebBrowserSession = nil\n        promise.resolve(["type": type])\n      }',
                   '      MainActor.assumeIsolated {\n        currentWebBrowserSession?.dismiss { type in\n          self.currentWebBrowserSession = nil\n          promise.resolve(["type": type])\n        }\n      }'
               )
+              text = text.replace(
+                  '      self.currentAuthSession = WebAuthSession(authUrl: authUrl, redirectUrl: redirectUrl, options: options)\n      self.currentAuthSession?.open(promise)',
+                  '      MainActor.assumeIsolated {\n        self.currentAuthSession = WebAuthSession(authUrl: authUrl, redirectUrl: redirectUrl, options: options)\n        self.currentAuthSession?.open(promise)\n      }'
+              )
+              text = text.replace(
+                  '      self.currentAuthSession?.dismiss()\n      self.currentAuthSession = nil',
+                  '      MainActor.assumeIsolated {\n        self.currentAuthSession?.dismiss()\n        self.currentAuthSession = nil\n      }'
+              )
               if text != original:
                   web_browser_module_path.write_text(text)
                   patched += 1
@@ -391,24 +399,28 @@ workflows:
               text = web_browser_session_path.read_text()
               original = text
               text = text.replace(
+                  'internal class WebBrowserSession: NSObject, SFSafariViewControllerDelegate, UIAdaptivePresentationControllerDelegate {',
+                  '@MainActor internal class WebBrowserSession: NSObject, SFSafariViewControllerDelegate, UIAdaptivePresentationControllerDelegate {'
+              )
+              text = text.replace(
                   '  init(url: URL, options: WebBrowserOptions, onDismiss: @escaping (String) -> Void, didPresent: @escaping () -> Void) {',
-                  '  @MainActor init(url: URL, options: WebBrowserOptions, onDismiss: @escaping (String) -> Void, didPresent: @escaping () -> Void) {'
+                  '  init(url: URL, options: WebBrowserOptions, onDismiss: @escaping (String) -> Void, didPresent: @escaping () -> Void) {'
               )
               text = text.replace(
                   '  func open() {',
-                  '  @MainActor func open() {'
+                  '  func open() {'
               )
               text = text.replace(
                   '  func dismiss(completion: ((String) -> Void)? = nil) {',
-                  '  @MainActor func dismiss(completion: ((String) -> Void)? = nil) {'
+                  '  func dismiss(completion: ((String) -> Void)? = nil) {'
               )
               text = text.replace(
                   '  func safariViewControllerDidFinish(_ controller: SFSafariViewController) {\n    finish(type: "cancel")\n  }',
-                  '  nonisolated func safariViewControllerDidFinish(_ controller: SFSafariViewController) {\n    onDismiss("cancel")\n  }'
+                  '  nonisolated func safariViewControllerDidFinish(_ controller: SFSafariViewController) {\n    MainActor.assumeIsolated {\n      finish(type: "cancel")\n    }\n  }'
               )
               text = text.replace(
                   '  func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {\n    finish(type: "cancel")\n  }',
-                  '  nonisolated func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {\n    onDismiss("cancel")\n  }'
+                  '  nonisolated func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {\n    MainActor.assumeIsolated {\n      finish(type: "cancel")\n    }\n  }'
               )
               if text != original:
                   web_browser_session_path.write_text(text)
@@ -612,19 +624,19 @@ workflows:
               )
               text = text.replace(
                   'final internal class WebAuthSession {',
-                  'final internal class WebAuthSession: @unchecked Sendable {'
+                  '@MainActor final internal class WebAuthSession: @unchecked Sendable {'
               )
               text = text.replace(
                   '  init(authUrl: URL, redirectUrl: URL?, options: AuthSessionOptions) {',
-                  '  @MainActor init(authUrl: URL, redirectUrl: URL?, options: AuthSessionOptions) {'
+                  '  init(authUrl: URL, redirectUrl: URL?, options: AuthSessionOptions) {'
               )
               text = text.replace(
                   '  func open(_ promise: Promise) {',
-                  '  @MainActor func open(_ promise: Promise) {'
+                  '  func open(_ promise: Promise) {'
               )
               text = text.replace(
                   '  func dismiss() {',
-                  '  @MainActor func dismiss() {'
+                  '  func dismiss() {'
               )
               if text != original:
                   web_auth_session_path.write_text(text)
