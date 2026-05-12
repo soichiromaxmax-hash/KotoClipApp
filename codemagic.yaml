@@ -451,6 +451,22 @@ workflows:
               text = notifications_trigger_records_path.read_text()
               original = text
               text = text.replace(
+                  'struct CategoryActionOptionsRecord: Record {',
+                  'struct CategoryActionOptionsRecord: Record, Sendable {'
+              )
+              text = text.replace(
+                  'struct CategoryTextInputActionRecord: Record {',
+                  'struct CategoryTextInputActionRecord: Record, Sendable {'
+              )
+              text = text.replace(
+                  'public struct CategoryActionRecord: Record {',
+                  'public struct CategoryActionRecord: Record, Sendable {'
+              )
+              text = text.replace(
+                  'public struct CategoryOptionsRecord: Record {',
+                  'public struct CategoryOptionsRecord: Record, Sendable {'
+              )
+              text = text.replace(
                   'public struct CategoryRecord: Record {',
                   'public struct CategoryRecord: Record, Sendable {'
               )
@@ -473,6 +489,14 @@ workflows:
               text = text.replace(
                   '    let fresh = await UNUserNotificationCenter.current().notificationCategories()\n    categories = fresh\n    return fresh',
                   '    let fresh = await withCheckedContinuation { continuation in\n      UNUserNotificationCenter.current().getNotificationCategories { categories in\n        continuation.resume(returning: categories)\n      }\n    }\n    categories = fresh\n    return fresh'
+              )
+              text = text.replace(
+                  '      return await withCheckedContinuation { continuation in\n        UNUserNotificationCenter.current().getNotificationCategories { categories in\n          continuation.resume(returning: categories.map { CategoryRecord($0) })\n        }\n      }',
+                  '      let semaphore = DispatchSemaphore(value: 0)\n      var result: [CategoryRecord] = []\n      UNUserNotificationCenter.current().getNotificationCategories { categories in\n        result = categories.map { CategoryRecord($0) }\n        semaphore.signal()\n      }\n      semaphore.wait()\n      return result'
+              )
+              text = text.replace(
+                  '    let fresh = await withCheckedContinuation { continuation in\n      UNUserNotificationCenter.current().getNotificationCategories { categories in\n        continuation.resume(returning: categories)\n      }\n    }\n    categories = fresh\n    return fresh',
+                  '    let semaphore = DispatchSemaphore(value: 0)\n    var fresh: Set<UNNotificationCategory> = []\n    UNUserNotificationCenter.current().getNotificationCategories { categories in\n      fresh = categories\n      semaphore.signal()\n    }\n    semaphore.wait()\n    self.categories = fresh\n    return fresh'
               )
               if text != original:
                   notifications_categories_path.write_text(text)
@@ -560,6 +584,18 @@ workflows:
               )
               if text != original:
                   notifications_scheduler_path.write_text(text)
+                  patched += 1
+
+          notifications_permissions_path = Path('node_modules/expo-notifications/ios/ExpoNotifications/Permissions/ExpoNotificationsPermissionsRequester.swift')
+          if notifications_permissions_path.exists():
+              text = notifications_permissions_path.read_text()
+              original = text
+              text = text.replace(
+                  'public class ExpoNotificationsPermissionsRequester: NSObject, EXPermissionsRequester {',
+                  'public class ExpoNotificationsPermissionsRequester: NSObject, EXPermissionsRequester, @unchecked Sendable {'
+              )
+              if text != original:
+                  notifications_permissions_path.write_text(text)
                   patched += 1
 
           linking_module_path = Path('node_modules/expo-linking/ios/ExpoLinkingModule.swift')
