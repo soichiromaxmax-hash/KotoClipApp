@@ -566,6 +566,50 @@ workflows:
                   linking_registry_path.write_text(text)
                   patched += 1
 
+          keep_awake_path = Path('node_modules/expo-keep-awake/ios/KeepAwakeModule.swift')
+          if keep_awake_path.exists():
+              text = keep_awake_path.read_text()
+              original = text
+              text = text.replace(
+                  '      return DispatchQueue.main.sync {\n        return UIApplication.shared.isIdleTimerDisabled\n      }',
+                  '      return MainActor.assumeIsolated {\n        UIApplication.shared.isIdleTimerDisabled\n      }'
+              )
+              text = text.replace(
+                  '  DispatchQueue.main.async {\n    UIApplication.shared.isIdleTimerDisabled = activated\n  }',
+                  '  DispatchQueue.main.async {\n    MainActor.assumeIsolated {\n      UIApplication.shared.isIdleTimerDisabled = activated\n    }\n  }'
+              )
+              if text != original:
+                  keep_awake_path.write_text(text)
+                  patched += 1
+
+          web_auth_session_path = Path('node_modules/expo-web-browser/ios/WebAuthSession.swift')
+          if web_auth_session_path.exists():
+              text = web_auth_session_path.read_text()
+              original = text
+              text = text.replace(
+                  'private class PresentationContextProvider: NSObject, ASWebAuthenticationPresentationContextProviding {',
+                  '@MainActor private class PresentationContextProvider: NSObject, ASWebAuthenticationPresentationContextProviding {'
+              )
+              text = text.replace(
+                  'final internal class WebAuthSession {',
+                  'final internal class WebAuthSession: @unchecked Sendable {'
+              )
+              text = text.replace(
+                  '  init(authUrl: URL, redirectUrl: URL?, options: AuthSessionOptions) {',
+                  '  @MainActor init(authUrl: URL, redirectUrl: URL?, options: AuthSessionOptions) {'
+              )
+              text = text.replace(
+                  '  func open(_ promise: Promise) {',
+                  '  @MainActor func open(_ promise: Promise) {'
+              )
+              text = text.replace(
+                  '  func dismiss() {',
+                  '  @MainActor func dismiss() {'
+              )
+              if text != original:
+                  web_auth_session_path.write_text(text)
+                  patched += 1
+
           print('extra expo iOS modules patched:', patched)
           if patched == 0:
               raise SystemExit('Failed to patch extra Expo iOS modules')
