@@ -288,22 +288,54 @@ workflows:
               original = text
               text = text.replace(
                   'class SplashScreenManager: NSObject, RCTReloadListener {',
-                  '@MainActor class SplashScreenManager: NSObject, RCTReloadListener {'
+                  '@MainActor class SplashScreenManager: NSObject, @preconcurrency RCTReloadListener {'
               )
               text = text.replace(
                   '@objc static let shared = SplashScreenManager()',
-                  '@objc nonisolated(unsafe) static let shared = SplashScreenManager()'
+                  '@MainActor @objc static let shared = SplashScreenManager()'
+              )
+              text = text.replace(
+                  '  func didReceiveReloadCommand() {\n    showSplashScreen()\n  }',
+                  '  nonisolated func didReceiveReloadCommand() {\n    MainActor.assumeIsolated {\n      showSplashScreen()\n    }\n  }'
               )
               text = text.replace(
                   '  private func isLoadingViewVisible() -> Bool {',
-                  '  nonisolated(unsafe) private func isLoadingViewVisible() -> Bool {'
+                  '  nonisolated private func isLoadingViewVisible() -> Bool {'
               )
               text = text.replace(
                   '    guard let loadingView else {\n      return false\n    }\n\n    return !loadingView.isHidden',
-                  '    return MainActor.assumeIsolated {\n      guard let loadingView else {\n        return false\n      }\n\n      return !loadingView.isHidden\n    }'
+                  '    MainActor.assumeIsolated {\n      guard let loadingView else {\n        return false\n      }\n\n      return !loadingView.isHidden\n    }'
               )
               if text != original:
                   splash_path.write_text(text)
+                  patched += 1
+
+          splash_module_path = Path('node_modules/expo-splash-screen/ios/SplashScreenModule.swift')
+          if splash_module_path.exists():
+              text = splash_module_path.read_text()
+              original = text
+              text = text.replace(
+                  '      SplashScreenManager.shared.setOptions(options: options)',
+                  '      MainActor.assumeIsolated {\n        SplashScreenManager.shared.setOptions(options: options)\n      }'
+              )
+              text = text.replace(
+                  '      SplashScreenManager.shared.hide()',
+                  '      MainActor.assumeIsolated {\n        SplashScreenManager.shared.hide()\n      }'
+              )
+              text = text.replace(
+                  '        SplashScreenManager.shared.hide()',
+                  '        MainActor.assumeIsolated {\n          SplashScreenManager.shared.hide()\n        }'
+              )
+              text = text.replace(
+                  '      SplashScreenManager.shared.preventAutoHideCalled = true',
+                  '      MainActor.assumeIsolated {\n        SplashScreenManager.shared.preventAutoHideCalled = true\n      }'
+              )
+              text = text.replace(
+                  '      SplashScreenManager.shared.removeObservers()',
+                  '      MainActor.assumeIsolated {\n        SplashScreenManager.shared.removeObservers()\n      }'
+              )
+              if text != original:
+                  splash_module_path.write_text(text)
                   patched += 1
 
           symbols_path = Path('node_modules/expo-symbols/ios/SymbolEffects.swift')
