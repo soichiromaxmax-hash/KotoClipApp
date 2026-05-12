@@ -610,6 +610,62 @@ workflows:
                   linear_gradient_path.write_text(text)
                   patched += 1
 
+          symbol_view_path = Path('node_modules/expo-symbols/ios/SymbolView.swift')
+          if symbol_view_path.exists():
+              text = symbol_view_path.read_text()
+              original = text
+              text = text.replace(
+                  'class SymbolView: ExpoView {',
+                  '@MainActor class SymbolView: ExpoView {'
+              )
+              if text != original:
+                  symbol_view_path.write_text(text)
+                  patched += 1
+
+          image_view_path = Path('node_modules/expo-image/ios/ImageView.swift')
+          if image_view_path.exists():
+              text = image_view_path.read_text()
+              original = text
+              text = text.replace(
+                  '  func applySymbolEffect() {',
+                  '  @MainActor func applySymbolEffect() {'
+              )
+              text = text.replace(
+                  '  private func applySingleSymbolEffect(_ sfEffectItem: SFSymbolEffect) {',
+                  '  @MainActor private func applySingleSymbolEffect(_ sfEffectItem: SFSymbolEffect) {'
+              )
+              text = text.replace(
+                  '  private func applySymbolEffectiOS18(effect: SFSymbolEffectType, scope: SFSymbolEffectScope?, options: SymbolEffectOptions) {',
+                  '  @MainActor private func applySymbolEffectiOS18(effect: SFSymbolEffectType, scope: SFSymbolEffectScope?, options: SymbolEffectOptions) {'
+              )
+              text = text.replace(
+                  '  private func applySymbolEffectiOS26(effect: SFSymbolEffectType, scope: SFSymbolEffectScope?, options: SymbolEffectOptions) {',
+                  '  @MainActor private func applySymbolEffectiOS26(effect: SFSymbolEffectType, scope: SFSymbolEffectScope?, options: SymbolEffectOptions) {'
+              )
+              text = text.replace(
+                  '  func startSymbolAnimation() {',
+                  '  @MainActor func startSymbolAnimation() {'
+              )
+              text = text.replace(
+                  '  func stopSymbolAnimation() {',
+                  '  @MainActor func stopSymbolAnimation() {'
+              )
+              if text != original:
+                  image_view_path.write_text(text)
+                  patched += 1
+
+          dom_webview_path = Path('node_modules/@expo/dom-webview/ios/DomWebView.swift')
+          if dom_webview_path.exists():
+              text = dom_webview_path.read_text()
+              original = text
+              text = text.replace(
+                  '    DispatchQueue.main.async { [weak self] in\n      self?.webView.evaluateJavaScript(script)\n    }',
+                  '    DispatchQueue.main.async { [weak self] in\n      MainActor.assumeIsolated {\n        self?.webView.evaluateJavaScript(script)\n      }\n    }'
+              )
+              if text != original:
+                  dom_webview_path.write_text(text)
+                  patched += 1
+
           keep_awake_path = Path('node_modules/expo-keep-awake/ios/KeepAwakeModule.swift')
           if keep_awake_path.exists():
               text = keep_awake_path.read_text()
