@@ -814,6 +814,26 @@ workflows:
                   dom_webview_path.write_text(text)
                   patched += 1
 
+          dom_webview_module_path = Path('node_modules/@expo/dom-webview/ios/DomWebViewModule.swift')
+          if dom_webview_module_path.exists():
+              text = dom_webview_module_path.read_text()
+              original = text
+              text = text.replace(
+                  '      if let webView = DomWebViewRegistry.shared.get(webViewId: webViewId) {\n        webView.injectJavaScript(source)\n      }',
+                  '      if let webView = DomWebViewRegistry.shared.get(webViewId: webViewId) {\n        MainActor.assumeIsolated {\n          webView.injectJavaScript(source)\n        }\n      }'
+              )
+              text = text.replace(
+                  '      AsyncFunction("scrollTo") { (view: DomWebView, param: ScrollToParam) in\n        view.scrollTo(offset: CGPoint(x: param.x, y: param.y), animated: param.animated)\n      }',
+                  '      AsyncFunction("scrollTo") { (view: DomWebView, param: ScrollToParam) in\n        MainActor.assumeIsolated {\n          view.scrollTo(offset: CGPoint(x: param.x, y: param.y), animated: param.animated)\n        }\n      }'
+              )
+              text = text.replace(
+                  '      AsyncFunction("injectJavaScript") { (view: DomWebView, script: String) in\n        view.injectJavaScript(script)\n      }',
+                  '      AsyncFunction("injectJavaScript") { (view: DomWebView, script: String) in\n        MainActor.assumeIsolated {\n          view.injectJavaScript(script)\n        }\n      }'
+              )
+              if text != original:
+                  dom_webview_module_path.write_text(text)
+                  patched += 1
+
           keep_awake_path = Path('node_modules/expo-keep-awake/ios/KeepAwakeModule.swift')
           if keep_awake_path.exists():
               text = keep_awake_path.read_text()
