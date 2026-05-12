@@ -856,7 +856,7 @@ workflows:
               )
               text = text.replace(
                   '          if instance[keyPath: storageKeyPath].updateAction {\n            instance.updateUiAction()\n          }\n          if instance[keyPath: storageKeyPath].updateMenu {\n            instance.updateMenu()\n          }',
-                  '          MainActor.assumeIsolated {\n            if instance[keyPath: storageKeyPath].updateAction {\n              instance.updateUiAction()\n            }\n            if instance[keyPath: storageKeyPath].updateMenu {\n              instance.updateMenu()\n            }\n          }'
+                  '          let shouldUpdateAction = instance[keyPath: storageKeyPath].updateAction\n          let shouldUpdateMenu = instance[keyPath: storageKeyPath].updateMenu\n          MainActor.assumeIsolated {\n            if shouldUpdateAction {\n              instance.updateUiAction()\n            }\n            if shouldUpdateMenu {\n              instance.updateMenu()\n            }\n          }'
               )
               if text != original:
                   link_preview_action_view_path.write_text(text)
@@ -960,7 +960,7 @@ workflows:
               )
               text = text.replace(
                   '        if instance[keyPath: storageKeyPath].needsFullRebuild {\n          instance.performRebuild()\n        } else {\n          instance.performUpdate()\n        }',
-                  '        MainActor.assumeIsolated {\n          if instance[keyPath: storageKeyPath].needsFullRebuild {\n            instance.performRebuild()\n          } else {\n            instance.performUpdate()\n          }\n        }'
+                  '        let needsFullRebuild = instance[keyPath: storageKeyPath].needsFullRebuild\n        MainActor.assumeIsolated {\n          if needsFullRebuild {\n            instance.performRebuild()\n          } else {\n            instance.performUpdate()\n          }\n        }'
               )
               if text != original:
                   router_toolbar_item_view_path.write_text(text)
