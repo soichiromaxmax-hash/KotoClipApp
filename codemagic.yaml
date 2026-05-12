@@ -1142,14 +1142,20 @@ workflows:
                 end
               end
             end
-            swiftui_t = installer.pods_project.targets.find { |t| t.name =~ /RCTSwiftUI/i && t.name !~ /Wrapper/i }
-            wrapper_t = installer.pods_project.targets.find { |t| t.name =~ /RCTSwiftUIWrapper/i }
-            if swiftui_t && wrapper_t
-              dep = wrapper_t.project.new(Xcodeproj::Project::Object::PBXTargetDependency)
-              dep.name = swiftui_t.name
-              dep.target = swiftui_t
-              wrapper_t.dependencies << dep
-              puts "=== Build order: #{wrapper_t.name} -> #{swiftui_t.name} ==="
+            begin
+              swiftui_t = installer.pods_project.targets.find { |t| t.name =~ /RCTSwiftUI/i && t.name !~ /Wrapper/i }
+              wrapper_t = installer.pods_project.targets.find { |t| t.name =~ /RCTSwiftUIWrapper/i }
+              if swiftui_t && wrapper_t
+                dep = wrapper_t.project.new(Xcodeproj::Project::Object::PBXTargetDependency)
+                dep.name = swiftui_t.name
+                dep.target = swiftui_t
+                wrapper_t.dependencies << dep
+                puts "=== Build order: #{wrapper_t.name} -> #{swiftui_t.name} ==="
+              else
+                puts "=== RCTSwiftUI targets not found (skipping build order fix) ==="
+              end
+            rescue => e
+              puts "=== Build order fix skipped: #{e.message} ==="
             end
             installer.aggregate_targets.each do |aggregate_target|
               aggregate_target.user_project.native_targets.each do |target|
