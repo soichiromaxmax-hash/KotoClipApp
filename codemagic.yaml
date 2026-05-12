@@ -479,12 +479,16 @@ workflows:
               text = notifications_categories_path.read_text()
               original = text
               text = text.replace(
+                  'import UIKit\n',
+                  'import UIKit\n\nextension UNNotificationCategory: @unchecked Sendable {}\n'
+              )
+              text = text.replace(
                   'actor CategoryManager {',
                   '@MainActor final class CategoryManager {'
               )
               text = text.replace(
                   'open class CategoriesModule: Module {',
-                  '@MainActor open class CategoriesModule: Module, @unchecked Sendable {'
+                  'open class CategoriesModule: Module, @unchecked Sendable {'
               )
               text = text.replace(
                   '      let categories = await UNUserNotificationCenter.current().notificationCategories()\n      return filterAndSerializeCategories(categories)',
