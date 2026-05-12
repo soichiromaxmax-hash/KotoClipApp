@@ -1030,6 +1030,18 @@ workflows:
                   web_auth_session_path.write_text(text)
                   patched += 1
 
+          fs_delegate_path = Path('node_modules/expo-file-system/ios/Legacy/EXSessionTasks/EXSessionTaskDelegate.h')
+          if fs_delegate_path.exists():
+              text = fs_delegate_path.read_text()
+              original = text
+              text = text.replace(
+                  '- (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task didCompleteWithError:(NSError *)error;',
+                  '- (void)URLSession:(NSURLSession * _Nonnull)session task:(NSURLSessionTask * _Nonnull)task didCompleteWithError:(NSError * _Nullable)error;'
+              )
+              if text != original:
+                  fs_delegate_path.write_text(text)
+                  patched += 1
+
           print('extra expo iOS modules patched:', patched)
           if patched == 0:
               raise SystemExit('Failed to patch extra Expo iOS modules')
