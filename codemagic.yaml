@@ -538,6 +538,34 @@ workflows:
                   notifications_scheduler_path.write_text(text)
                   patched += 1
 
+          linking_module_path = Path('node_modules/expo-linking/ios/ExpoLinkingModule.swift')
+          if linking_module_path.exists():
+              text = linking_module_path.read_text()
+              original = text
+              text = text.replace(
+                  'public class ExpoLinkingModule: Module {',
+                  'public class ExpoLinkingModule: Module, @unchecked Sendable {'
+              )
+              if text != original:
+                  linking_module_path.write_text(text)
+                  patched += 1
+
+          linking_registry_path = Path('node_modules/expo-linking/ios/ExpoLinkingRegistry.swift')
+          if linking_registry_path.exists():
+              text = linking_registry_path.read_text()
+              original = text
+              text = text.replace(
+                  'class ExpoLinkingRegistry {',
+                  'class ExpoLinkingRegistry: @unchecked Sendable {'
+              )
+              text = text.replace(
+                  '  static let shared = ExpoLinkingRegistry()',
+                  '  nonisolated(unsafe) static let shared = ExpoLinkingRegistry()'
+              )
+              if text != original:
+                  linking_registry_path.write_text(text)
+                  patched += 1
+
           print('extra expo iOS modules patched:', patched)
           if patched == 0:
               raise SystemExit('Failed to patch extra Expo iOS modules')
