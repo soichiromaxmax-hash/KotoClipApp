@@ -387,6 +387,10 @@ workflows:
                   '      MainActor.assumeIsolated {\n        self.currentAuthSession = WebAuthSession(authUrl: authUrl, redirectUrl: redirectUrl, options: options)\n        self.currentAuthSession?.open(promise)\n      }'
               )
               text = text.replace(
+                  '      guard self.currentAuthSession?.isOpen != true else {\n        throw WebBrowserAlreadyOpenException()\n      }\n      MainActor.assumeIsolated {\n        self.currentAuthSession = WebAuthSession(authUrl: authUrl, redirectUrl: redirectUrl, options: options)\n        self.currentAuthSession?.open(promise)\n      }',
+                  '      try MainActor.assumeIsolated {\n        guard self.currentAuthSession?.isOpen != true else {\n          throw WebBrowserAlreadyOpenException()\n        }\n        self.currentAuthSession = WebAuthSession(authUrl: authUrl, redirectUrl: redirectUrl, options: options)\n        self.currentAuthSession?.open(promise)\n      }'
+              )
+              text = text.replace(
                   '      self.currentAuthSession?.dismiss()\n      self.currentAuthSession = nil',
                   '      MainActor.assumeIsolated {\n        self.currentAuthSession?.dismiss()\n        self.currentAuthSession = nil\n      }'
               )
