@@ -678,6 +678,34 @@ workflows:
                   haptics_path.write_text(text)
                   patched += 1
 
+          font_alias_manager_path = Path('node_modules/expo-font/ios/FontFamilyAliasManager.swift')
+          if font_alias_manager_path.exists():
+              text = font_alias_manager_path.read_text()
+              original = text
+              text = text.replace(
+                  'private var fontFamilyAliases = [String: String]()',
+                  'private nonisolated(unsafe) var fontFamilyAliases = [String: String]()'
+              )
+              text = text.replace(
+                  'private var hasSwizzled = false',
+                  'private nonisolated(unsafe) var hasSwizzled = false'
+              )
+              if text != original:
+                  font_alias_manager_path.write_text(text)
+                  patched += 1
+
+          font_utils_path = Path('node_modules/expo-font/ios/FontUtilsModule.swift')
+          if font_utils_path.exists():
+              text = font_utils_path.read_text()
+              original = text
+              text = text.replace(
+                  '          "scale": UIScreen.main.scale',
+                  '          "scale": MainActor.assumeIsolated { UIScreen.main.scale }'
+              )
+              if text != original:
+                  font_utils_path.write_text(text)
+                  patched += 1
+
           image_view_path = Path('node_modules/expo-image/ios/ImageView.swift')
           if image_view_path.exists():
               text = image_view_path.read_text()
