@@ -1052,6 +1052,47 @@ workflows:
           if patched == 0:
               raise SystemExit('Failed to patch extra Expo iOS modules')
           PYEOF
+      - name: Patch React-RCTSwiftUI podspec for DEFINES_MODULE
+        script: |
+          python3 << 'PYEOF'
+          import re
+          from pathlib import Path
+
+          fixed = 0
+          for podspec in Path('node_modules/react-native').rglob('*RCTSwiftUI*.podspec'):
+              if 'Wrapper' in podspec.name:
+                  continue
+              print(f'Found: {podspec}')
+              text = podspec.read_text(encoding='utf-8', errors='replace')
+              print(f'Has DEFINES_MODULE: {"DEFINES_MODULE" in text}')
+              original = text
+              if 'DEFINES_MODULE' not in text:
+                  # Insert into existing pod_target_xcconfig hash
+                  patched = re.sub(
+                      r"(s\.pod_target_xcconfig\s*=\s*\{)",
+                      r"\1\n    'DEFINES_MODULE' => 'YES',\n    'PRODUCT_MODULE_NAME' => 'RCTSwiftUI',",
+                      text
+                  )
+                  if patched != text:
+                      text = patched
+                  else:
+                      # No existing xcconfig — add before the final end
+                      text = re.sub(
+                          r'\nend\s*$',
+                          "\n  s.pod_target_xcconfig = { 'DEFINES_MODULE' => 'YES', 'PRODUCT_MODULE_NAME' => 'RCTSwiftUI' }\nend\n",
+                          text
+                      )
+              if text != original:
+                  podspec.write_text(text, encoding='utf-8')
+                  fixed += 1
+                  print(f'Patched: {podspec}')
+
+          if fixed == 0:
+              print('No podspec patched (either already has DEFINES_MODULE or not found)')
+              # List all react-native podspecs for diagnosis
+              for p in Path('node_modules/react-native').glob('*.podspec'):
+                  print(f'  podspec: {p.name}')
+          PYEOF
       - name: Disable react-native-screens gamma sources
         script: |
           python3 << 'PYEOF'
@@ -1094,11 +1135,21 @@ workflows:
                   config.build_settings['GCC_WARN_ABOUT_MISSING_FIELD_INITIALIZERS'] = 'NO'
                   config.build_settings['CLANG_WARN_NULLABLE_TO_NONNULL_CONVERSION'] = 'NO'
                 end
-                if target.name == 'React-RCTSwiftUI' || target.name == 'RCTSwiftUI'
+                if target.name =~ /RCTSwiftUI/i && target.name !~ /Wrapper/i
                   config.build_settings['DEFINES_MODULE'] = 'YES'
                   config.build_settings['PRODUCT_MODULE_NAME'] = 'RCTSwiftUI'
+                  puts "=== DEFINES_MODULE=YES set for: #{target.name} ==="
                 end
               end
+            end
+            swiftui_t = installer.pods_project.targets.find { |t| t.name =~ /RCTSwiftUI/i && t.name !~ /Wrapper/i }
+            wrapper_t = installer.pods_project.targets.find { |t| t.name =~ /RCTSwiftUIWrapper/i }
+            if swiftui_t && wrapper_t
+              dep = wrapper_t.project.new(Xcodeproj::Project::Object::PBXTargetDependency)
+              dep.name = swiftui_t.name
+              dep.target = swiftui_t
+              wrapper_t.dependencies << dep
+              puts "=== Build order: #{wrapper_t.name} -> #{swiftui_t.name} ==="
             end
             installer.aggregate_targets.each do |aggregate_target|
               aggregate_target.user_project.native_targets.each do |target|
