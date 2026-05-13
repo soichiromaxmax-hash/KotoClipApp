@@ -100,7 +100,10 @@ function addXcodeTarget(config) {
         CODE_SIGN_STYLE: 'Automatic',
         DEVELOPMENT_TEAM,
         SKIP_INSTALL: 'YES',
-        // Xcode 16 auto-links AppIntentsSSUTraining which isn't available for extensions
+        // AppIntentsSSUTraining is auto-linked via SwiftUI dependency chain on Xcode 16.
+        // It lives in PrivateFrameworks (not public Frameworks), so we must add that
+        // search path so the linker can find it. -weak_framework makes it optional at runtime.
+        FRAMEWORK_SEARCH_PATHS: '"$(inherited) $(SDKROOT)/System/Library/PrivateFrameworks"',
         OTHER_LDFLAGS: '"$(inherited) -weak_framework AppIntentsSSUTraining"',
       });
     });
