@@ -1138,6 +1138,35 @@ workflows:
         script: |
           export RNS_GAMMA_ENABLED=0
           npx expo prebuild --platform ios --clean
+      - name: Create AppIntentsSSUTraining stub framework if missing
+        script: |
+          python3 << 'PYEOF'
+          import subprocess
+          from pathlib import Path
+
+          sdkroot = subprocess.check_output(
+              ['xcrun', '--sdk', 'iphoneos', '--show-sdk-path'], text=True
+          ).strip()
+          priv = Path(sdkroot) / 'System/Library/PrivateFrameworks/AppIntentsSSUTraining.framework'
+
+          if priv.exists():
+              print(f'[AppIntentsSSUTraining] Found in PrivateFrameworks — no stub needed')
+          else:
+              print(f'[AppIntentsSSUTraining] Not in PrivateFrameworks — creating stub TBD')
+              stub_dir = Path('ios-stubs/AppIntentsSSUTraining.framework')
+              stub_dir.mkdir(parents=True, exist_ok=True)
+              tbd = '\n'.join([
+                  '--- !tapi-tbd',
+                  'tbd-version:     4',
+                  'targets:         [ arm64-ios ]',
+                  'install-name:    /System/Library/PrivateFrameworks/AppIntentsSSUTraining.framework/AppIntentsSSUTraining',
+                  'current-version: 1',
+                  'compatibility-version: 1',
+                  '...',
+              ])
+              (stub_dir / 'AppIntentsSSUTraining.tbd').write_text(tbd)
+              print(f'[AppIntentsSSUTraining] Stub created at {stub_dir}')
+          PYEOF
       - name: Patch Podfile for Swift concurrency errors
         script: |
           python3 << 'PYEOF'
