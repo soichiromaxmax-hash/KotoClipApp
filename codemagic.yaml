@@ -1162,7 +1162,6 @@ workflows:
                   'install-name:    /System/Library/PrivateFrameworks/AppIntentsSSUTraining.framework/AppIntentsSSUTraining',
                   'current-version: 1',
                   'compatibility-version: 1',
-                  '...',
               ])
               (stub_dir / 'AppIntentsSSUTraining.tbd').write_text(tbd)
               print(f'[AppIntentsSSUTraining] Stub created at {stub_dir}')
