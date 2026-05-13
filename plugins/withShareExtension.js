@@ -100,12 +100,6 @@ function addXcodeTarget(config) {
         CODE_SIGN_STYLE: 'Automatic',
         DEVELOPMENT_TEAM,
         SKIP_INSTALL: 'YES',
-        // AppIntentsSSUTraining is auto-linked via SwiftUI on Xcode 16, but is not in the
-        // public Frameworks directory. Search PrivateFrameworks first; if the framework
-        // doesn't exist there either, a stub TBD is created in ios-stubs/ by the CI script.
-        // -weak_framework makes it optional at runtime (safe for app extensions).
-        FRAMEWORK_SEARCH_PATHS: '"$(inherited) $(PROJECT_DIR)/../ios-stubs $(SDKROOT)/System/Library/PrivateFrameworks"',
-        OTHER_LDFLAGS: '"$(inherited) -weak_framework AppIntentsSSUTraining"',
       });
     });
 
