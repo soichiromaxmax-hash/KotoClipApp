@@ -1038,32 +1038,30 @@ workflows:
           # Quoted #import "file.h" searches the source file's own directory first (C standard),
           # so Xcode finds it during ScanDependencies with zero HEADER_SEARCH_PATHS changes.
           rct_objc_h = Path('node_modules/react-native/ReactApple/RCTSwiftUIWrapper/RCTSwiftUIContainerViewObjC.h')
-          rct_objc_h.write_text('''\
-// Hand-written ObjC declarations for RCTSwiftUIContainerView.
-// Placed in same directory as RCTSwiftUIContainerViewWrapper.m so quoted
-// #import resolves it during Xcode 16 ScanDependencies (before Swift compiles).
-#pragma once
-#import <Foundation/Foundation.h>
-#import <UIKit/UIKit.h>
-
-@interface RCTSwiftUIContainerView : NSObject
-- (instancetype)init;
-- (void)updateContentView:(UIView *)view;
-- (UIView * _Nullable)hostingView;
-- (UIView * _Nullable)contentView;
-- (void)updateBlurRadius:(NSNumber *)radius;
-- (void)updateGrayscale:(NSNumber *)grayscale;
-- (void)updateDropShadowWithStandardDeviation:(NSNumber *)standardDeviation
-                                            x:(NSNumber *)x
-                                            y:(NSNumber *)y
-                                        color:(UIColor *)color;
-- (void)updateSaturation:(NSNumber *)saturation;
-- (void)updateContrast:(NSNumber *)contrast;
-- (void)updateHueRotate:(NSNumber *)degrees;
-- (void)updateLayoutWithBounds:(CGRect)bounds;
-- (void)resetStyles;
-@end
-''', encoding='utf-8')
+          rct_objc_h.write_text('\n'.join([
+              '// Hand-written ObjC declarations for RCTSwiftUIContainerView.',
+              '// Placed in same directory as RCTSwiftUIContainerViewWrapper.m so quoted',
+              '// #import resolves it during Xcode 16 ScanDependencies (before Swift compiles).',
+              '#pragma once',
+              '#import <Foundation/Foundation.h>',
+              '#import <UIKit/UIKit.h>',
+              '',
+              '@interface RCTSwiftUIContainerView : NSObject',
+              '- (instancetype)init;',
+              '- (void)updateContentView:(UIView *)view;',
+              '- (UIView * _Nullable)hostingView;',
+              '- (UIView * _Nullable)contentView;',
+              '- (void)updateBlurRadius:(NSNumber *)radius;',
+              '- (void)updateGrayscale:(NSNumber *)grayscale;',
+              '- (void)updateDropShadowWithStandardDeviation:(NSNumber *)standardDeviation x:(NSNumber *)x y:(NSNumber *)y color:(UIColor *)color;',
+              '- (void)updateSaturation:(NSNumber *)saturation;',
+              '- (void)updateContrast:(NSNumber *)contrast;',
+              '- (void)updateHueRotate:(NSNumber *)degrees;',
+              '- (void)updateLayoutWithBounds:(CGRect)bounds;',
+              '- (void)resetStyles;',
+              '@end',
+              '',
+          ]), encoding='utf-8')
           patched += 1
           print('[RCTSwiftUI] Created RCTSwiftUIContainerViewObjC.h in wrapper directory')
 
