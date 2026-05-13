@@ -100,6 +100,8 @@ function addXcodeTarget(config) {
         CODE_SIGN_STYLE: 'Automatic',
         DEVELOPMENT_TEAM,
         SKIP_INSTALL: 'YES',
+        // Xcode 16 auto-links AppIntentsSSUTraining which isn't available for extensions
+        OTHER_LDFLAGS: '"$(inherited) -weak_framework AppIntentsSSUTraining"',
       });
     });
 
