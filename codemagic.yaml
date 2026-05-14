@@ -1242,6 +1242,29 @@ workflows:
               path.write_text(text)
               print(f'patched swift version: {path} changed={text != original}')
           PYEOF
+      - name: Patch hermes-engine JSI headers
+        script: |
+          python3 << 'PYEOF'
+          import shutil
+          from pathlib import Path
+
+          src_dir = Path('node_modules/react-native/ReactCommon/jsi/jsi')
+          if not src_dir.exists():
+              raise SystemExit(f'[hermes] JSI source dir not found: {src_dir}')
+
+          header = src_dir / 'hermes-interfaces.h'
+          if not header.exists():
+              raise SystemExit(f'[hermes] hermes-interfaces.h not found: {header}')
+
+          for dst_parent in [
+              Path('ios/Pods/hermes-engine/API'),
+              Path('ios/Pods/hermes-engine'),
+          ]:
+              dst_dir = dst_parent / 'jsi'
+              dst_dir.mkdir(parents=True, exist_ok=True)
+              shutil.copy2(header, dst_dir / 'hermes-interfaces.h')
+              print(f'[hermes] Copied hermes-interfaces.h -> {dst_dir}')
+          PYEOF
       - name: Build IPA
         script: |
           set -eo pipefail
