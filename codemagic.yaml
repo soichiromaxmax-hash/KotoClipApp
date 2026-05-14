@@ -1156,6 +1156,24 @@ workflows:
           else:
               print('[RCTSwiftUI] RCTSwiftUIContainerView.swift not found')
 
+          # expo-modules-core: SwiftUIViewDefinition.swift - getContentView() is @MainActor via HostingView
+          swiftui_view_def_path = Path('node_modules/expo-modules-core/ios/Core/Views/SwiftUI/SwiftUIViewDefinition.swift')
+          if swiftui_view_def_path.exists():
+              text = swiftui_view_def_path.read_text()
+              original = text
+              text = text.replace(
+                  '            let content = hostingUIView.getContentView()',
+                  '            let content = MainActor.assumeIsolated { hostingUIView.getContentView() }'
+              )
+              if text != original:
+                  swiftui_view_def_path.write_text(text)
+                  patched += 1
+                  print('[expo-modules-core] Patched SwiftUIViewDefinition.swift getContentView()')
+              else:
+                  print('[expo-modules-core] SwiftUIViewDefinition.swift already patched or not matched')
+          else:
+              print('[expo-modules-core] SwiftUIViewDefinition.swift not found')
+
           # Fix nullability annotations in expo-file-system ObjC headers
           for h in Path('node_modules').rglob('EXSession*Delegate.h'):
               print(f'[nullability] checking: {h}')
@@ -1211,7 +1229,7 @@ workflows:
           inject = """  {marker}
             installer.pods_project.targets.each do |target|
               target.build_configurations.each do |config|
-                config.build_settings['SWIFT_VERSION'] = '5.10'
+                config.build_settings['SWIFT_VERSION'] = '5.0'
                 config.build_settings['SWIFT_STRICT_CONCURRENCY'] = 'minimal'
                 config.build_settings['GCC_TREAT_WARNINGS_AS_ERRORS'] = 'NO'
                 if target.name.include?('ExpoFileSystem') || target.name.include?('expo-file-system')
@@ -1292,7 +1310,7 @@ workflows:
           import re
 
           file_configs = [
-              (Path('ios/Pods/Pods.xcodeproj/project.pbxproj'), '5.10'),
+              (Path('ios/Pods/Pods.xcodeproj/project.pbxproj'), '5.0'),
               (Path('ios/KotoClip.xcodeproj/project.pbxproj'), '6.0'),
           ]
 
