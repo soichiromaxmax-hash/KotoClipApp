@@ -779,6 +779,34 @@ workflows:
                   fs_bg_handler_path.write_text(text)
                   patched += 1
 
+          fs_module_path = Path('node_modules/expo-file-system/ios/FileSystemModule.swift')
+          if fs_module_path.exists():
+              text = fs_module_path.read_text()
+              original = text
+              text = text.replace(
+                  '      filePickingHandler.presentDocumentPicker(\n        picker: createDirectoryPicker(initialUri: initialUri),\n        isDirectory: true,\n        initialUri: initialUri,\n        mimeType: nil,\n        promise: promise\n      )',
+                  '      MainActor.assumeIsolated {\n        filePickingHandler.presentDocumentPicker(\n          picker: createDirectoryPicker(initialUri: initialUri),\n          isDirectory: true,\n          initialUri: initialUri,\n          mimeType: nil,\n          promise: promise\n        )\n      }'
+              )
+              text = text.replace(
+                  '      filePickingHandler.presentDocumentPicker(\n        picker: createFilePicker(initialUri: initialUri, mimeType: mimeType),\n        isDirectory: false,\n        initialUri: initialUri,\n        mimeType: mimeType,\n        promise: promise\n      )',
+                  '      MainActor.assumeIsolated {\n        filePickingHandler.presentDocumentPicker(\n          picker: createFilePicker(initialUri: initialUri, mimeType: mimeType),\n          isDirectory: false,\n          initialUri: initialUri,\n          mimeType: mimeType,\n          promise: promise\n        )\n      }'
+              )
+              if text != original:
+                  fs_module_path.write_text(text)
+                  patched += 1
+
+          fs_legacy_module_path = Path('node_modules/expo-file-system/ios/Legacy/FileSystemLegacyModule.swift')
+          if fs_legacy_module_path.exists():
+              text = fs_legacy_module_path.read_text()
+              original = text
+              text = text.replace(
+                  'public final class FileSystemLegacyModule: Module {',
+                  'public final class FileSystemLegacyModule: Module, @unchecked Sendable {'
+              )
+              if text != original:
+                  fs_legacy_module_path.write_text(text)
+                  patched += 1
+
           log_box_wrapper_path = Path('node_modules/@expo/log-box/ios/ExpoLogBoxWebViewWrapper.swift')
           if log_box_wrapper_path.exists():
               text = log_box_wrapper_path.read_text()
