@@ -740,11 +740,43 @@ workflows:
               text = file_picking_handler_path.read_text()
               original = text
               text = text.replace(
+                  '  func presentDocumentPicker(',
+                  '  @MainActor func presentDocumentPicker('
+              )
+              text = text.replace(
                   '    if UIDevice.current.userInterfaceIdiom == .pad {\n      let viewFrame = currentVc.view.frame\n      picker.popoverPresentationController?.sourceRect = CGRect(\n        x: viewFrame.midX,\n        y: viewFrame.maxY,\n        width: 0,\n        height: 0\n      )\n      picker.popoverPresentationController?.sourceView = currentVc.view\n      picker.modalPresentationStyle = .pageSheet\n    }\n\n    currentVc.present(picker, animated: true)',
                   '    MainActor.assumeIsolated {\n      if UIDevice.current.userInterfaceIdiom == .pad {\n        let viewFrame = currentVc.view.frame\n        picker.popoverPresentationController?.sourceRect = CGRect(\n          x: viewFrame.midX,\n          y: viewFrame.maxY,\n          width: 0,\n          height: 0\n        )\n        picker.popoverPresentationController?.sourceView = currentVc.view\n        picker.modalPresentationStyle = .pageSheet\n      }\n\n      currentVc.present(picker, animated: true)\n    }'
               )
               if text != original:
                   file_picking_handler_path.write_text(text)
+                  patched += 1
+
+          file_picking_utils_path = Path('node_modules/expo-file-system/ios/FilePickingUtils.swift')
+          if file_picking_utils_path.exists():
+              text = file_picking_utils_path.read_text()
+              original = text
+              text = text.replace(
+                  'internal func createFilePicker(',
+                  '@MainActor internal func createFilePicker('
+              )
+              text = text.replace(
+                  'internal func createDirectoryPicker(',
+                  '@MainActor internal func createDirectoryPicker('
+              )
+              if text != original:
+                  file_picking_utils_path.write_text(text)
+                  patched += 1
+
+          fs_bg_handler_path = Path('node_modules/expo-file-system/ios/Legacy/FileSystemBackgroundSessionHandler.swift')
+          if fs_bg_handler_path.exists():
+              text = fs_bg_handler_path.read_text()
+              original = text
+              text = text.replace(
+                  '  public func invokeCompletionHandler(forSessionIdentifier identifier: String) {\n    guard let completionHandler = completionHandlers[identifier] else {\n      return\n    }\n    DispatchQueue.main.async {\n      completionHandler()\n    }\n    completionHandlers.removeValue(forKey: identifier)\n  }',
+                  '  public nonisolated func invokeCompletionHandler(forSessionIdentifier identifier: String) {\n    MainActor.assumeIsolated {\n      guard let completionHandler = completionHandlers[identifier] else {\n        return\n      }\n      DispatchQueue.main.async {\n        completionHandler()\n      }\n      completionHandlers.removeValue(forKey: identifier)\n    }\n  }'
+              )
+              if text != original:
+                  fs_bg_handler_path.write_text(text)
                   patched += 1
 
           log_box_wrapper_path = Path('node_modules/@expo/log-box/ios/ExpoLogBoxWebViewWrapper.swift')
