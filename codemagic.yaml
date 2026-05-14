@@ -1211,7 +1211,7 @@ workflows:
           inject = """  {marker}
             installer.pods_project.targets.each do |target|
               target.build_configurations.each do |config|
-                config.build_settings['SWIFT_VERSION'] = '6.0'
+                config.build_settings['SWIFT_VERSION'] = '5.10'
                 config.build_settings['SWIFT_STRICT_CONCURRENCY'] = 'minimal'
                 config.build_settings['GCC_TREAT_WARNINGS_AS_ERRORS'] = 'NO'
                 if target.name.include?('ExpoFileSystem') || target.name.include?('expo-file-system')
@@ -1291,26 +1291,26 @@ workflows:
           from pathlib import Path
           import re
 
-          files = [
-              Path('ios/Pods/Pods.xcodeproj/project.pbxproj'),
-              Path('ios/KotoClip.xcodeproj/project.pbxproj'),
+          file_configs = [
+              (Path('ios/Pods/Pods.xcodeproj/project.pbxproj'), '5.10'),
+              (Path('ios/KotoClip.xcodeproj/project.pbxproj'), '6.0'),
           ]
 
-          for path in files:
+          for path, swift_version in file_configs:
               if not path.exists():
                   print(f'skip missing: {path}')
                   continue
               text = path.read_text()
               original = text
-              text = re.sub(r'SWIFT_VERSION = [^;]+;', 'SWIFT_VERSION = 6.0;', text)
+              text = re.sub(r'SWIFT_VERSION = [^;]+;', f'SWIFT_VERSION = {swift_version};', text)
               text = re.sub(r'SWIFT_STRICT_CONCURRENCY = [^;]+;', 'SWIFT_STRICT_CONCURRENCY = minimal;', text)
               if 'SWIFT_STRICT_CONCURRENCY = minimal;' not in text:
-                  text = text.replace('SWIFT_VERSION = 6.0;', 'SWIFT_VERSION = 6.0;\n\t\t\t\tSWIFT_STRICT_CONCURRENCY = minimal;')
+                  text = text.replace(f'SWIFT_VERSION = {swift_version};', f'SWIFT_VERSION = {swift_version};\n\t\t\t\tSWIFT_STRICT_CONCURRENCY = minimal;')
               text = re.sub(r'GCC_TREAT_WARNINGS_AS_ERRORS = YES;', 'GCC_TREAT_WARNINGS_AS_ERRORS = NO;', text)
               if 'GCC_TREAT_WARNINGS_AS_ERRORS = NO;' not in text:
                   text = text.replace('SWIFT_STRICT_CONCURRENCY = minimal;', 'SWIFT_STRICT_CONCURRENCY = minimal;\n\t\t\t\tGCC_TREAT_WARNINGS_AS_ERRORS = NO;', 1)
               path.write_text(text)
-              print(f'patched swift version: {path} changed={text != original}')
+              print(f'patched swift version: {path} swift={swift_version} changed={text != original}')
           PYEOF
       - name: Build IPA
         script: |
