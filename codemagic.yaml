@@ -1156,6 +1156,24 @@ workflows:
           else:
               print('[RCTSwiftUI] RCTSwiftUIContainerView.swift not found')
 
+          # expo-notifications: CategoriesModule - actor CategoryManager init called from @MainActor context
+          categories_module_path = Path('node_modules/expo-notifications/ios/ExpoNotifications/Notifications/Categories/CategoriesModule.swift')
+          if categories_module_path.exists():
+              text = categories_module_path.read_text()
+              original = text
+              text = text.replace(
+                  '  private let categoryManager = CategoryManager()',
+                  '  nonisolated(unsafe) private let categoryManager = CategoryManager()'
+              )
+              if text != original:
+                  categories_module_path.write_text(text)
+                  patched += 1
+                  print('[expo-notifications] Patched CategoriesModule.swift categoryManager')
+              else:
+                  print('[expo-notifications] CategoriesModule.swift already patched or not matched')
+          else:
+              print('[expo-notifications] CategoriesModule.swift not found')
+
           # expo-modules-core: SwiftUIViewDefinition.swift - getContentView() is @MainActor via HostingView
           swiftui_view_def_path = Path('node_modules/expo-modules-core/ios/Core/Views/SwiftUI/SwiftUIViewDefinition.swift')
           if swiftui_view_def_path.exists():
