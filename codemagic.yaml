@@ -1154,7 +1154,6 @@ workflows:
                 config.build_settings['SWIFT_VERSION'] = '6.0'
                 config.build_settings['SWIFT_STRICT_CONCURRENCY'] = 'minimal'
                 config.build_settings['GCC_TREAT_WARNINGS_AS_ERRORS'] = 'NO'
-                config.build_settings['OTHER_CFLAGS'] = '$(inherited) -Wno-nullability-completeness -Wno-nullability'
                 if target.name.include?('ExpoFileSystem') || target.name.include?('expo-file-system')
                   config.build_settings['GCC_WARN_ABOUT_MISSING_FIELD_INITIALIZERS'] = 'NO'
                   config.build_settings['CLANG_WARN_NULLABLE_TO_NONNULL_CONVERSION'] = 'NO'
@@ -1174,7 +1173,6 @@ workflows:
                   config.build_settings['SWIFT_VERSION'] = '6.0'
                   config.build_settings['SWIFT_STRICT_CONCURRENCY'] = 'minimal'
                   config.build_settings['GCC_TREAT_WARNINGS_AS_ERRORS'] = 'NO'
-                  config.build_settings['OTHER_CFLAGS'] = '$(inherited) -Wno-nullability-completeness -Wno-nullability'
                 end
               end
               aggregate_target.user_project.save
@@ -1270,8 +1268,7 @@ workflows:
             DEVELOPMENT_TEAM=9U2YJ4XL4K \
             CODE_SIGN_IDENTITY="Apple Distribution" \
             CODE_SIGN_STYLE=Manual \
-            GCC_TREAT_WARNINGS_AS_ERRORS=NO \
-            "OTHER_CFLAGS=$(inherited) -Wno-nullability-completeness -Wno-nullability"
+            GCC_TREAT_WARNINGS_AS_ERRORS=NO
 
           # ExportOptions.plist
           cat > /tmp/ExportOptions.plist << 'PLIST'
