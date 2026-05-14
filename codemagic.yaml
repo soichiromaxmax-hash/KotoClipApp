@@ -1156,19 +1156,20 @@ workflows:
           else:
               print('[RCTSwiftUI] RCTSwiftUIContainerView.swift not found')
 
-          # expo-notifications: CategoriesModule - actor CategoryManager init called from @MainActor context
+          # expo-notifications: CategoryManager actor init must be nonisolated so it can be called
+          # from any context. nonisolated(unsafe) on the property does NOT fix the init itself.
           categories_module_path = Path('node_modules/expo-notifications/ios/ExpoNotifications/Notifications/Categories/CategoriesModule.swift')
           if categories_module_path.exists():
               text = categories_module_path.read_text()
               original = text
               text = text.replace(
-                  '  private let categoryManager = CategoryManager()',
-                  '  nonisolated(unsafe) private let categoryManager = CategoryManager()'
+                  '  private var categories: Set<UNNotificationCategory>?\n\n  func setCategory',
+                  '  private var categories: Set<UNNotificationCategory>?\n\n  nonisolated init() {}\n\n  func setCategory'
               )
               if text != original:
                   categories_module_path.write_text(text)
                   patched += 1
-                  print('[expo-notifications] Patched CategoriesModule.swift categoryManager')
+                  print('[expo-notifications] Patched CategoriesModule.swift - nonisolated init() on CategoryManager')
               else:
                   print('[expo-notifications] CategoriesModule.swift already patched or not matched')
           else:
