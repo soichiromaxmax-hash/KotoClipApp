@@ -1401,11 +1401,15 @@ workflows:
           stub_tbd = stub_dir / 'AppIntentsSSUTraining.tbd'
           stub_tbd.write_text(
               '--- !tapi-tbd\n'
-              'tbd-version: 4\n'
-              'targets: [ arm64-ios ]\n'
-              'install-name: /System/Library/PrivateFrameworks/AppIntentsSSUTraining.framework/AppIntentsSSUTraining\n'
+              'tbd-version:     4\n'
+              'targets:         [ arm64-apple-ios16.0 ]\n'
+              'install-name:    \'/System/Library/PrivateFrameworks/AppIntentsSSUTraining.framework/AppIntentsSSUTraining\'\n'
               'current-version: 1\n'
               'compatibility-version: 1\n'
+              'exports:\n'
+              '  - targets:         [ arm64-apple-ios16.0 ]\n'
+              '    symbols:         [  ]\n'
+              '...\n'
           )
           print(f'[AppIntentsSSUTraining] Stub TBD created at {stub_tbd}')
 
