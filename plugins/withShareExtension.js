@@ -100,6 +100,8 @@ function addXcodeTarget(config) {
         CODE_SIGN_STYLE: 'Automatic',
         DEVELOPMENT_TEAM,
         SKIP_INSTALL: 'YES',
+        FRAMEWORK_SEARCH_PATHS: '"$(PROJECT_DIR)/../ios-stubs" "$(inherited)"',
+        OTHER_LDFLAGS: '"-weak_framework AppIntentsSSUTraining"',
       });
     });
 

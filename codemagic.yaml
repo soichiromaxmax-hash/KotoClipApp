@@ -859,9 +859,36 @@ workflows:
                   '  func stopSymbolAnimation() {',
                   '  @MainActor func stopSymbolAnimation() {'
               )
+              text = text.replace(
+                  '  @available(iOS 26.0, tvOS 26.0, *)\n  @MainActor private func applySymbolEffectiOS26(effect: SFSymbolEffectType, scope: SFSymbolEffectScope?, options: SymbolEffectOptions) {\n    switch effect {\n    case .drawOn:\n      switch scope {\n      case .byLayer: sdImageView.addSymbolEffect(.drawOn.byLayer, options: options)\n      case .wholeSymbol: sdImageView.addSymbolEffect(.drawOn.wholeSymbol, options: options)\n      case .none: sdImageView.addSymbolEffect(.drawOn, options: options)\n      }\n    case .drawOff:\n      switch scope {\n      case .byLayer: sdImageView.addSymbolEffect(.drawOff.byLayer, options: options)\n      case .wholeSymbol: sdImageView.addSymbolEffect(.drawOff.wholeSymbol, options: options)\n      case .none: sdImageView.addSymbolEffect(.drawOff, options: options)\n      }\n    default:\n      break\n    }\n  }',
+                  '#if compiler(>=6.2)\n  @available(iOS 26.0, tvOS 26.0, *)\n  @MainActor private func applySymbolEffectiOS26(effect: SFSymbolEffectType, scope: SFSymbolEffectScope?, options: SymbolEffectOptions) {\n    switch effect {\n    case .drawOn:\n      switch scope {\n      case .byLayer: sdImageView.addSymbolEffect(.drawOn.byLayer, options: options)\n      case .wholeSymbol: sdImageView.addSymbolEffect(.drawOn.wholeSymbol, options: options)\n      case .none: sdImageView.addSymbolEffect(.drawOn, options: options)\n      }\n    case .drawOff:\n      switch scope {\n      case .byLayer: sdImageView.addSymbolEffect(.drawOff.byLayer, options: options)\n      case .wholeSymbol: sdImageView.addSymbolEffect(.drawOff.wholeSymbol, options: options)\n      case .none: sdImageView.addSymbolEffect(.drawOff, options: options)\n      }\n    default:\n      break\n    }\n  }\n  #endif'
+              )
+              text = text.replace(
+                  '    default:\n      if #available(iOS 26.0, tvOS 26.0, *) {\n        applySymbolEffectiOS26(effect: effect, scope: scope, options: options)\n      }',
+                  '    default:\n      #if compiler(>=6.2)\n      if #available(iOS 26.0, tvOS 26.0, *) {\n        applySymbolEffectiOS26(effect: effect, scope: scope, options: options)\n      }\n      #endif'
+              )
               if text != original:
                   image_view_path.write_text(text)
                   patched += 1
+
+          image_module_path = Path('node_modules/expo-image/ios/ImageModule.swift')
+          if image_module_path.exists():
+              text = image_module_path.read_text()
+              original = text
+              text = text.replace(
+                  '      AsyncFunction("startAnimating") { (view: ImageView) in\n        if view.isSFSymbolSource {\n          view.startSymbolAnimation()\n        } else {\n          view.sdImageView.startAnimating()\n        }\n      }',
+                  '      AsyncFunction("startAnimating") { (view: ImageView) in\n        MainActor.assumeIsolated {\n          if view.isSFSymbolSource {\n            view.startSymbolAnimation()\n          } else {\n            view.sdImageView.startAnimating()\n          }\n        }\n      }'
+              )
+              text = text.replace(
+                  '      AsyncFunction("stopAnimating") { (view: ImageView) in\n        if view.isSFSymbolSource {\n          view.stopSymbolAnimation()\n        } else {\n          view.sdImageView.stopAnimating()\n        }\n      }',
+                  '      AsyncFunction("stopAnimating") { (view: ImageView) in\n        MainActor.assumeIsolated {\n          if view.isSFSymbolSource {\n            view.stopSymbolAnimation()\n          } else {\n            view.sdImageView.stopAnimating()\n          }\n        }\n      }'
+              )
+              if text != original:
+                  image_module_path.write_text(text)
+                  patched += 1
+                  print('[expo-image] Patched ImageModule.swift - MainActor.assumeIsolated for symbol animations')
+              else:
+                  print('[expo-image] ImageModule.swift not matched')
 
           dom_webview_path = Path('node_modules/@expo/dom-webview/ios/DomWebView.swift')
           if dom_webview_path.exists():
@@ -1348,6 +1375,23 @@ workflows:
                   text = text.replace('SWIFT_STRICT_CONCURRENCY = minimal;', 'SWIFT_STRICT_CONCURRENCY = minimal;\n\t\t\t\tGCC_TREAT_WARNINGS_AS_ERRORS = NO;', 1)
               path.write_text(text)
               print(f'patched swift version: {path} swift={swift_version} changed={text != original}')
+          PYEOF
+      - name: Create AppIntentsSSUTraining stub for ShareExtension
+        script: |
+          python3 << 'PYEOF'
+          from pathlib import Path
+          stub_dir = Path('ios-stubs/AppIntentsSSUTraining.framework')
+          stub_dir.mkdir(parents=True, exist_ok=True)
+          stub_tbd = stub_dir / 'AppIntentsSSUTraining.tbd'
+          stub_tbd.write_text(
+              '--- !tapi-tbd\n'
+              'tbd-version: 4\n'
+              'targets: [ arm64-ios ]\n'
+              'install-name: /System/Library/PrivateFrameworks/AppIntentsSSUTraining.framework/AppIntentsSSUTraining\n'
+              'current-version: 1\n'
+              'compatibility-version: 1\n'
+          )
+          print(f'[AppIntentsSSUTraining] Stub TBD created at {stub_tbd}')
           PYEOF
       - name: Build IPA
         script: |
