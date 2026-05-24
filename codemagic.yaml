@@ -1408,6 +1408,40 @@ workflows:
               'compatibility-version: 1\n'
           )
           print(f'[AppIntentsSSUTraining] Stub TBD created at {stub_tbd}')
+
+          import re
+          pbxproj = Path('ios/KotoClip.xcodeproj/project.pbxproj')
+          if pbxproj.exists():
+              text = pbxproj.read_text()
+              if 'AppIntentsSSUTraining' not in text:
+                  def add_share_ext_settings(m):
+                      indent = m.group(1)
+                      return (
+                          indent + 'SKIP_INSTALL = YES;\n' +
+                          indent + 'FRAMEWORK_SEARCH_PATHS = (\n' +
+                          indent + '\t"$(PROJECT_DIR)/../ios-stubs",\n' +
+                          indent + '\t"$(inherited)",\n' +
+                          indent + ');\n' +
+                          indent + 'OTHER_LDFLAGS = (\n' +
+                          indent + '\t"-weak_framework",\n' +
+                          indent + '\tAppIntentsSSUTraining,\n' +
+                          indent + ');'
+                      )
+                  patched_text = re.sub(
+                      r'^(\s+)SKIP_INSTALL = YES;$',
+                      add_share_ext_settings,
+                      text,
+                      flags=re.MULTILINE
+                  )
+                  if patched_text != text:
+                      pbxproj.write_text(patched_text)
+                      print('[ShareExtension] Patched KotoClip.xcodeproj with FRAMEWORK_SEARCH_PATHS and OTHER_LDFLAGS')
+                  else:
+                      print('[ShareExtension] SKIP_INSTALL not found in pbxproj - skipping')
+              else:
+                  print('[ShareExtension] Already patched')
+          else:
+              print('[ShareExtension] KotoClip.xcodeproj not found')
           PYEOF
       - name: Build IPA
         script: |
