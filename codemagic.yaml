@@ -1395,23 +1395,42 @@ workflows:
       - name: Create AppIntentsSSUTraining stub for ShareExtension
         script: |
           python3 << 'PYEOF'
+          import os, subprocess, tempfile
           from pathlib import Path
+
           stub_dir = Path('ios-stubs/AppIntentsSSUTraining.framework')
           stub_dir.mkdir(parents=True, exist_ok=True)
-          stub_tbd = stub_dir / 'AppIntentsSSUTraining.tbd'
-          stub_tbd.write_text(
-              '--- !tapi-tbd\n'
-              'tbd-version:     4\n'
-              'targets:         [ arm64-apple-ios16.0 ]\n'
-              'install-name:    \'/System/Library/PrivateFrameworks/AppIntentsSSUTraining.framework/AppIntentsSSUTraining\'\n'
-              'current-version: 1\n'
-              'compatibility-version: 1\n'
-              'exports:\n'
-              '  - targets:         [ arm64-apple-ios16.0 ]\n'
-              '    symbols:         [  ]\n'
-              '...\n'
-          )
-          print(f'[AppIntentsSSUTraining] Stub TBD created at {stub_tbd}')
+
+          # Remove any leftover TBD file (TBD format is unreliable across TAPI versions)
+          for old in stub_dir.glob('*.tbd'):
+              old.unlink()
+
+          stub_binary = stub_dir / 'AppIntentsSSUTraining'
+          sdk_path = subprocess.check_output(
+              ['xcrun', '--sdk', 'iphoneos', '--show-sdk-path'], text=True
+          ).strip()
+
+          with tempfile.NamedTemporaryFile(suffix='.c', mode='w', delete=False) as f:
+              f.write('// AppIntentsSSUTraining stub\n')
+              tmp_c = f.name
+          try:
+              result = subprocess.run(
+                  ['xcrun', 'clang',
+                   '-arch', 'arm64',
+                   '-target', 'arm64-apple-ios16.0',
+                   '-isysroot', sdk_path,
+                   '-dynamiclib',
+                   '-fapplication-extension',
+                   '-Wl,-install_name,/System/Library/PrivateFrameworks/AppIntentsSSUTraining.framework/AppIntentsSSUTraining',
+                   tmp_c, '-o', str(stub_binary)],
+                  capture_output=True, text=True, timeout=60
+              )
+              if result.returncode != 0:
+                  print(f'[AppIntentsSSUTraining] stderr: {result.stderr}')
+                  raise SystemExit(f'clang stub failed (exit {result.returncode})')
+              print(f'[AppIntentsSSUTraining] Created Mach-O stub binary at {stub_binary}')
+          finally:
+              os.unlink(tmp_c)
 
           import re
           pbxproj = Path('ios/KotoClip.xcodeproj/project.pbxproj')
