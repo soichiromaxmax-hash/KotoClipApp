@@ -860,12 +860,28 @@ workflows:
                   '  @MainActor func stopSymbolAnimation() {'
               )
               text = text.replace(
-                  '  @available(iOS 26.0, tvOS 26.0, *)\n  @MainActor private func applySymbolEffectiOS26(effect: SFSymbolEffectType, scope: SFSymbolEffectScope?, options: SymbolEffectOptions) {\n    switch effect {\n    case .drawOn:\n      switch scope {\n      case .byLayer: sdImageView.addSymbolEffect(.drawOn.byLayer, options: options)\n      case .wholeSymbol: sdImageView.addSymbolEffect(.drawOn.wholeSymbol, options: options)\n      case .none: sdImageView.addSymbolEffect(.drawOn, options: options)\n      }\n    case .drawOff:\n      switch scope {\n      case .byLayer: sdImageView.addSymbolEffect(.drawOff.byLayer, options: options)\n      case .wholeSymbol: sdImageView.addSymbolEffect(.drawOff.wholeSymbol, options: options)\n      case .none: sdImageView.addSymbolEffect(.drawOff, options: options)\n      }\n    default:\n      break\n    }\n  }',
-                  '#if compiler(>=6.2)\n  @available(iOS 26.0, tvOS 26.0, *)\n  @MainActor private func applySymbolEffectiOS26(effect: SFSymbolEffectType, scope: SFSymbolEffectScope?, options: SymbolEffectOptions) {\n    switch effect {\n    case .drawOn:\n      switch scope {\n      case .byLayer: sdImageView.addSymbolEffect(.drawOn.byLayer, options: options)\n      case .wholeSymbol: sdImageView.addSymbolEffect(.drawOn.wholeSymbol, options: options)\n      case .none: sdImageView.addSymbolEffect(.drawOn, options: options)\n      }\n    case .drawOff:\n      switch scope {\n      case .byLayer: sdImageView.addSymbolEffect(.drawOff.byLayer, options: options)\n      case .wholeSymbol: sdImageView.addSymbolEffect(.drawOff.wholeSymbol, options: options)\n      case .none: sdImageView.addSymbolEffect(.drawOff, options: options)\n      }\n    default:\n      break\n    }\n  }\n  #endif'
+                  'case .byLayer: sdImageView.addSymbolEffect(.drawOn.byLayer, options: options)',
+                  'case .byLayer: sdImageView.addSymbolEffect(DrawSymbolEffect.drawOn.byLayer, options: options)'
               )
               text = text.replace(
-                  '    default:\n      if #available(iOS 26.0, tvOS 26.0, *) {\n        applySymbolEffectiOS26(effect: effect, scope: scope, options: options)\n      }',
-                  '    default:\n      #if compiler(>=6.2)\n      if #available(iOS 26.0, tvOS 26.0, *) {\n        applySymbolEffectiOS26(effect: effect, scope: scope, options: options)\n      }\n      #endif'
+                  'case .wholeSymbol: sdImageView.addSymbolEffect(.drawOn.wholeSymbol, options: options)',
+                  'case .wholeSymbol: sdImageView.addSymbolEffect(DrawSymbolEffect.drawOn.wholeSymbol, options: options)'
+              )
+              text = text.replace(
+                  'case .none: sdImageView.addSymbolEffect(.drawOn, options: options)',
+                  'case .none: sdImageView.addSymbolEffect(DrawSymbolEffect.drawOn, options: options)'
+              )
+              text = text.replace(
+                  'case .byLayer: sdImageView.addSymbolEffect(.drawOff.byLayer, options: options)',
+                  'case .byLayer: sdImageView.addSymbolEffect(DrawSymbolEffect.drawOff.byLayer, options: options)'
+              )
+              text = text.replace(
+                  'case .wholeSymbol: sdImageView.addSymbolEffect(.drawOff.wholeSymbol, options: options)',
+                  'case .wholeSymbol: sdImageView.addSymbolEffect(DrawSymbolEffect.drawOff.wholeSymbol, options: options)'
+              )
+              text = text.replace(
+                  'case .none: sdImageView.addSymbolEffect(.drawOff, options: options)',
+                  'case .none: sdImageView.addSymbolEffect(DrawSymbolEffect.drawOff, options: options)'
               )
               if text != original:
                   image_view_path.write_text(text)
