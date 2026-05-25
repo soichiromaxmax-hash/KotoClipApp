@@ -11,11 +11,23 @@ env:
 
 jobs:
   build:
-    runs-on: macos-14
+    runs-on: macos-15
     timeout-minutes: 90
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Select Xcode 16
+        run: |
+          ls /Applications/ | grep "^Xcode" | sort
+          for ver in 16.3 16.2 16.1 16.0; do
+            if [ -d "/Applications/Xcode_${ver}.app" ]; then
+              sudo xcode-select -s "/Applications/Xcode_${ver}.app/Contents/Developer"
+              echo "Selected Xcode ${ver}"
+              break
+            fi
+          done
+          xcodebuild -version
 
       - uses: actions/setup-node@v4
         with:
@@ -35,6 +47,12 @@ jobs:
           CI_WORKSPACE: ${{ github.workspace }}
           APPLE_TEAM_ID: 9U2YJ4XL4K
         run: bash ci_scripts/ci_post_clone.sh
+
+      - name: Verify ios/ after pod install
+        run: |
+          echo "=== ios/ top-level ===" && ls ios/
+          echo "=== xcworkspace ===" && test -d ios/KotoClip.xcworkspace && echo "EXISTS" || echo "MISSING"
+          echo "=== Pods/ ===" && test -d ios/Pods && echo "EXISTS" || echo "MISSING"
 
       - name: Archive
         env:
