@@ -852,6 +852,26 @@ for path, version in [
     print(f'patched {path} swift={version} changed={t!=o}')
 PYEOF
 
+# ── 6b. Force Apple Distribution signing in project-level Release config ───────
+python3 << 'PYEOF'
+from pathlib import Path
+
+path = Path('ios/KotoClip.xcodeproj/project.pbxproj')
+if path.exists():
+    t = path.read_text()
+    patched = t.replace(
+        '"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";\n\t\t\t\tCOPY_PHASE_STRIP = YES;',
+        '"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "Apple Distribution";\n\t\t\t\tCOPY_PHASE_STRIP = YES;'
+    )
+    if patched != t:
+        path.write_text(patched)
+        print('[signing] Patched CODE_SIGN_IDENTITY iPhone Developer -> Apple Distribution')
+    else:
+        print('[signing] Already Apple Distribution or pattern not found (no change needed)')
+else:
+    print('[signing] pbxproj not found, skipping')
+PYEOF
+
 # ── 7. AppIntentsSSUTraining Mach-O stub ──────────────────────────────────────
 python3 << 'PYEOF'
 import os, subprocess, tempfile, re
