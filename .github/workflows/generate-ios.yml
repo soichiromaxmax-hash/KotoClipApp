@@ -1,0 +1,42 @@
+name: Generate ios/ for Xcode Cloud
+
+# Run this workflow manually whenever you update app.json, add a native module,
+# or need to refresh the committed ios/ folder.
+on:
+  workflow_dispatch:
+
+jobs:
+  generate:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: npm install
+        run: npm install
+
+      - name: expo prebuild (iOS only)
+        run: npx expo prebuild --platform ios --non-interactive
+        env:
+          CI: '1'
+
+      - name: Copy ci_scripts into ios/
+        run: |
+          mkdir -p ios/ci_scripts
+          cp ci_scripts/ci_post_clone.sh ios/ci_scripts/ci_post_clone.sh
+          chmod +x ios/ci_scripts/ci_post_clone.sh
+
+      - name: Commit ios/
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add ios/
+          git status
+          git diff --cached --stat
+          git commit -m "chore: regenerate ios/ via expo prebuild [skip ci]" || echo "Nothing to commit"
+          git push

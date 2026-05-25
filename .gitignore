@@ -39,5 +39,5 @@ yarn-error.*
 app-example
 
 # generated native folders
-/ios
+# /ios is committed so Xcode Cloud can detect the workspace
 /android
