@@ -1159,15 +1159,19 @@ workflows:
           if rct_wrapper_m.exists():
               text = rct_wrapper_m.read_text(encoding='utf-8')
               original = text
-              # Replace both possible forms (original @import and previous patch attempt)
-              text = text.replace('@import RCTSwiftUI;', '#import "RCTSwiftUIContainerViewObjC.h"')
-              text = text.replace('#import "RCTSwiftUI-Swift.h"', '#import "RCTSwiftUIContainerViewObjC.h"')
+              # Keep @import RCTSwiftUI; — this is what triggers Clang module auto-linking of
+              # libRCTSwiftUI.a. Replacing it with a local #import breaks the link because
+              # DEFINES_MODULE=YES pods rely on @import for symbol resolution.
+              # ScanDependencies failure (RCTSwiftUI-Swift.h not yet compiled) is handled by
+              # CLANG_ENABLE_EXPLICIT_MODULES=NO in the Podfile patch instead.
+              text = text.replace('#import "RCTSwiftUIContainerViewObjC.h"', '@import RCTSwiftUI;')
+              text = text.replace('#import "RCTSwiftUI-Swift.h"', '@import RCTSwiftUI;')
               if text != original:
                   rct_wrapper_m.write_text(text, encoding='utf-8')
                   patched += 1
-                  print('[RCTSwiftUI] Patched RCTSwiftUIContainerViewWrapper.m -> #import "RCTSwiftUIContainerViewObjC.h"')
+                  print('[RCTSwiftUI] Restored @import RCTSwiftUI; in RCTSwiftUIContainerViewWrapper.m')
               else:
-                  print('[RCTSwiftUI] RCTSwiftUIContainerViewWrapper.m already patched')
+                  print('[RCTSwiftUI] RCTSwiftUIContainerViewWrapper.m already uses @import RCTSwiftUI;')
           else:
               print('[RCTSwiftUI] RCTSwiftUIContainerViewWrapper.m not found')
 
@@ -1291,6 +1295,10 @@ workflows:
                 end
                 if target.name == 'RCTSwiftUIWrapper'
                   config.build_settings['CLANG_ENABLE_MODULES'] = 'YES'
+                  # Disable Xcode 16 explicit module scanning so @import RCTSwiftUI; resolves
+                  # at actual compile time (after Swift has generated RCTSwiftUI-Swift.h),
+                  # not during the premature ScanDependencies phase.
+                  config.build_settings['CLANG_ENABLE_EXPLICIT_MODULES'] = 'NO'
                 end
               end
             end
