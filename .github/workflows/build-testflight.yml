@@ -54,6 +54,35 @@ jobs:
           echo "=== xcworkspace ===" && test -d ios/KotoClip.xcworkspace && echo "EXISTS" || echo "MISSING"
           echo "=== Pods/ ===" && test -d ios/Pods && echo "EXISTS" || echo "MISSING"
 
+      - name: Prepare Distribution certificate and profiles
+        env:
+          ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
+        run: |
+          sudo gem install fastlane --no-document 2>&1 | tail -3
+
+          # Write API key JSON for fastlane
+          python3 -c "
+          import os, json, pathlib
+          kid = os.environ['ASC_KEY_ID']
+          key = pathlib.Path(os.environ['RUNNER_TEMP'] + '/private_keys/AuthKey_' + kid + '.p8').read_text()
+          json.dump({'key_id': kid, 'issuer_id': os.environ['ASC_ISSUER_ID'], 'key': key, 'in_house': False}, open('/tmp/api_key.json', 'w'))
+          print('API key JSON written')
+          "
+
+          # Get/create Distribution certificate → installs cert + private key in keychain
+          fastlane cert --development false --api_key_path /tmp/api_key.json
+
+          # Get/create App Store Distribution profiles (includes App Groups capability)
+          fastlane sigh \
+            --app_identifier "jp.kotoclip.app" \
+            --api_key_path /tmp/api_key.json \
+            --force
+          fastlane sigh \
+            --app_identifier "jp.kotoclip.app.share" \
+            --api_key_path /tmp/api_key.json \
+            --force
+
       - name: Archive
         env:
           ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
