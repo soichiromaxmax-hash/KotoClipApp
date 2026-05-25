@@ -852,22 +852,28 @@ for path, version in [
     print(f'patched {path} swift={version} changed={t!=o}')
 PYEOF
 
-# ── 6b. Force Apple Distribution signing in project-level Release config ───────
+# ── 6b. Remove CODE_SIGN_IDENTITY override from project-level Release config ───
+# Leaving this line (any value) conflicts with CODE_SIGN_STYLE=Automatic.
+# Automatic signing chooses Apple Distribution for archive builds on its own.
 python3 << 'PYEOF'
+import re
 from pathlib import Path
 
 path = Path('ios/KotoClip.xcodeproj/project.pbxproj')
 if path.exists():
     t = path.read_text()
-    patched = t.replace(
-        '"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";\n\t\t\t\tCOPY_PHASE_STRIP = YES;',
-        '"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "Apple Distribution";\n\t\t\t\tCOPY_PHASE_STRIP = YES;'
+    # Remove the CODE_SIGN_IDENTITY line that appears just before COPY_PHASE_STRIP
+    # (that section is the project-level Release configuration)
+    patched = re.sub(
+        r'\t\t\t\t"CODE_SIGN_IDENTITY\[sdk=iphoneos\*\]" = "[^"]*";\n(?=\t\t\t\tCOPY_PHASE_STRIP)',
+        '',
+        t
     )
     if patched != t:
         path.write_text(patched)
-        print('[signing] Patched CODE_SIGN_IDENTITY iPhone Developer -> Apple Distribution')
+        print('[signing] Removed CODE_SIGN_IDENTITY override from project-level Release config')
     else:
-        print('[signing] Already Apple Distribution or pattern not found (no change needed)')
+        print('[signing] CODE_SIGN_IDENTITY override not found (already clean)')
 else:
     print('[signing] pbxproj not found, skipping')
 PYEOF
