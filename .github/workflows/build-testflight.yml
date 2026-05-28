@@ -138,21 +138,10 @@ jobs:
             --filename "share.mobileprovision" \
             --force
 
-          # Install profiles and extract UUIDs
-          for name in main share; do
-            prof="$RUNNER_TEMP/profiles/${name}.mobileprovision"
-            security cms -D -i "$prof" > /tmp/prof.plist
-            UUID=$(/usr/libexec/PlistBuddy -c "Print UUID" /tmp/prof.plist)
-            BID=$(/usr/libexec/PlistBuddy -c "Print :Entitlements:application-identifier" /tmp/prof.plist 2>/dev/null | sed 's/^[^.]*\.//')
-            GROUPS=$(/usr/libexec/PlistBuddy -c "Print :Entitlements:com.apple.security.application-groups" /tmp/prof.plist 2>/dev/null || echo "(none)")
-            cp "$prof" ~/Library/MobileDevice/Provisioning\ Profiles/"${UUID}.mobileprovision"
-            echo "Installed profile: bundle=$BID uuid=$UUID app-groups=$GROUPS"
-            if [ "$name" = "main" ]; then
-              echo "MAIN_PROFILE_UUID=$UUID" >> "$GITHUB_ENV"
-            else
-              echo "SHARE_PROFILE_UUID=$UUID" >> "$GITHUB_ENV"
-            fi
-          done
+          # sigh (skip_install: false by default) already installs profiles to
+          # ~/Library/MobileDevice/Provisioning Profiles/ — no manual copy needed.
+          echo "Installed profiles:"
+          ls ~/Library/MobileDevice/Provisioning\ Profiles/ 2>/dev/null | tail -5 || true
 
       - name: Patch pbxproj signing for Distribution
         run: |
@@ -199,8 +188,7 @@ jobs:
             -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
             CODE_SIGN_STYLE=Manual \
             CODE_SIGN_IDENTITY="Apple Distribution" \
-            DEVELOPMENT_TEAM=9U2YJ4XL4K \
-            PROVISIONING_PROFILE="$MAIN_PROFILE_UUID"
+            DEVELOPMENT_TEAM=9U2YJ4XL4K
 
       - name: Export IPA
         env:
