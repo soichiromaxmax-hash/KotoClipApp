@@ -28,6 +28,7 @@ jobs:
             fi
           done
           xcodebuild -version
+          sudo xcodebuild -runFirstLaunch
 
       - uses: actions/setup-node@v4
         with:
