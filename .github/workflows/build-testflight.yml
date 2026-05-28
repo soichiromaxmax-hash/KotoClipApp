@@ -121,6 +121,18 @@ jobs:
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
           mkdir -p "$RUNNER_TEMP/profiles"
 
+          # Ensure App Groups capability is enabled on both App IDs
+          for BID in "jp.kotoclip.app" "jp.kotoclip.app.share"; do
+            fastlane produce enable_services \
+              --app_identifier "$BID" \
+              --api_key_path /tmp/api_key.json \
+              --app-group 2>&1 | tail -5 || true
+            fastlane produce associate_group \
+              --app_identifier "$BID" \
+              --api_key_path /tmp/api_key.json \
+              -g "group.jp.kotoclip.app" 2>&1 | tail -5 || true
+          done
+
           # Create/download App Store Distribution profiles for both targets
           fastlane sigh \
             --app_identifier "jp.kotoclip.app" \
