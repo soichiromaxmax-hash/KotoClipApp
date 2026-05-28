@@ -134,29 +134,6 @@ jobs:
               -g "group.jp.kotoclip.app" || echo "WARNING: associate_group exited non-zero for $BID (may already be associated)"
           done
 
-      - name: Patch pbxproj signing for Distribution
-        run: |
-          python3 - <<'PYEOF'
-          import pathlib
-          pbxproj = pathlib.Path('ios/KotoClip.xcodeproj/project.pbxproj')
-          content = pbxproj.read_text()
-
-          # CODE_SIGN_IDENTITY: "iPhone Developer" -> "Apple Distribution"
-          c1 = content.count('CODE_SIGN_IDENTITY = "iPhone Developer";')
-          content = content.replace('CODE_SIGN_IDENTITY = "iPhone Developer";', 'CODE_SIGN_IDENTITY = "Apple Distribution";')
-
-          # Any empty identity -> Apple Distribution
-          c2 = content.count('CODE_SIGN_IDENTITY = "";')
-          content = content.replace('CODE_SIGN_IDENTITY = "";', 'CODE_SIGN_IDENTITY = "Apple Distribution";')
-
-          # Keep CODE_SIGN_STYLE = Automatic so xcodebuild manages profiles automatically.
-          # Do NOT patch to Manual — Automatic + -allowProvisioningUpdates lets Xcode create
-          # profiles with the correct capabilities (incl. App Groups) from the portal.
-
-          pbxproj.write_text(content)
-          print(f"iPhone Developer->AppleDistribution: {c1}, empty->AppleDistribution: {c2}")
-          PYEOF
-
       - name: Archive
         env:
           ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
@@ -173,7 +150,6 @@ jobs:
             -authenticationKeyID "$ASC_KEY_ID" \
             -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
             CODE_SIGN_STYLE=Automatic \
-            CODE_SIGN_IDENTITY="Apple Distribution" \
             DEVELOPMENT_TEAM=9U2YJ4XL4K
 
       - name: Export IPA
