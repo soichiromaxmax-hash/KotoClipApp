@@ -113,26 +113,83 @@ jobs:
             rm /tmp/dist_new.p12
           fi
 
-      - name: Ensure App Groups capability in portal
+      - name: Download provisioning profiles
         env:
           ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
         run: |
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          mkdir -p "$RUNNER_TEMP/profiles"
 
-          # Ensure App Groups is enabled on both App IDs (idempotent)
+          # Ensure App Groups is enabled on both App IDs (idempotent — show output)
           for BID in "jp.kotoclip.app" "jp.kotoclip.app.share"; do
-            echo "--- enable_services for $BID ---"
+            echo "=== enable_services for $BID ==="
             fastlane produce enable_services \
               --app_identifier "$BID" \
               --api_key_path /tmp/api_key.json \
-              --app-group || echo "WARNING: enable_services exited non-zero for $BID (may already be enabled)"
-            echo "--- associate_group for $BID ---"
+              --app-group || true
+            echo "=== associate_group for $BID ==="
             fastlane produce associate_group \
               --app_identifier "$BID" \
               --api_key_path /tmp/api_key.json \
-              -g "group.jp.kotoclip.app" || echo "WARNING: associate_group exited non-zero for $BID (may already be associated)"
+              -g "group.jp.kotoclip.app" || true
           done
+
+          # Create/download App Store Distribution profiles (--force regenerates from portal)
+          fastlane sigh \
+            --app_identifier "jp.kotoclip.app" \
+            --development false \
+            --api_key_path /tmp/api_key.json \
+            --output_path "$RUNNER_TEMP/profiles" \
+            --filename "main.mobileprovision" \
+            --force
+
+          fastlane sigh \
+            --app_identifier "jp.kotoclip.app.share" \
+            --development false \
+            --api_key_path /tmp/api_key.json \
+            --output_path "$RUNNER_TEMP/profiles" \
+            --filename "share.mobileprovision" \
+            --force
+
+          # Verify App Groups is present in both profiles (fail early if missing)
+          python3 - <<'PYEOF'
+          import subprocess, plistlib, sys, os
+          rt = os.environ['RUNNER_TEMP']
+          ok = True
+          for name, path in [('main', rt+'/profiles/main.mobileprovision'),
+                              ('share', rt+'/profiles/share.mobileprovision')]:
+              r = subprocess.run(['openssl','smime','-inform','DER','-verify','-noverify','-in',path],
+                                 capture_output=True)
+              plist = plistlib.loads(r.stdout)
+              ents  = plist.get('Entitlements', {})
+              groups = ents.get('com.apple.security.application-groups')
+              uuid   = plist.get('UUID','?')
+              print(f"[{name}] UUID={uuid}")
+              print(f"[{name}] AppID={ents.get('application-identifier','?')}")
+              print(f"[{name}] AppGroups={groups or 'NOT PRESENT'}")
+              if not groups:
+                  print(f"ERROR: App Groups missing from {name} profile!", file=sys.stderr)
+                  ok = False
+          sys.exit(0 if ok else 1)
+          PYEOF
+
+          echo "=== Installed profiles ==="
+          ls ~/Library/MobileDevice/Provisioning\ Profiles/ 2>/dev/null || true
+
+      - name: Patch pbxproj for Manual signing
+        run: |
+          python3 - <<'PYEOF'
+          import pathlib
+          pbxproj = pathlib.Path('ios/KotoClip.xcodeproj/project.pbxproj')
+          content = pbxproj.read_text()
+          c1 = content.count('ProvisioningStyle = Automatic;')
+          content = content.replace('ProvisioningStyle = Automatic;', 'ProvisioningStyle = Manual;')
+          c2 = content.count('CODE_SIGN_STYLE = Automatic;')
+          content = content.replace('CODE_SIGN_STYLE = Automatic;', 'CODE_SIGN_STYLE = Manual;')
+          pbxproj.write_text(content)
+          print(f"ProvisioningStyle patched: {c1}, CODE_SIGN_STYLE patched: {c2}")
+          PYEOF
 
       - name: Archive
         env:
@@ -149,7 +206,8 @@ jobs:
             -authenticationKeyPath "$RUNNER_TEMP/private_keys/AuthKey_${ASC_KEY_ID}.p8" \
             -authenticationKeyID "$ASC_KEY_ID" \
             -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
-            CODE_SIGN_STYLE=Automatic \
+            CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_IDENTITY="Apple Distribution" \
             DEVELOPMENT_TEAM=9U2YJ4XL4K
 
       - name: Export IPA
