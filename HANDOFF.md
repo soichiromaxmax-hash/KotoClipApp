@@ -133,15 +133,98 @@ GitHub上の "Run workflow" ボタンを押すだけで以下が動く。
 
 ---
 
-## 重要なファイル一覧
+## プロジェクト全体のファイル構成
 
-| ファイル | 役割 |
-|---|---|
-| `.github/workflows/build-testflight.yml` | ビルド全体の定義。最もよく触るファイル |
-| `ci_scripts/ci_post_clone.sh` | Swift 6バグパッチ・pod install・pbxproj修正。触るな |
-| `app.json` | `buildNumber` をここで管理（TestFlight再送時は +1 必須） |
-| `ios/KotoClip.xcodeproj/project.pbxproj` | Xcodeプロジェクト設定。ビルド時に自動生成・手動では触らない |
-| `plugins/withShareExtension.js` | Share ExtensionをXcodeプロジェクトに組み込むExpoプラグイン |
+```
+KotoClipApp/
+│
+├── .github/workflows/
+│   └── build-testflight.yml    ★ GitHub Actions ビルド定義。ここを読めば何が起きているか分かる
+│
+├── ci_scripts/
+│   └── ci_post_clone.sh        ★ Swift 6バグパッチ・pod install・pbxproj修正。触るな
+│
+├── app.json                    ★ buildNumber はここ（TestFlight再送のたびに +1 必須）
+│
+├── app/                        画面ファイル（expo-router / ファイルがURLになる）
+│   ├── _layout.tsx             ルート: 認証ゲート・フォント読込・Renderウォームアップ
+│   ├── flashcard.tsx           フラッシュカード画面（10枚バッチ復習）
+│   ├── how-to.tsx              使い方説明
+│   ├── auth/
+│   │   └── login.tsx           ログイン・新規登録画面
+│   ├── word/
+│   │   └── [id].tsx            単語詳細・AI再翻訳・削除
+│   └── (tabs)/                 タブバーの中の画面
+│       ├── _layout.tsx         タブバー定義（アイコン・ラベル）
+│       ├── index.tsx           ホーム（統計・CTAカード）
+│       ├── study.tsx           クイズ練習（4択のみ）
+│       ├── add.tsx             単語追加タブ
+│       ├── words.tsx           単語一覧（フィルター・ソート・お気に入り）
+│       └── settings.tsx        設定（通知・ログアウト）
+│
+├── lib/
+│   ├── api.ts                  ★ 全API呼び出しはここ経由（認証・リフレッシュ自動処理）
+│   └── notifications.ts        通知スケジュール管理
+│
+├── context/
+│   └── auth.tsx                認証コンテキスト（useAuth フック）
+│
+├── components/
+│   ├── KotoBird.tsx            黄色い鳥キャラ（空状態に使う。絵文字で代替しない）
+│   ├── Onboarding.tsx          ★ 触るな（確定版）
+│   └── SplashAnimation.tsx     スプラッシュアニメーション
+│
+├── modules/
+│   └── shared-storage/         自作ネイティブモジュール
+│       └── ios/SharedStorageModule.swift
+│                               App GroupのUserDefaultsにアクセスする
+│                               （メインアプリ↔Share Extension のトークン共有に使う）
+│
+├── targets/
+│   └── share-extension/
+│       └── ShareViewController.swift
+│                               Share Extension の Swift 実装本体
+│                               Safari等の「共有」ボタンから起動する
+│
+├── plugins/
+│   ├── withShareExtension.js   Share ExtensionをXcodeプロジェクトに組み込む
+│   └── withoutPushEntitlement.js  不要なプッシュ権限を削除
+│
+├── ios/                        expo prebuild + pod install で自動生成される
+│   ├── KotoClip.xcodeproj/
+│   │   └── project.pbxproj    ★ Xcodeプロジェクト設定。手動で触らない
+│   ├── KotoClip/
+│   │   └── KotoClip.entitlements  App Group設定（group.jp.kotoclip.app）
+│   ├── ShareExtension/
+│   │   └── ShareExtension.entitlements  Share Extension の App Group設定
+│   ├── Podfile                 CocoaPods設定（ci_post_clone.sh がパッチを当てる）
+│   └── Pods/                  pod install で生成（gitignore対象）
+│
+├── ios-stubs/
+│   └── AppIntentsSSUTraining.framework/
+│                               ★ 自作スタブ。ShareExtensionのリンクエラー回避用
+│                               ci_post_clone.sh が自動生成する
+│
+├── codemagic.yaml              旧CI設定（Codemagic用）。現在は使っていない
+│                               Swift 6パッチの参考資料としては有用
+│
+├── HANDOFF.md                  このファイル（TestFlight配信の引き継ぎ）
+└── HANDOVER.md                 アプリ全体の設計・API・デザインルールの引き継ぎ
+```
+
+### 特に重要なファイル（迷ったらここを見る）
+
+| ファイル | 何をするか | 触っていいか |
+|---|---|---|
+| `.github/workflows/build-testflight.yml` | CI全体の定義 | **触る（ビルドが壊れたとき）** |
+| `ci_scripts/ci_post_clone.sh` | Swift 6パッチ + pod install | **触るな** |
+| `app.json` | buildNumber・Bundle ID | **触る（番号更新のみ）** |
+| `lib/api.ts` | 全API通信 | 触ってよい |
+| `targets/share-extension/ShareViewController.swift` | Share Extension本体 | 触ってよい |
+| `modules/shared-storage/ios/SharedStorageModule.swift` | トークン橋渡し | 慎重に |
+| `plugins/withShareExtension.js` | Share Extension Xcodeへの組み込み | 慎重に |
+| `components/Onboarding.tsx` | オンボーディング | **絶対に触るな** |
+| `ios/KotoClip.xcodeproj/project.pbxproj` | Xcodeプロジェクト設定 | **触るな（自動生成）** |
 
 ---
 
