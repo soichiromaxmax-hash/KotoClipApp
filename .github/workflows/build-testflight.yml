@@ -113,6 +113,18 @@ jobs:
             rm /tmp/dist_new.p12
           fi
 
+      - name: Patch pbxproj signing to Manual
+        run: |
+          python3 - <<'PYEOF'
+          import pathlib
+          pbxproj = pathlib.Path('ios/KotoClip.xcodeproj/project.pbxproj')
+          content = pbxproj.read_text()
+          count = content.count('CODE_SIGN_STYLE = Automatic;')
+          patched = content.replace('CODE_SIGN_STYLE = Automatic;', 'CODE_SIGN_STYLE = Manual;')
+          pbxproj.write_text(patched)
+          print(f"Patched {count} CODE_SIGN_STYLE occurrences: Automatic -> Manual")
+          PYEOF
+
       - name: Archive
         env:
           ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
@@ -128,7 +140,7 @@ jobs:
             -authenticationKeyPath "$RUNNER_TEMP/private_keys/AuthKey_${ASC_KEY_ID}.p8" \
             -authenticationKeyID "$ASC_KEY_ID" \
             -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
-            CODE_SIGN_STYLE=Automatic \
+            CODE_SIGN_STYLE=Manual \
             CODE_SIGN_IDENTITY="Apple Distribution" \
             DEVELOPMENT_TEAM=9U2YJ4XL4K
 
