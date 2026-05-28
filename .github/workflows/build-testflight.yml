@@ -113,16 +113,21 @@ jobs:
             rm /tmp/dist_new.p12
           fi
 
-      - name: Patch pbxproj signing to Manual
+      - name: Patch pbxproj signing for Distribution
         run: |
           python3 - <<'PYEOF'
           import pathlib
           pbxproj = pathlib.Path('ios/KotoClip.xcodeproj/project.pbxproj')
           content = pbxproj.read_text()
-          count = content.count('CODE_SIGN_STYLE = Automatic;')
-          patched = content.replace('CODE_SIGN_STYLE = Automatic;', 'CODE_SIGN_STYLE = Manual;')
-          pbxproj.write_text(patched)
-          print(f"Patched {count} CODE_SIGN_STYLE occurrences: Automatic -> Manual")
+          # Keep CODE_SIGN_STYLE = Automatic so -allowProvisioningUpdates can create profiles.
+          # Just clear the "iPhone Developer" identity override that forces Development signing.
+          count = content.count('CODE_SIGN_IDENTITY = "iPhone Developer";')
+          content = content.replace(
+              'CODE_SIGN_IDENTITY = "iPhone Developer";',
+              'CODE_SIGN_IDENTITY = "";'
+          )
+          pbxproj.write_text(content)
+          print(f"Cleared {count} 'iPhone Developer' identity overrides; kept CODE_SIGN_STYLE=Automatic")
           PYEOF
 
       - name: Archive
@@ -140,8 +145,7 @@ jobs:
             -authenticationKeyPath "$RUNNER_TEMP/private_keys/AuthKey_${ASC_KEY_ID}.p8" \
             -authenticationKeyID "$ASC_KEY_ID" \
             -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
-            CODE_SIGN_STYLE=Manual \
-            CODE_SIGN_IDENTITY="Apple Distribution" \
+            CODE_SIGN_STYLE=Automatic \
             DEVELOPMENT_TEAM=9U2YJ4XL4K
 
       - name: Export IPA
