@@ -74,7 +74,13 @@ export function setAuthExpiredHandler(handler: AuthExpiredHandler) {
   onAuthExpired = handler;
 }
 
-async function _fetch(path: string, options: RequestInit = {}): Promise<any> {
+function fetchWithTimeout(url: string, opts: RequestInit, ms: number): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ms);
+  return fetch(url, { ...opts, signal: controller.signal }).finally(() => clearTimeout(timer));
+}
+
+async function _fetch(path: string, options: RequestInit = {}, timeoutMs = 30000): Promise<any> {
   const token = await getToken();
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -82,7 +88,7 @@ async function _fetch(path: string, options: RequestInit = {}): Promise<any> {
   };
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
-  let res = await fetch(`${BASE}${path}`, { ...options, headers });
+  let res = await fetchWithTimeout(`${BASE}${path}`, { ...options, headers }, timeoutMs);
 
   if (res.status === 401) {
     const next = await refreshAccessToken();
@@ -92,7 +98,7 @@ async function _fetch(path: string, options: RequestInit = {}): Promise<any> {
       throw new Error('AUTH_REQUIRED');
     }
     headers['Authorization'] = `Bearer ${next}`;
-    res = await fetch(`${BASE}${path}`, { ...options, headers });
+    res = await fetchWithTimeout(`${BASE}${path}`, { ...options, headers }, timeoutMs);
     if (res.status === 401) {
       await clearTokens();
       onAuthExpired?.();

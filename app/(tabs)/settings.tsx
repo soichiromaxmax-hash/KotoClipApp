@@ -96,6 +96,16 @@ export default function SettingsScreen() {
     if (next === 1) {
       const perm = await requestPermission();
       setNotifPerm(perm);
+      if (perm === 'denied') {
+        Alert.alert(
+          '通知の許可が必要です',
+          'iOSの設定でKotoClipの通知が無効になっています。\n\n設定アプリ → KotoClip → 通知 → 「通知を許可」をオンにしてください。',
+          [
+            { text: 'キャンセル', style: 'cancel' },
+            { text: '設定を開く', onPress: () => Linking.openURL('app-settings:') },
+          ]
+        );
+      }
     }
 
     if (key === 'notification_daily_enabled') {
@@ -118,7 +128,16 @@ export default function SettingsScreen() {
   async function handleRequestPermission() {
     const perm = await requestPermission();
     setNotifPerm(perm);
-    if (perm !== 'granted') {
+    if (perm === 'denied') {
+      Alert.alert(
+        '通知の許可が必要です',
+        'iOSの設定でKotoClipの通知が無効になっています。\n\n設定アプリ → KotoClip → 通知 → 「通知を許可」をオンにしてください。',
+        [
+          { text: 'キャンセル', style: 'cancel' },
+          { text: '設定を開く', onPress: () => Linking.openURL('app-settings:') },
+        ]
+      );
+    } else if (perm !== 'granted') {
       Linking.openURL('app-settings:');
     }
   }
