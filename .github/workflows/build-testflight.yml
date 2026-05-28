@@ -174,27 +174,56 @@ jobs:
           sys.exit(0 if ok else 1)
           PYEOF
 
+          # Export profile UUIDs to GITHUB_ENV for subsequent steps
+          python3 - <<'PYEOF2'
+          import subprocess, plistlib, os
+          rt = os.environ['RUNNER_TEMP']
+          for env_name, path in [('MAIN_PROFILE_UUID', rt+'/profiles/main.mobileprovision'),
+                                  ('SHARE_PROFILE_UUID', rt+'/profiles/share.mobileprovision')]:
+              r = subprocess.run(['openssl','smime','-inform','DER','-verify','-noverify','-in',path],
+                                 capture_output=True)
+              plist = plistlib.loads(r.stdout)
+              uuid = plist['UUID']
+              with open(os.environ['GITHUB_ENV'], 'a') as f:
+                  f.write(f"{env_name}={uuid}\n")
+              print(f"{env_name}={uuid}")
+          PYEOF2
+
           echo "=== Installed profiles ==="
           ls ~/Library/MobileDevice/Provisioning\ Profiles/ 2>/dev/null || true
 
       - name: Patch pbxproj for Manual signing
         run: |
           python3 - <<'PYEOF'
-          import pathlib
-          pbxproj = pathlib.Path('ios/KotoClip.xcodeproj/project.pbxproj')
-          content = pbxproj.read_text()
+          import pathlib, os, re
+          pbxproj_path = pathlib.Path('ios/KotoClip.xcodeproj/project.pbxproj')
+          content = pbxproj_path.read_text()
+          main_uuid = os.environ['MAIN_PROFILE_UUID']
+          share_uuid = os.environ['SHARE_PROFILE_UUID']
           c1 = content.count('ProvisioningStyle = Automatic;')
           content = content.replace('ProvisioningStyle = Automatic;', 'ProvisioningStyle = Manual;')
           c2 = content.count('CODE_SIGN_STYLE = Automatic;')
           content = content.replace('CODE_SIGN_STYLE = Automatic;', 'CODE_SIGN_STYLE = Manual;')
-          pbxproj.write_text(content)
           print(f"ProvisioningStyle patched: {c1}, CODE_SIGN_STYLE patched: {c2}")
+          for bid, uuid in [('jp.kotoclip.app', main_uuid), ('jp.kotoclip.app.share', share_uuid)]:
+              def make_replacer(u):
+                  def replacer(m):
+                      block = m.group(0)
+                      if 'PROVISIONING_PROFILE_SPECIFIER' in block:
+                          return re.sub(r'PROVISIONING_PROFILE_SPECIFIER = [^;]+;',
+                                        f'PROVISIONING_PROFILE_SPECIFIER = "{u}";', block)
+                      return block[:-1] + f'\t\t\t\tPROVISIONING_PROFILE_SPECIFIER = "{u}";\n\t\t\t' + '}'
+                  return replacer
+              pattern = (r'buildSettings = \{[^{}]*?PRODUCT_BUNDLE_IDENTIFIER = "?'
+                         + re.escape(bid) + r'"?;[^{}]*?\}')
+              new_content = re.sub(pattern, make_replacer(uuid), content, flags=re.DOTALL)
+              count = new_content.count(f'PROVISIONING_PROFILE_SPECIFIER = "{uuid}"')
+              print(f"{bid}: {count} profile specifier(s) set")
+              content = new_content
+          pbxproj_path.write_text(content)
           PYEOF
 
       - name: Archive
-        env:
-          ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
-          ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
         run: |
           xcodebuild archive \
             -workspace ios/KotoClip.xcworkspace \
@@ -202,22 +231,17 @@ jobs:
             -configuration Release \
             -destination 'generic/platform=iOS' \
             -archivePath "$RUNNER_TEMP/KotoClip.xcarchive" \
-            -allowProvisioningUpdates \
-            -authenticationKeyPath "$RUNNER_TEMP/private_keys/AuthKey_${ASC_KEY_ID}.p8" \
-            -authenticationKeyID "$ASC_KEY_ID" \
-            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
             CODE_SIGN_STYLE=Manual \
             CODE_SIGN_IDENTITY="Apple Distribution" \
             DEVELOPMENT_TEAM=9U2YJ4XL4K
 
       - name: Export IPA
-        env:
-          ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
-          ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
         run: |
           python3 - <<'PYEOF'
           import os, pathlib
-          plist = """<?xml version="1.0" encoding="UTF-8"?>
+          main_uuid = os.environ['MAIN_PROFILE_UUID']
+          share_uuid = os.environ['SHARE_PROFILE_UUID']
+          plist = f"""<?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0">
           <dict>
@@ -228,7 +252,14 @@ jobs:
             <key>uploadSymbols</key>
             <true/>
             <key>signingStyle</key>
-            <string>automatic</string>
+            <string>manual</string>
+            <key>provisioningProfiles</key>
+            <dict>
+              <key>jp.kotoclip.app</key>
+              <string>{main_uuid}</string>
+              <key>jp.kotoclip.app.share</key>
+              <string>{share_uuid}</string>
+            </dict>
           </dict>
           </plist>
           """
@@ -239,11 +270,7 @@ jobs:
           xcodebuild -exportArchive \
             -archivePath "$RUNNER_TEMP/KotoClip.xcarchive" \
             -exportPath "$RUNNER_TEMP/export" \
-            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
-            -allowProvisioningUpdates \
-            -authenticationKeyPath "$RUNNER_TEMP/private_keys/AuthKey_${ASC_KEY_ID}.p8" \
-            -authenticationKeyID "$ASC_KEY_ID" \
-            -authenticationKeyIssuerID "$ASC_ISSUER_ID"
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist"
 
       - name: Upload to TestFlight
         env:
