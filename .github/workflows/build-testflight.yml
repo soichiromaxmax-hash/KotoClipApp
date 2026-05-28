@@ -116,18 +116,29 @@ jobs:
       - name: Patch pbxproj signing for Distribution
         run: |
           python3 - <<'PYEOF'
-          import pathlib
+          import pathlib, re
           pbxproj = pathlib.Path('ios/KotoClip.xcodeproj/project.pbxproj')
           content = pbxproj.read_text()
-          # Keep CODE_SIGN_STYLE = Automatic so -allowProvisioningUpdates can create profiles.
-          # Just clear the "iPhone Developer" identity override that forces Development signing.
-          count = content.count('CODE_SIGN_IDENTITY = "iPhone Developer";')
-          content = content.replace(
-              'CODE_SIGN_IDENTITY = "iPhone Developer";',
-              'CODE_SIGN_IDENTITY = "";'
-          )
+
+          # 1. TargetAttributes: ProvisioningStyle = Automatic -> Manual
+          #    This is the key override that kept Xcode in Development mode.
+          c1 = content.count('ProvisioningStyle = Automatic;')
+          content = content.replace('ProvisioningStyle = Automatic;', 'ProvisioningStyle = Manual;')
+
+          # 2. Build settings: CODE_SIGN_STYLE = Automatic -> Manual
+          c2 = content.count('CODE_SIGN_STYLE = Automatic;')
+          content = content.replace('CODE_SIGN_STYLE = Automatic;', 'CODE_SIGN_STYLE = Manual;')
+
+          # 3. CODE_SIGN_IDENTITY: "iPhone Developer" -> "Apple Distribution"
+          c3 = content.count('CODE_SIGN_IDENTITY = "iPhone Developer";')
+          content = content.replace('CODE_SIGN_IDENTITY = "iPhone Developer";', 'CODE_SIGN_IDENTITY = "Apple Distribution";')
+
+          # 4. Any empty identity -> Apple Distribution
+          c4 = content.count('CODE_SIGN_IDENTITY = "";')
+          content = content.replace('CODE_SIGN_IDENTITY = "";', 'CODE_SIGN_IDENTITY = "Apple Distribution";')
+
           pbxproj.write_text(content)
-          print(f"Cleared {count} 'iPhone Developer' identity overrides; kept CODE_SIGN_STYLE=Automatic")
+          print(f"ProvisioningStyle patched: {c1}, CODE_SIGN_STYLE patched: {c2}, iPhone Developer->AppleDistribution: {c3}, empty->AppleDistribution: {c4}")
           PYEOF
 
       - name: Archive
@@ -145,7 +156,8 @@ jobs:
             -authenticationKeyPath "$RUNNER_TEMP/private_keys/AuthKey_${ASC_KEY_ID}.p8" \
             -authenticationKeyID "$ASC_KEY_ID" \
             -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
-            CODE_SIGN_STYLE=Automatic \
+            CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_IDENTITY="Apple Distribution" \
             DEVELOPMENT_TEAM=9U2YJ4XL4K
 
       - name: Export IPA
