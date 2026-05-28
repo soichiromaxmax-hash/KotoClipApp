@@ -28,7 +28,12 @@ jobs:
             fi
           done
           xcodebuild -version
-          sudo xcodebuild -runFirstLaunch
+
+      - name: Install iOS platform
+        run: |
+          echo "Installing iOS simulator platform (needed by ibtool for storyboard compilation)..."
+          xcodebuild -downloadPlatform iOS
+          echo "Done."
 
       - uses: actions/setup-node@v4
         with:
