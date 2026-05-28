@@ -664,6 +664,31 @@ if toolbar_item.exists():
         '        if instance[keyPath: storageKeyPath].needsFullRebuild {\n          instance.performRebuild()\n        } else {\n          instance.performUpdate()\n        }',
         '        let needsFullRebuild = instance[keyPath: storageKeyPath].needsFullRebuild\n        MainActor.assumeIsolated {\n          if needsFullRebuild {\n            instance.performRebuild()\n          } else {\n            instance.performUpdate()\n          }\n        }'
     )
+    # Wrap UIBarButtonItem.Badge (iOS 26 only) in compiler check
+    if 'UIBarButtonItem.Badge' in t:
+        lines = t.split('\n')
+        out = []
+        i = 0
+        while i < len(lines):
+            if ('if #available(iOS 26.0, *)' in lines[i]
+                    and (i == 0 or '#if compiler(>=6.2)' not in lines[i-1])):
+                depth, j = 0, i
+                while j < len(lines):
+                    depth += lines[j].count('{') - lines[j].count('}')
+                    if depth <= 0 and j > i:
+                        break
+                    j += 1
+                block = '\n'.join(lines[i:j+1])
+                if 'UIBarButtonItem.Badge' in block or 'item.badge' in block:
+                    ind = len(lines[i]) - len(lines[i].lstrip())
+                    out.append(' ' * ind + '#if compiler(>=6.2)')
+                    out.extend(lines[i:j+1])
+                    out.append(' ' * ind + '#endif')
+                    i = j + 1
+                    continue
+            out.append(lines[i])
+            i += 1
+        t = '\n'.join(out)
     if t != o: toolbar_item.write_text(t); patched += 1
 
 toolbar_mod = Path('node_modules/expo-router/ios/Toolbar/RouterToolbarModule.swift')
