@@ -113,6 +113,47 @@ jobs:
             rm /tmp/dist_new.p12
           fi
 
+      - name: Download provisioning profiles
+        env:
+          ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
+        run: |
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          mkdir -p "$RUNNER_TEMP/profiles"
+
+          # Create/download App Store Distribution profiles for both targets
+          fastlane sigh \
+            --app_identifier "jp.kotoclip.app" \
+            --development false \
+            --api_key_path /tmp/api_key.json \
+            --output_path "$RUNNER_TEMP/profiles" \
+            --filename "main.mobileprovision" \
+            --force
+
+          fastlane sigh \
+            --app_identifier "jp.kotoclip.app.share" \
+            --development false \
+            --api_key_path /tmp/api_key.json \
+            --output_path "$RUNNER_TEMP/profiles" \
+            --filename "share.mobileprovision" \
+            --force
+
+          # Install profiles and extract UUIDs
+          for name in main share; do
+            prof="$RUNNER_TEMP/profiles/${name}.mobileprovision"
+            security cms -D -i "$prof" > /tmp/prof.plist
+            UUID=$(/usr/libexec/PlistBuddy -c "Print UUID" /tmp/prof.plist)
+            BID=$(/usr/libexec/PlistBuddy -c "Print :Entitlements:application-identifier" /tmp/prof.plist 2>/dev/null | sed 's/^[^.]*\.//')
+            GROUPS=$(/usr/libexec/PlistBuddy -c "Print :Entitlements:com.apple.security.application-groups" /tmp/prof.plist 2>/dev/null || echo "(none)")
+            cp "$prof" ~/Library/MobileDevice/Provisioning\ Profiles/"${UUID}.mobileprovision"
+            echo "Installed profile: bundle=$BID uuid=$UUID app-groups=$GROUPS"
+            if [ "$name" = "main" ]; then
+              echo "MAIN_PROFILE_UUID=$UUID" >> "$GITHUB_ENV"
+            else
+              echo "SHARE_PROFILE_UUID=$UUID" >> "$GITHUB_ENV"
+            fi
+          done
+
       - name: Patch pbxproj signing for Distribution
         run: |
           python3 - <<'PYEOF'
@@ -158,7 +199,8 @@ jobs:
             -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
             CODE_SIGN_STYLE=Manual \
             CODE_SIGN_IDENTITY="Apple Distribution" \
-            DEVELOPMENT_TEAM=9U2YJ4XL4K
+            DEVELOPMENT_TEAM=9U2YJ4XL4K \
+            PROVISIONING_PROFILE="$MAIN_PROFILE_UUID"
 
       - name: Export IPA
         env:
