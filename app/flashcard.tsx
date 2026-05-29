@@ -179,6 +179,12 @@ export default function FlashcardScreen() {
     beginSession([...sessionWords.current].sort(() => Math.random() - 0.5));
   }
 
+  function loadNextBatch() {
+    setAllLoaded(false);
+    setDone(false);
+    load();
+  }
+
   async function onRate(rating: Rating) {
     const word = queue[idx];
     const elapsed = Math.max(1, Math.round(((Date.now() - startTime.current) / 1000 / 86400) * 10) / 10);
@@ -290,6 +296,9 @@ export default function FlashcardScreen() {
           </View>
           <TouchableOpacity style={s.primaryBtn} onPress={restartSession}>
             <Text style={s.primaryBtnText}>もう一度10枚</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={s.secondaryBtn} onPress={loadNextBatch}>
+            <Text style={s.secondaryBtnText}>違う10枚へ</Text>
           </TouchableOpacity>
           <TouchableOpacity style={s.ghostBtn} onPress={() => router.back()}>
             <Text style={s.ghostBtnText}>ホームへ</Text>
@@ -452,6 +461,15 @@ const s = StyleSheet.create({
   primaryBtnText: { color: '#0E1116', fontWeight: '700', fontSize: 16 },
   ghostBtn: { paddingVertical: 14, alignItems: 'center' },
   ghostBtnText: { color: '#6B7280', fontSize: 15 },
+  secondaryBtn: {
+    borderWidth: 1.5,
+    borderColor: '#2DD4BF',
+    borderRadius: 12,
+    paddingVertical: 15,
+    alignItems: 'center',
+    width: '100%',
+  },
+  secondaryBtnText: { color: '#2DD4BF', fontWeight: '700', fontSize: 16 },
 
   ratingWrap: { gap: 10 },
   ratingAgain: {
