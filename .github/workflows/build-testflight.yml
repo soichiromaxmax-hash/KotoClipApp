@@ -12,7 +12,7 @@ env:
 jobs:
   build:
     runs-on: macos-15
-    timeout-minutes: 150
+    timeout-minutes: 200
 
     steps:
       - uses: actions/checkout@v4
@@ -35,21 +35,33 @@ jobs:
           echo "=== Installed iOS runtimes ==="
           xcrun simctl list runtimes 2>/dev/null | grep -i ios || echo "(none found)"
 
+      - name: Cache iOS platform
+        uses: actions/cache@v4
+        id: ios-platform-cache
+        with:
+          path: |
+            /Library/Developer/CoreSimulator/Volumes
+            /Library/Developer/CoreSimulator/Profiles/Runtimes
+          key: ios-platform-xcode-16.3-macos15-v1
+
       - name: Install iOS platform
         run: |
-          echo "=== iPhoneOS platform SDK ==="
-          ls "$(xcode-select -p)/Platforms/iPhoneOS.platform/Developer/SDKs/" 2>/dev/null \
-            || echo "(SDK dir not found — platform needs download)"
-          echo "=== CoreSimulator services ==="
-          launchctl list 2>/dev/null | grep -i simul | head -5 || echo "(none)"
-
-          echo "Waking CoreSimulator service via simctl..."
-          xcrun simctl list > /dev/null 2>&1 || true
+          # キャッシュ復元後にサービスにランタイムを認識させる
+          xcrun simctl list runtimes > /dev/null 2>&1 || true
           sleep 3
 
-          echo "Downloading iOS platform (sudo)..."
-          sudo xcodebuild -downloadPlatform iOS 2>&1
-          echo "Done."
+          echo "=== iOS runtimes ==="
+          xcrun simctl list runtimes 2>/dev/null | grep -i ios || echo "(none found)"
+
+          if xcrun simctl list runtimes 2>/dev/null | grep -q "iOS 18.4"; then
+            echo "iOS 18.4 runtime already available — skipping download"
+          else
+            echo "Downloading iOS platform (初回のみ 60〜90 分かかります)..."
+            sudo xcodebuild -downloadPlatform iOS 2>&1
+          fi
+
+          echo "=== iOS runtimes after install ==="
+          xcrun simctl list runtimes 2>/dev/null | grep -i ios || echo "(none found)"
 
       - uses: actions/setup-node@v4
         with:
