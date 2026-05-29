@@ -20,20 +20,19 @@ jobs:
       - name: Select Xcode 16
         run: |
           ls /Applications/ | grep "^Xcode" | sort
-          for ver in 16.3 16.2 16.1 16.0; do
+          # 16.2 を優先: iOS 18.2 シミュレータが macos-15 に同梱済み
+          # 16.3 は入っているが iOS 18.4 シミュレータが同梱されておらず ibtool が失敗する
+          for ver in 16.2 16.3 16.1 16.0; do
             if [ -d "/Applications/Xcode_${ver}.app" ]; then
               sudo xcode-select -s "/Applications/Xcode_${ver}.app/Contents/Developer"
               echo "Selected Xcode ${ver}"
               break
             fi
           done
+          sudo xcodebuild -license accept 2>/dev/null || true
           xcodebuild -version
-
-      - name: Install iOS platform
-        run: |
-          echo "Installing iOS simulator platform (needed by ibtool for storyboard compilation)..."
-          xcodebuild -downloadPlatform iOS
-          echo "Done."
+          echo "=== Installed iOS runtimes ==="
+          xcrun simctl list runtimes 2>/dev/null | grep -i ios || echo "(none found)"
 
       - uses: actions/setup-node@v4
         with:
