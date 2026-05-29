@@ -20,9 +20,10 @@ jobs:
       - name: Select Xcode 16
         run: |
           ls /Applications/ | grep "^Xcode" | sort
-          # 16.2 を優先: iOS 18.2 シミュレータが macos-15 に同梱済み
-          # 16.3 は入っているが iOS 18.4 シミュレータが同梱されておらず ibtool が失敗する
-          for ver in 16.2 16.3 16.1 16.0; do
+          # 16.3 優先: 16.2 は iOS デバイスプラットフォームが完全未インストールで
+          # "iOS 18.2 is not installed" となり archive の宛先すら見つからない
+          # 16.3 は部分的にインストール済みで archive は開始できる
+          for ver in 16.3 16.2 16.1 16.0; do
             if [ -d "/Applications/Xcode_${ver}.app" ]; then
               sudo xcode-select -s "/Applications/Xcode_${ver}.app/Contents/Developer"
               echo "Selected Xcode ${ver}"
@@ -33,6 +34,22 @@ jobs:
           xcodebuild -version
           echo "=== Installed iOS runtimes ==="
           xcrun simctl list runtimes 2>/dev/null | grep -i ios || echo "(none found)"
+
+      - name: Install iOS platform
+        run: |
+          echo "=== iPhoneOS platform SDK ==="
+          ls "$(xcode-select -p)/Platforms/iPhoneOS.platform/Developer/SDKs/" 2>/dev/null \
+            || echo "(SDK dir not found — platform needs download)"
+          echo "=== CoreSimulator services ==="
+          launchctl list 2>/dev/null | grep -i simul | head -5 || echo "(none)"
+
+          echo "Waking CoreSimulator service via simctl..."
+          xcrun simctl list > /dev/null 2>&1 || true
+          sleep 3
+
+          echo "Downloading iOS platform (sudo)..."
+          sudo xcodebuild -downloadPlatform iOS 2>&1
+          echo "Done."
 
       - uses: actions/setup-node@v4
         with:
