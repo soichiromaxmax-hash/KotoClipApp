@@ -180,8 +180,8 @@ export const api = {
   getTodayEncounters: ()                  => _fetch('/wild/today'),
   getTimeline:       (id: number)         => _fetch(`/words/${id}/timeline`),
   getSettings:       ()                   => _fetch('/settings'),
-  lookup: (word: string, learningLang = 'en', nativeLang = 'ja') =>
-    _fetch(`/lookup?word=${encodeURIComponent(word)}&learning_lang=${learningLang}&native_lang=${nativeLang}`),
+  lookup: (word: string, targetLang = 'en', nativeLang = 'ja') =>
+    _fetch(`/lookup?word=${encodeURIComponent(word)}&target_lang=${targetLang}&native_lang=${nativeLang}`),
 
   addWord: (payload: object) =>
     _fetch('/words', { method: 'POST', body: JSON.stringify(payload) }),
@@ -195,8 +195,8 @@ export const api = {
   deleteWord: (id: number) =>
     _fetch(`/words/${id}`, { method: 'DELETE' }),
 
-  retranslate: (id: number, learningLang = 'en', nativeLang = 'ja') =>
-    _fetch(`/words/${id}/retranslate`, { method: 'POST', body: JSON.stringify({ learning_lang: learningLang, native_lang: nativeLang }) }),
+  retranslate: (id: number) =>
+    _fetch(`/words/${id}/retranslate`, { method: 'POST' }),
 
   postReview: (wordId: number, rating: 'good' | 'hard' | 'again', elapsedDays = 1) =>
     _fetch('/study/review', { method: 'POST', body: JSON.stringify({ word_id: wordId, rating, elapsed_days: elapsedDays }) }),

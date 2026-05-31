@@ -43,8 +43,8 @@ export default function AddWordScreen() {
       api.getSettings().catch(() => null),
     ]).then(([stats, settings]) => {
       if (stats?.total !== undefined) setWordCount(stats.total);
-      if (settings?.learning_language) setLearningLang(settings.learning_language);
-      if (settings?.native_language) setNativeLang(settings.native_language);
+      if (settings?.target_lang) setLearningLang(settings.target_lang);
+      if (settings?.native_lang) setNativeLang(settings.native_lang);
     });
   }, []);
 
@@ -91,6 +91,8 @@ export default function AddWordScreen() {
       meaning: meaning.trim(),
       context,
       source_type: 'manual',
+      target_lang: learningLang,
+      native_lang: nativeLang,
       ai_explanation: aiPanel
         ? [aiPanel.example_native, aiPanel.notes].filter(Boolean).join('\n')
         : '',

@@ -212,7 +212,7 @@ export default function SettingsScreen() {
             </View>
             <View style={s.langValueWrap}>
               <Text style={s.langValue}>
-                {LEARNING_LANGS.find(l => l.key === (settings?.learning_language ?? 'en'))?.label ?? '英語'}
+                {LEARNING_LANGS.find(l => l.key === (settings?.target_lang ?? 'en'))?.label ?? '英語'}
               </Text>
               <Text style={s.langChevron}>›</Text>
             </View>
@@ -230,7 +230,7 @@ export default function SettingsScreen() {
             </View>
             <View style={s.langValueWrap}>
               <Text style={s.langValue}>
-                {NATIVE_LANGS.find(l => l.key === (settings?.native_language ?? 'ja'))?.label ?? '日本語'}
+                {NATIVE_LANGS.find(l => l.key === (settings?.native_lang ?? 'ja'))?.label ?? '日本語'}
               </Text>
               <Text style={s.langChevron}>›</Text>
             </View>
@@ -336,7 +336,7 @@ export default function SettingsScreen() {
               <TouchableOpacity
                 key={lang.key}
                 style={[s.timeOption, active && s.timeOptionActive]}
-                onPress={() => { saveSetting('learning_language', lang.key); setShowLearningLangPicker(false); }}
+                onPress={() => { saveSetting('target_lang', lang.key); setShowLearningLangPicker(false); }}
               >
                 <Text style={[s.timeOptionText, active && s.timeOptionTextActive]}>{lang.label}</Text>
               </TouchableOpacity>
@@ -361,7 +361,7 @@ export default function SettingsScreen() {
               <TouchableOpacity
                 key={lang.key}
                 style={[s.timeOption, active && s.timeOptionActive]}
-                onPress={() => { saveSetting('native_language', lang.key); setShowNativeLangPicker(false); }}
+                onPress={() => { saveSetting('native_lang', lang.key); setShowNativeLangPicker(false); }}
               >
                 <Text style={[s.timeOptionText, active && s.timeOptionTextActive]}>{lang.label}</Text>
               </TouchableOpacity>
