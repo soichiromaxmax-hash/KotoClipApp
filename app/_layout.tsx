@@ -61,7 +61,7 @@ function RootLayoutNav() {
       </Stack>
       <StatusBar style="light" />
       <Onboarding
-        visible={showOnboarding}
+        visible={showOnboarding && !showSplash}
         onDone={() => setShowOnboarding(false)}
       />
       {showSplash && (

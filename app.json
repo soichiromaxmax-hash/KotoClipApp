@@ -54,7 +54,11 @@
           }
         }
       ],
-      "./plugins/withoutPushEntitlement"
+      "./plugins/withoutPushEntitlement",
+      "expo-font",
+      "expo-image",
+      "expo-sharing",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true

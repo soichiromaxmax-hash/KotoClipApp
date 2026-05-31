@@ -504,17 +504,13 @@ class ShareViewController: UIViewController {
         }
 
         let providers = item.attachments ?? []
-        let typeIds = ["public.plain-text", "public.text", "public.url"]
+        // public.url は除外: URL文字列そのものは単語として保存しない
+        let typeIds = ["public.plain-text", "public.text"]
 
         for typeId in typeIds {
             for provider in providers where provider.hasItemConformingToTypeIdentifier(typeId) {
                 provider.loadItem(forTypeIdentifier: typeId, options: nil) { [weak self] data, _ in
-                    let text: String
-                    if let url = data as? URL {
-                        text = url.absoluteString
-                    } else {
-                        text = (data as? String) ?? ""
-                    }
+                    let text = (data as? String) ?? ""
                     let clipped = extractBestClip(from: text)
                     guard !clipped.isEmpty else {
                         DispatchQueue.main.async { self?.cancel() }

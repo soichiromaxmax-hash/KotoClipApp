@@ -73,12 +73,21 @@ export default function WildScreen() {
   const [encounters, setEncounters] = useState<Encounter[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [netError, setNetError] = useState(false);
 
   async function load(isRefresh = false) {
     if (isRefresh) setRefreshing(true);
+    else setNetError(false);
     try {
       const data = await api.getTodayEncounters();
-      if (Array.isArray(data)) setEncounters(data);
+      if (Array.isArray(data)) {
+        setEncounters(data);
+        setNetError(false);
+      } else {
+        setNetError(true);
+      }
+    } catch {
+      setNetError(true);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -95,6 +104,15 @@ export default function WildScreen() {
   return (
     <SafeAreaView style={styles.root}>
       <Text style={styles.title}>今日の野生検出</Text>
+
+      {netError && !refreshing && (
+        <View style={styles.errorBox}>
+          <Text style={styles.errorText}>読み込みに失敗しました</Text>
+          <TouchableOpacity onPress={() => load()} activeOpacity={0.7}>
+            <Text style={styles.retryText}>再試行</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* サマリー */}
       {encounters.length > 0 && (
@@ -154,6 +172,9 @@ export default function WildScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#0E1116' },
   title: { color: '#F9FAFB', fontSize: 22, fontWeight: '700', marginHorizontal: 16, marginTop: 16, marginBottom: 14 },
+  errorBox: { marginHorizontal: 16, marginBottom: 12, backgroundColor: 'rgba(239,68,68,0.08)', borderRadius: 10, borderWidth: 1, borderColor: 'rgba(239,68,68,0.25)', padding: 14, alignItems: 'center', gap: 6 },
+  errorText: { color: '#EF4444', fontSize: 13 },
+  retryText: { color: '#2DD4BF', fontSize: 13, fontWeight: '600' },
 
   summary: {
     flexDirection: 'row',

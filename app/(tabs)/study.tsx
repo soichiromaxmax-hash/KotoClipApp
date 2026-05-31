@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   View,
   Text,
@@ -378,15 +379,38 @@ export default function StudyScreen() {
     try {
       const perm = await getPermissionStatus();
       if (perm !== 'granted') return;
-      const stats = await api.getStats();
+
+      const [stats, settings] = await Promise.all([
+        api.getStats(),
+        api.getSettings().catch(() => ({})),
+      ]);
+
+      const milestoneEnabled = settings?.notification_milestone_enabled !== 0 &&
+        settings?.notification_milestone_enabled !== '0';
+      const streakEnabled = settings?.notification_streak_enabled !== 0 &&
+        settings?.notification_streak_enabled !== '0';
+
       const mastered = stats.mastered ?? 0;
       const streak = stats.streak ?? 0;
       const milestones = [10, 25, 50, 100, 200, 500];
-      if (milestones.includes(mastered)) {
-        sendMilestoneNotification(mastered).catch(() => {});
+      const today = new Date().toISOString().slice(0, 10);
+
+      if (milestoneEnabled && milestones.includes(mastered)) {
+        const key = `koto_notif_milestone_${mastered}`;
+        const sent = await AsyncStorage.getItem(key).catch(() => null);
+        if (!sent) {
+          await sendMilestoneNotification(mastered).catch(() => {});
+          AsyncStorage.setItem(key, '1').catch(() => {});
+        }
       }
-      if (streak > 0 && streak % 7 === 0) {
-        sendStreakNotification(streak).catch(() => {});
+
+      if (streakEnabled && streak > 0 && streak % 7 === 0) {
+        const key = `koto_notif_streak_${streak}_${today}`;
+        const sent = await AsyncStorage.getItem(key).catch(() => null);
+        if (!sent) {
+          await sendStreakNotification(streak).catch(() => {});
+          AsyncStorage.setItem(key, '1').catch(() => {});
+        }
       }
     } catch {
       // 非クリティカル

@@ -48,6 +48,7 @@ export default function AddWordScreen() {
 
   async function autoTranslate() {
     if (!word.trim()) return;
+    setSavedWord(null);
     setLoading(true);
     setStatus({ type: 'info', msg: 'AI解説を取得中...' });
     setAiPanel(null);
@@ -78,6 +79,7 @@ export default function AddWordScreen() {
       setStatus({ type: 'error', msg: '単語と意味を入力してください' });
       return;
     }
+    setSavedWord(null);
     if (wordCount !== null && wordCount >= FREE_LIMIT) {
       setShowLimitModal(true);
       return;
@@ -166,7 +168,7 @@ export default function AddWordScreen() {
                 placeholder="例: perseverance"
                 placeholderTextColor="#4B5563"
                 value={word}
-                onChangeText={setWord}
+                onChangeText={(v) => { setWord(v); setSavedWord(null); }}
                 autoCapitalize="none"
                 autoCorrect={false}
                 onSubmitEditing={autoTranslate}

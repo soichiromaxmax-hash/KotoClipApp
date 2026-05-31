@@ -104,7 +104,7 @@ export function SharePrompt({ payload, onClose }: Props) {
           </TouchableOpacity>
 
           <TouchableOpacity onPress={handleDismiss} style={styles.laterBtn}>
-            <Text style={styles.laterBtnText}>あとで</Text>
+            <Text style={styles.laterBtnText}>今回は閉じる</Text>
           </TouchableOpacity>
         </ScrollView>
       </View>
