@@ -50,9 +50,26 @@ eas build --platform ios --profile production
 - プライバシーポリシーURL: https://kotoclip.onrender.com/privacy.html
 - カテゴリ: 教育 / 年齢区分: 4歳以上
 
-## 現在のフェーズ（2026-05-10）
-- Build #39 ソースコード修正完了。未コミット。
-- 次ステップ: git commit → push → EAS Build 実行 → TestFlight 確認 → App Store 審査
+## 現在のフェーズ（2026-05-31）
+
+| 項目 | 状態 |
+|---|---|
+| TestFlight 最新ビルド | Codemagic 製（eas update 非対応） |
+| OTA 更新（eas update） | **現在不可**（Codemagic ビルドはチャンネル不明） |
+| 6月1日以降 | EAS Build → TestFlight → 以後 eas update が使える |
+
+### 日常開発フロー（6月1日以降）
+
+```bash
+# JS/TSの変更（毎日の作業）← ビルド不要
+cd "C:/Users/SoichiroKamibeppu(MC/KotoClipApp"
+npx eas update --branch production --environment production --message "変更内容"
+# iPhoneのアプリを完全に閉じて再起動で反映（1〜2分）
+
+# Swift・ネイティブコードの変更
+npx eas build --platform ios --profile production --auto-submit
+# 30〜40分で TestFlight に自動送信
+```
 
 ## 完了済み ✅
 - [x] Apple Developer Program 登録（$99/年）
@@ -61,23 +78,49 @@ eas build --platform ios --profile production
 - [x] プライバシーポリシー公開
 - [x] アプリアイコン（1024×1024px）配置済み
 - [x] ITSAppUsesNonExemptEncryption: false 設定済み
-- [x] expo-notifications プラグイン設定済み（Build #38〜）
 - [x] 通知設定画面実装（毎日リマインダー・週次サマリー・マイルストーン・ストリーク）
 - [x] homeCache リセット（学習完了・認証期限切れ時）
 - [x] オンボーディング初回のみ表示（onboardingChecked ref）
+- [x] フラッシュカード終了後「違う10枚へ」ボタン追加
+- [x] 通知 trigger フォーマット修正（SchedulableTriggerInputTypes.CALENDAR）
 
 ## 未完了 ⏳（優先順）
-1. **git commit & push & EAS Build**: Build #39 をビルドして TestFlight に配信
+1. **6月1日に EAS Build 実行**: `eas build --platform ios --profile production --auto-submit`
 2. **Share Extension 動作確認**: App Group `group.jp.kotoclip.app` を Developer Portal で作成・紐付け → 再ビルド
 3. App Store Connect でメタデータ入力・審査提出
+4. 起動時アクセスエラー（Render スリープ）の対策
+5. iOS 通知許可ダイアログの初回表示確認
 
-## 将来実装予定（公開後）
-1. 100語上限 + 課金誘導UI
-2. AI解説月10回制限
-3. RevenueCat 導入（サブスク）
-4. 問題バリエーション複数化（意味→単語・穴埋め・例文選択）
-5. 多言語対応（`native_language` / `learning_language` 設計あり）
-6. Android 対応（adaptiveIcon 設定済み・Share Extension は別途実装が必要）
+## リリース前（必須）
+| 項目 | 内容 |
+|---|---|
+| 無料/有料区別 | free / premium フラグをサーバーで管理 |
+| 単語数制限 | 無料は100語まで、課金で解除 |
+| AI検索回数制限 | 無料は月10回まで |
+| RevenueCat 導入 | iOS サブスク管理（App Store 課金に必要） |
+| 学習言語設定 | 英語/スペイン語/中国語/日本語 |
+| 説明言語設定 | 日本語/英語/スペイン語/中国語 |
+| 言語別単語帳 | 学習言語ごとに単語帳・復習を分離 |
+| Google/Apple ログイン | 登録ハードル削減（Apple ログインは Google を入れる場合に必須） |
+
+## リリース後すぐ
+| 項目 | 内容 |
+|---|---|
+| UI 多言語化 | ボタン・画面文言を日英西中に翻訳 |
+| App Store 文言多言語化 | 英語/スペイン語/中国語のストア文言 |
+| 言語別 AI 品質改善 | スペイン語活用形・中国語ピンイン等 |
+
+## 中期（リリース後）
+| 項目 | 内容 |
+|---|---|
+| 写真から OCR 読み込み | スクショから単語抽出 |
+| 広告（無料ユーザー限定） | UX 確認しながら慎重に導入 |
+| オフライン対応 | 単語帳・復習をオフラインで表示 |
+| PC デスクトップアプリ | まずブラウザ拡張強化が先 |
+
+## リリース前の最小ゴール
+日本語 UI のまま、英語/スペイン語/中国語/日本語の単語を保存・復習でき、
+無料ユーザーは単語数とAI検索に制限があり、有料で解除できる。
 
 ## よくあるトラブル
 | 状況 | 対処 |

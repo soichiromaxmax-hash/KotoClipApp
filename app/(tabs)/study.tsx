@@ -258,14 +258,14 @@ export default function StudyScreen() {
     try {
       const words: Word[] = m === 'free'
         ? await api.getAllWords(10, true)
-        : await api.getDue(10);
+        : await api.getDue(20);
       if (!Array.isArray(words) || words.length === 0) {
         resetHomeCache();
         setQueue([]);
         setPhase('empty');
         return;
       }
-      const entries = shuffle(words).slice(0, 10).map((w) => ({
+      const entries = shuffle(words).slice(0, 20).map((w) => ({
         ...w,
         _q_type: m === 'free' ? pickFreeType([]) : undefined,
       }));

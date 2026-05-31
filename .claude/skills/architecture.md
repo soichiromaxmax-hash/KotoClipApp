@@ -55,7 +55,7 @@ resetHomeCache()    // 両方 null にリセット → 次回フォーカスでA
 - `context/auth.tsx`: 認証期限切れコールバック（`setAuthExpiredHandler`）
 - `context/auth.tsx`: logout 時
 
-## 通知ライブラリ（lib/notifications.ts）
+## 通知ライブラリ（lib/notifications.ts）— expo-notifications ~55.0.22
 
 ```ts
 requestPermission()                      // iOS権限リクエスト → status 返す
@@ -67,6 +67,16 @@ cancelWeeklySummary()
 sendMilestoneNotification(mastered)      // 即時通知（定着語数マイルストーン）
 sendStreakNotification(streak)           // 即時通知（連続日数7の倍数）
 syncNotifications(settings)             // settings オブジェクト全体を読んでまとめてon/off
+```
+
+**⚠️ trigger フォーマット（SDK 55 から `type` 必須）:**
+```ts
+// 正しい書き方
+trigger: {
+  type: Notifications.SchedulableTriggerInputTypes.CALENDAR,
+  hour, minute, repeats: true,
+}
+// `as any` で type を省略すると無音で失敗する（修正済み 2026-05-31）
 ```
 
 **isOn() 挙動**: `undefined/null` を `true`（ON）として扱う。

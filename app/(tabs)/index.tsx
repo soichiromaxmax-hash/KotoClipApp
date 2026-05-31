@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -45,6 +45,55 @@ function withTimeout<T>(promise: Promise<T>, fallback: T, ms = 35000): Promise<T
       });
   });
 }
+
+const LOADING_MSGS = [
+  '読み込み中...',
+  'サーバーを起動中...',
+  'もう少しお待ちください...',
+  '接続に時間がかかっています',
+];
+
+function LoadingGauge() {
+  const [progress, setProgress] = useState(0);
+  const [msgIdx, setMsgIdx] = useState(0);
+  const totalMs = 30000;
+
+  useEffect(() => {
+    const start = Date.now();
+    const interval = setInterval(() => {
+      const elapsed = Date.now() - start;
+      const pct = Math.min((elapsed / totalMs) * 100, 96);
+      setProgress(pct);
+      if (elapsed > 15000) setMsgIdx(3);
+      else if (elapsed > 8000) setMsgIdx(2);
+      else if (elapsed > 3000) setMsgIdx(1);
+    }, 300);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <View style={gaugeStyles.wrap}>
+      <ActivityIndicator color="#2DD4BF" size="large" />
+      <Text style={gaugeStyles.msg}>{LOADING_MSGS[msgIdx]}</Text>
+      <View style={gaugeStyles.track}>
+        <View style={[gaugeStyles.fill, { width: `${progress}%` as any }]} />
+      </View>
+    </View>
+  );
+}
+
+const gaugeStyles = StyleSheet.create({
+  wrap: { alignItems: 'center', marginTop: 80, paddingHorizontal: 40, gap: 16 },
+  msg: { color: '#8F99A8', fontSize: 13 },
+  track: {
+    width: '100%',
+    height: 4,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderRadius: 99,
+    overflow: 'hidden',
+  },
+  fill: { height: '100%', backgroundColor: '#2DD4BF', borderRadius: 99 },
+});
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -114,7 +163,7 @@ export default function HomeScreen() {
     <SafeAreaView style={s.root}>
       <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
         {loading ? (
-          <ActivityIndicator color="#2DD4BF" style={{ marginTop: 80 }} />
+          <LoadingGauge />
         ) : netError ? (
           <View style={s.emptyWrap}>
             <KotoBird size={130} />

@@ -20,7 +20,8 @@
           "fb",
           "linkedin"
         ]
-      }
+      },
+      "runtimeVersion": "1.0.0"
     },
     "android": {
       "adaptiveIcon": {
@@ -29,7 +30,10 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "runtimeVersion": {
+        "policy": "appVersion"
+      }
     },
     "web": {
       "output": "static",
@@ -77,6 +81,9 @@
           }
         }
       }
+    },
+    "updates": {
+      "url": "https://u.expo.dev/f90b1ad4-f8a9-4345-84f5-e1a5d443dbad"
     }
   }
 }

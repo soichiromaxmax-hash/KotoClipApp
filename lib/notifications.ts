@@ -34,7 +34,12 @@ export async function scheduleDailyReminder(time: string) {
       title: '今日の復習をしましょう',
       body: '単語帳に復習が待っています。',
     },
-    trigger: { hour, minute, repeats: true } as any,
+    trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.CALENDAR,
+      hour,
+      minute,
+      repeats: true,
+    },
   });
 }
 
@@ -50,7 +55,13 @@ export async function scheduleWeeklySummary() {
       title: '今週の学習まとめ',
       body: 'KotoClipで今週の語彙の成長を確認しましょう。',
     },
-    trigger: { weekday: 2, hour: 9, minute: 0, repeats: true } as any,
+    trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.CALENDAR,
+      weekday: 2,
+      hour: 9,
+      minute: 0,
+      repeats: true,
+    },
   });
 }
 
