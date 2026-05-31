@@ -359,7 +359,7 @@ export default function SettingsScreen() {
             </TouchableOpacity>
           </View>
           {LEARNING_LANGS.map((lang) => {
-            const active = (settings?.learning_language ?? 'en') === lang.key;
+            const active = (settings?.target_lang ?? 'en') === lang.key;
             return (
               <TouchableOpacity
                 key={lang.key}
@@ -384,7 +384,7 @@ export default function SettingsScreen() {
             </TouchableOpacity>
           </View>
           {NATIVE_LANGS.map((lang) => {
-            const active = (settings?.native_language ?? 'ja') === lang.key;
+            const active = (settings?.native_lang ?? 'ja') === lang.key;
             return (
               <TouchableOpacity
                 key={lang.key}

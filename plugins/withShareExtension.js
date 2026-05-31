@@ -172,33 +172,6 @@ function addEmbedExtensionPhase(project, mainTargetKey, productRef) {
   }
 }
 
-// ── 4. Podfile post_install: disable resource bundle signing (Xcode 14+) ─────
-function fixResourceBundleSigning(config) {
-  return withDangerousMod(config, [
-    'ios',
-    (c) => {
-      const podfilePath = path.join(c.modRequest.platformProjectRoot, 'Podfile');
-      if (!fs.existsSync(podfilePath)) return c;
-      let podfile = fs.readFileSync(podfilePath, 'utf8');
-      if (podfile.includes('KotoClip: resource bundle signing fix')) return c;
-      podfile += `
-# KotoClip: resource bundle signing fix (Xcode 14+)
-post_install do |installer|
-  installer.pods_project.targets.each do |target|
-    next unless target.respond_to?(:product_type)
-    next unless target.product_type == "com.apple.product-type.bundle"
-    target.build_configurations.each do |cfg|
-      cfg.build_settings['CODE_SIGNING_ALLOWED'] = 'NO'
-    end
-  end
-end
-`;
-      fs.writeFileSync(podfilePath, podfile, 'utf8');
-      return c;
-    },
-  ]);
-}
-
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function buildInfoPlist(bundleId) {
   return `<?xml version="1.0" encoding="UTF-8"?>

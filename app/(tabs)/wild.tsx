@@ -105,37 +105,15 @@ export default function WildScreen() {
     <SafeAreaView style={styles.root}>
       <Text style={styles.title}>今日の野生検出</Text>
 
-      {netError && !refreshing && (
+      {loading ? (
+        <ActivityIndicator color="#2DD4BF" style={{ marginTop: 40 }} />
+      ) : netError ? (
         <View style={styles.errorBox}>
           <Text style={styles.errorText}>読み込みに失敗しました</Text>
           <TouchableOpacity onPress={() => load()} activeOpacity={0.7}>
             <Text style={styles.retryText}>再試行</Text>
           </TouchableOpacity>
         </View>
-      )}
-
-      {/* サマリー */}
-      {encounters.length > 0 && (
-        <View style={styles.summary}>
-          <View style={styles.summaryItem}>
-            <Text style={[styles.summaryNum, { color: '#22C55E' }]}>{knew}</Text>
-            <Text style={styles.summaryLabel}>覚えてた</Text>
-          </View>
-          <View style={styles.summaryDivider} />
-          <View style={styles.summaryItem}>
-            <Text style={[styles.summaryNum, { color: '#F59E0B' }]}>{unsure}</Text>
-            <Text style={styles.summaryLabel}>曖昧</Text>
-          </View>
-          <View style={styles.summaryDivider} />
-          <View style={styles.summaryItem}>
-            <Text style={[styles.summaryNum, { color: '#2DD4BF' }]}>{encounters.length}</Text>
-            <Text style={styles.summaryLabel}>合計</Text>
-          </View>
-        </View>
-      )}
-
-      {loading ? (
-        <ActivityIndicator color="#2DD4BF" style={{ marginTop: 40 }} />
       ) : encounters.length === 0 ? (
         <View style={styles.empty}>
           <Text style={styles.emptyIcon}>👁</Text>
@@ -143,7 +121,25 @@ export default function WildScreen() {
           <Text style={styles.emptySub}>ブラウジング中に Chrome Extension で単語が検出されると、ここに記録されます。</Text>
         </View>
       ) : (
-        <FlatList
+        <>
+          {/* サマリー */}
+          <View style={styles.summary}>
+            <View style={styles.summaryItem}>
+              <Text style={[styles.summaryNum, { color: '#22C55E' }]}>{knew}</Text>
+              <Text style={styles.summaryLabel}>覚えてた</Text>
+            </View>
+            <View style={styles.summaryDivider} />
+            <View style={styles.summaryItem}>
+              <Text style={[styles.summaryNum, { color: '#F59E0B' }]}>{unsure}</Text>
+              <Text style={styles.summaryLabel}>曖昧</Text>
+            </View>
+            <View style={styles.summaryDivider} />
+            <View style={styles.summaryItem}>
+              <Text style={[styles.summaryNum, { color: '#2DD4BF' }]}>{encounters.length}</Text>
+              <Text style={styles.summaryLabel}>合計</Text>
+            </View>
+          </View>
+          <FlatList
           data={encounters}
           keyExtractor={(e) => String(e.id)}
           renderItem={({ item }) => (
@@ -164,6 +160,7 @@ export default function WildScreen() {
             />
           }
         />
+        </>
       )}
     </SafeAreaView>
   );

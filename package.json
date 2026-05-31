@@ -8,8 +8,8 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "lint": "expo lint",
-    "release:ios:check": "expo config --type introspect && expo lint",
+    "lint": "eslint . --no-cache",
+    "release:ios:check": "expo config --type introspect && eslint . --no-cache",
     "release:ios:build": "eas build --platform ios --profile production"
   },
   "dependencies": {

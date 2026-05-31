@@ -36,6 +36,12 @@ Build #39（EAS）。TestFlight 未提出。
 - `Onboarding.tsx` をさわらない
 - Render.com warmup は `fetch('https://kotoclip.onrender.com')` のみ（AI APIを叩かない・有料）
 
+## Expo Doctor 許容している警告（1件）
+
+> **Check for app config fields that may not be synced in a non-CNG project**
+
+`ios/` が git に含まれるため出る警告。EAS Build は `expo prebuild` でネイティブを再生成するため実害なし。`app.json` のプラグイン・アイコン等を変更したら次回 EAS Build で反映を確認すること。
+
 ## 詳細が必要なとき
 - デザイントークン・KotoBird仕様 → `.claude/skills/design.md`
 - 画面構成・ルーティング・実装詳細 → `.claude/skills/screens.md`
