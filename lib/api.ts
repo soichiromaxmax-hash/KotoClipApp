@@ -195,8 +195,8 @@ export const api = {
   deleteWord: (id: number) =>
     _fetch(`/words/${id}`, { method: 'DELETE' }),
 
-  retranslate: (id: number) =>
-    _fetch(`/words/${id}/retranslate`, { method: 'POST' }),
+  retranslate: (id: number, learningLang = 'en', nativeLang = 'ja') =>
+    _fetch(`/words/${id}/retranslate`, { method: 'POST', body: JSON.stringify({ learning_lang: learningLang, native_lang: nativeLang }) }),
 
   postReview: (wordId: number, rating: 'good' | 'hard' | 'again', elapsedDays = 1) =>
     _fetch('/study/review', { method: 'POST', body: JSON.stringify({ word_id: wordId, rating, elapsed_days: elapsedDays }) }),

@@ -3,9 +3,13 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts, LobsterTwo_700Bold } from '@expo-google-fonts/lobster-two';
 import { SpaceGrotesk_700Bold } from '@expo-google-fonts/space-grotesk';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { AuthProvider, useAuth } from '@/context/auth';
 import { Onboarding, hasSeenOnboarding } from '@/components/Onboarding';
+import { SplashAnimation } from '@/components/SplashAnimation';
+
+const SPLASH_KEY = 'koto_splash_seen_v1';
 
 // Render.com のコールドスタート対策: アプリ起動時にバックグラウンドでサーバーを起こす
 function useRenderWarmup() {
@@ -20,7 +24,14 @@ function RootLayoutNav() {
   const segments = useSegments();
   const [showOnboarding, setShowOnboarding] = useState(false);
   const onboardingChecked = useRef(false);
+  const [showSplash, setShowSplash] = useState(false);
   useRenderWarmup();
+
+  useEffect(() => {
+    AsyncStorage.getItem(SPLASH_KEY).then((val) => {
+      if (!val) setShowSplash(true);
+    }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (state === 'loading') return;
@@ -53,6 +64,15 @@ function RootLayoutNav() {
         visible={showOnboarding}
         onDone={() => setShowOnboarding(false)}
       />
+      {showSplash && (
+        <SplashAnimation
+          fontsLoaded
+          onFinish={() => {
+            AsyncStorage.setItem(SPLASH_KEY, '1').catch(() => {});
+            setShowSplash(false);
+          }}
+        />
+      )}
     </>
   );
 }

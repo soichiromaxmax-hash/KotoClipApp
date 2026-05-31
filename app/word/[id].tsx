@@ -84,17 +84,27 @@ export default function WordDetailScreen() {
   const [retranslating, setRetranslating] = useState(false);
   const [retranslated, setRetranslated] = useState(false);
   const [retranslateError, setRetranslateError] = useState('');
+  const [learningLang, setLearningLang] = useState('en');
+  const [nativeLang, setNativeLang] = useState('ja');
 
   useEffect(() => {
     if (!id) return;
     const wordId = Number(id);
-    Promise.allSettled([api.getWord(wordId), api.getTimeline(wordId)]).then(([wRes, tRes]) => {
+    Promise.allSettled([
+      api.getWord(wordId),
+      api.getTimeline(wordId),
+      api.getSettings(),
+    ]).then(([wRes, tRes, sRes]) => {
       if (wRes.status === 'fulfilled' && wRes.value?.id) {
         setWord(wRes.value);
         setMemo(wRes.value.memo ?? '');
       }
       if (tRes.status === 'fulfilled' && Array.isArray(tRes.value)) {
         setTimeline(tRes.value);
+      }
+      if (sRes.status === 'fulfilled' && sRes.value) {
+        if (sRes.value.learning_language) setLearningLang(sRes.value.learning_language);
+        if (sRes.value.native_language) setNativeLang(sRes.value.native_language);
       }
       setLoading(false);
     });
@@ -105,7 +115,7 @@ export default function WordDetailScreen() {
     setRetranslating(true);
     setRetranslateError('');
     try {
-      const res = await api.retranslate(word.id);
+      const res = await api.retranslate(word.id, learningLang, nativeLang);
       if (res?.meaning) {
         setWord((w) => w ? { ...w, meaning: res.meaning } : w);
         setRetranslated(true);
