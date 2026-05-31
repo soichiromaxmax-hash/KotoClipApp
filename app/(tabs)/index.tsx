@@ -151,15 +151,9 @@ export default function HomeScreen() {
     return () => {};
   }, [doFetch]));
 
-  const reliable = stats?.reliable_count ?? 0;
-  const total    = stats?.total ?? 0;
-  const pct      = total > 0 ? Math.min((reliable / total) * 100, 100) : 0;
+  const total = stats?.total ?? 0;
 
-  const progressText = total === 0
-    ? '学習の進み具合'
-    : reliable === 0
-    ? 'クイズで自分の語彙を試そう'
-    : `登録${total}語中 ${reliable}語を確実に習得`;
+  const progressText = total === 0 ? '学習の進み具合' : 'クイズで自分の語彙を試そう';
 
   return (
     <SafeAreaView style={s.root}>
@@ -231,8 +225,8 @@ export default function HomeScreen() {
                   <KotoBird size={110} />
                 </View>
                 <View style={s.statPanel}>
-                  <StatItem label="確実に習得" value={reliable} />
                   <StatItem label="登録語数"   value={total} />
+                  <StatItem label="定着済み"   value={stats?.mastered ?? 0} />
                   <StatItem label="連続日数"   value={stats?.streak ?? 0} />
                 </View>
               </View>
@@ -245,21 +239,7 @@ export default function HomeScreen() {
                   </View>
                 </View>
                 <Text style={s.heroTitle}>{progressText}</Text>
-                {total > 0 && (
-                  <Text style={s.heroCaption}>正答率75%以上かつ3回正解で「確実に習得」</Text>
-                )}
               </View>
-
-              {total > 0 && (
-                <View style={s.progressTrack}>
-                  <LinearGradient
-                    colors={['#2DD4BF', '#4CC9F0']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                    style={[s.progressFill, { width: `${pct}%` as any }]}
-                  />
-                </View>
-              )}
 
               {/* XP / Level バー */}
               {(() => {
