@@ -197,6 +197,34 @@ export default function SettingsScreen() {
           </View>
         )}
 
+        {/* プランカード */}
+        {settings !== null && (
+          <View style={s.planCard}>
+            <View style={s.planRow}>
+              <View style={s.planBadge}>
+                <Text style={s.planBadgeText}>{settings.is_premium ? 'PREMIUM' : 'FREE'}</Text>
+              </View>
+              <Text style={s.planWordCount}>
+                {settings.word_count ?? '—'} / {settings.word_limit ?? 100}語
+              </Text>
+            </View>
+            <View style={s.planTrack}>
+              <View style={[
+                s.planFill,
+                {
+                  width: `${Math.min(((settings.word_count ?? 0) / (settings.word_limit ?? 100)) * 100, 100)}%` as any,
+                  backgroundColor: (settings.word_count ?? 0) >= (settings.word_limit ?? 100) ? '#EF4444' : (settings.word_count ?? 0) >= 80 ? '#F59E0B' : '#2DD4BF',
+                },
+              ]} />
+            </View>
+            {!settings.is_premium && (
+              <TouchableOpacity style={s.planUpgradeBtn} activeOpacity={0.8} disabled>
+                <Text style={s.planUpgradeText}>プレミアムにアップグレード（近日公開）</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
+
         {/* 学習設定 */}
         <Text style={s.sectionHeader}>学習設定</Text>
         <View style={[s.card, s.cardNoPad]}>
@@ -553,6 +581,40 @@ const s = StyleSheet.create({
   timeValue: { fontSize: 16, color: '#E9EDF2' },
   timeValueDisabled: { color: '#6B7280' },
   timeChevron: { fontSize: 20, color: '#6B7280' },
+
+  planCard: {
+    marginHorizontal: 16,
+    marginBottom: 4,
+    backgroundColor: 'rgba(21,26,34,0.98)',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    padding: 16,
+    gap: 10,
+  },
+  planRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  planBadge: {
+    backgroundColor: 'rgba(45,212,191,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(45,212,191,0.3)',
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  planBadgeText: { color: '#2DD4BF', fontSize: 11, fontWeight: '700', letterSpacing: 1 },
+  planWordCount: { color: '#8F99A8', fontSize: 13 },
+  planTrack: { height: 4, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 99, overflow: 'hidden' },
+  planFill: { height: '100%', borderRadius: 99 },
+  planUpgradeBtn: {
+    backgroundColor: 'rgba(45,212,191,0.08)',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(45,212,191,0.2)',
+    paddingVertical: 10,
+    alignItems: 'center',
+    opacity: 0.6,
+  },
+  planUpgradeText: { color: '#2DD4BF', fontSize: 13, fontWeight: '600' },
 
   langRow: {
     flexDirection: 'row',

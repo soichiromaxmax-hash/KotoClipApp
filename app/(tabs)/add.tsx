@@ -38,13 +38,11 @@ export default function AddWordScreen() {
   const [showLimitModal, setShowLimitModal] = useState(false);
 
   useEffect(() => {
-    Promise.all([
-      api.getStats().catch(() => null),
-      api.getSettings().catch(() => null),
-    ]).then(([stats, settings]) => {
-      if (stats?.total !== undefined) setWordCount(stats.total);
-      if (settings?.target_lang) setLearningLang(settings.target_lang);
-      if (settings?.native_lang) setNativeLang(settings.native_lang);
+    api.getSettings().catch(() => null).then((settings) => {
+      if (!settings) return;
+      if (settings.word_count !== undefined) setWordCount(settings.word_count);
+      if (settings.target_lang) setLearningLang(settings.target_lang);
+      if (settings.native_lang) setNativeLang(settings.native_lang);
     });
   }, []);
 
@@ -109,8 +107,12 @@ export default function AddWordScreen() {
       } else {
         setStatus({ type: 'error', msg: res.detail || '保存に失敗しました' });
       }
-    } catch {
-      setStatus({ type: 'error', msg: '保存に失敗しました。時間をおいてもう一度お試しください。' });
+    } catch (e: any) {
+      if (e?.status === 402 || e?.message?.includes('上限')) {
+        setShowLimitModal(true);
+      } else {
+        setStatus({ type: 'error', msg: '保存に失敗しました。時間をおいてもう一度お試しください。' });
+      }
     } finally {
       setLoading(false);
     }
