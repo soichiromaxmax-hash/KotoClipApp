@@ -180,7 +180,8 @@ export const api = {
   getTodayEncounters: ()                  => _fetch('/wild/today'),
   getTimeline:       (id: number)         => _fetch(`/words/${id}/timeline`),
   getSettings:       ()                   => _fetch('/settings'),
-  lookup: (word: string) => _fetch(`/lookup?word=${encodeURIComponent(word)}`),
+  lookup: (word: string, learningLang = 'en', nativeLang = 'ja') =>
+    _fetch(`/lookup?word=${encodeURIComponent(word)}&learning_lang=${learningLang}&native_lang=${nativeLang}`),
 
   addWord: (payload: object) =>
     _fetch('/words', { method: 'POST', body: JSON.stringify(payload) }),

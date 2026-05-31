@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -10,9 +10,17 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  Modal,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { api } from '@/lib/api';
+import { KotoBird } from '@/components/KotoBird';
+
+const FREE_LIMIT = 100;
+
+const LANG_LABELS: Record<string, string> = {
+  en: '英語', es: 'スペイン語', zh: '中国語', ja: '日本語',
+};
 
 export default function AddWordScreen() {
   const router = useRouter();
@@ -24,13 +32,29 @@ export default function AddWordScreen() {
   const [aiPanel, setAiPanel] = useState<{ example_native: string; notes: string } | null>(null);
   const [savedWord, setSavedWord] = useState<{ word: string; meaning: string } | null>(null);
 
+  const [wordCount, setWordCount] = useState<number | null>(null);
+  const [learningLang, setLearningLang] = useState('en');
+  const [nativeLang, setNativeLang] = useState('ja');
+  const [showLimitModal, setShowLimitModal] = useState(false);
+
+  useEffect(() => {
+    Promise.all([
+      api.getStats().catch(() => null),
+      api.getSettings().catch(() => null),
+    ]).then(([stats, settings]) => {
+      if (stats?.total !== undefined) setWordCount(stats.total);
+      if (settings?.learning_language) setLearningLang(settings.learning_language);
+      if (settings?.native_language) setNativeLang(settings.native_language);
+    });
+  }, []);
+
   async function autoTranslate() {
     if (!word.trim()) return;
     setLoading(true);
     setStatus({ type: 'info', msg: 'AI解説を取得中...' });
     setAiPanel(null);
     try {
-      const res = await api.lookup(word.trim());
+      const res = await api.lookup(word.trim(), learningLang, nativeLang);
       if (res.meaning) {
         setMeaning(res.meaning);
         if (res.ai_example) setContext(res.ai_example);
@@ -53,9 +77,14 @@ export default function AddWordScreen() {
 
   async function save() {
     if (!word.trim() || !meaning.trim()) {
-      setStatus({ type: 'error', msg: '単語と日本語訳を入力してください' });
+      setStatus({ type: 'error', msg: '単語と意味を入力してください' });
       return;
     }
+    if (wordCount !== null && wordCount >= FREE_LIMIT) {
+      setShowLimitModal(true);
+      return;
+    }
+    if (loading) return;
     setLoading(true);
     const payload = {
       word: word.trim(),
@@ -72,6 +101,7 @@ export default function AddWordScreen() {
         setStatus({ type: 'success', msg: '保存できました。あとで復習に出てきます。' });
         setSavedWord({ word: res.word, meaning: res.meaning });
         setWord(''); setMeaning(''); setContext(''); setAiPanel(null);
+        setWordCount((c) => (c !== null ? c + 1 : null));
       } else if (res.status === 'duplicate') {
         setStatus({ type: 'warning', msg: `「${res.word}」はすでに登録済みです` });
       } else {
@@ -83,6 +113,9 @@ export default function AddWordScreen() {
       setLoading(false);
     }
   }
+
+  const nearLimit = wordCount !== null && wordCount >= FREE_LIMIT - 10;
+  const atLimit   = wordCount !== null && wordCount >= FREE_LIMIT;
 
   const statusStyle: Record<string, { bg: string; border: string; text: string }> = {
     success: { bg: 'rgba(34,197,94,0.08)',  border: 'rgba(34,197,94,0.28)',  text: '#22C55E' },
@@ -100,11 +133,30 @@ export default function AddWordScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <Text style={s.title}>手動で単語を追加する</Text>
+          <View style={s.titleRow}>
+            <Text style={s.title}>単語を追加する</Text>
+            {wordCount !== null && (
+              <Text style={[s.countChip, atLimit && s.countChipRed, nearLimit && !atLimit && s.countChipAmber]}>
+                {wordCount}/{FREE_LIMIT}語
+              </Text>
+            )}
+          </View>
+
+          {/* 学習言語インジケーター */}
+          <TouchableOpacity
+            style={s.langBadge}
+            onPress={() => router.push('/(tabs)/settings' as any)}
+            activeOpacity={0.75}
+          >
+            <Text style={s.langBadgeText}>
+              🌐 {LANG_LABELS[learningLang] ?? learningLang} → {LANG_LABELS[nativeLang] ?? nativeLang}
+            </Text>
+            <Text style={s.langBadgeEdit}>設定を変える ›</Text>
+          </TouchableOpacity>
 
           <View style={s.card}>
             <View style={s.formGroup}>
-              <Text style={s.label}>英単語・フレーズ</Text>
+              <Text style={s.label}>{LANG_LABELS[learningLang] ?? ''}の単語・フレーズ</Text>
               <TextInput
                 style={s.input}
                 placeholder="例: perseverance"
@@ -131,7 +183,7 @@ export default function AddWordScreen() {
             </TouchableOpacity>
 
             <View style={s.formGroup}>
-              <Text style={s.label}>日本語訳</Text>
+              <Text style={s.label}>{LANG_LABELS[nativeLang] ?? ''}訳</Text>
               <TextInput
                 style={s.input}
                 placeholder="自動取得または手動で入力"
@@ -173,12 +225,12 @@ export default function AddWordScreen() {
             )}
 
             <TouchableOpacity
-              style={[s.primaryBtn, loading && { opacity: 0.6 }]}
+              style={[s.primaryBtn, (loading || atLimit) && { opacity: atLimit ? 0.5 : 0.6 }]}
               onPress={save}
               disabled={loading}
               activeOpacity={0.8}
             >
-              <Text style={s.primaryBtnText}>{loading ? '処理中...' : '保存する'}</Text>
+              <Text style={s.primaryBtnText}>{loading ? '処理中...' : atLimit ? '上限に達しました' : '保存する'}</Text>
             </TouchableOpacity>
 
             {savedWord && (
@@ -202,6 +254,26 @@ export default function AddWordScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* 上限モーダル */}
+      <Modal visible={showLimitModal} transparent animationType="fade">
+        <View style={s.modalOverlay}>
+          <View style={s.modalCard}>
+            <KotoBird size={76} />
+            <Text style={s.modalTitle}>無料プランの上限です</Text>
+            <Text style={s.modalBody}>
+              無料プランでは{FREE_LIMIT}語まで保存できます。{'\n'}
+              プレミアムプランにアップグレードすると、単語数が無制限になります。
+            </Text>
+            <TouchableOpacity style={s.modalPremiumBtn} activeOpacity={0.85} disabled>
+              <Text style={s.modalPremiumText}>アップグレード（近日公開）</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={s.modalCancelBtn} onPress={() => setShowLimitModal(false)} activeOpacity={0.7}>
+              <Text style={s.modalCancelText}>閉じる</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -209,14 +281,36 @@ export default function AddWordScreen() {
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#0E1116' },
   scroll: { paddingBottom: 40 },
-  title: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#F9FAFB',
+
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginHorizontal: 16,
     marginTop: 16,
-    marginBottom: 16,
+    marginBottom: 8,
   },
+  title: { fontSize: 22, fontWeight: '700', color: '#F9FAFB' },
+  countChip: { fontSize: 12, fontWeight: '700', color: '#6B7280' },
+  countChipAmber: { color: '#F59E0B' },
+  countChipRed: { color: '#EF4444' },
+
+  langBadge: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginHorizontal: 16,
+    marginBottom: 14,
+    backgroundColor: 'rgba(45,212,191,0.06)',
+    borderWidth: 1,
+    borderColor: 'rgba(45,212,191,0.15)',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+  },
+  langBadgeText: { fontSize: 13, color: '#8F99A8' },
+  langBadgeEdit: { fontSize: 12, color: '#2DD4BF', fontWeight: '600' },
+
   card: {
     marginHorizontal: 16,
     backgroundColor: 'rgba(21,26,34,0.98)',
@@ -292,4 +386,47 @@ const s = StyleSheet.create({
     alignItems: 'center',
   },
   savedPrimaryText: { color: '#2DD4BF', fontSize: 14, fontWeight: '700' },
+
+  // 上限モーダル
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.85)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 32,
+  },
+  modalCard: {
+    width: '100%',
+    backgroundColor: '#1D2430',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.10)',
+    padding: 28,
+    alignItems: 'center',
+    gap: 12,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#F9FAFB',
+    textAlign: 'center',
+  },
+  modalBody: {
+    fontSize: 14,
+    color: '#8F99A8',
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  modalPremiumBtn: {
+    width: '100%',
+    backgroundColor: '#2DD4BF',
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginTop: 4,
+    opacity: 0.5,
+  },
+  modalPremiumText: { color: '#0E1116', fontWeight: '700', fontSize: 15 },
+  modalCancelBtn: { paddingVertical: 8 },
+  modalCancelText: { color: '#6B7280', fontSize: 14 },
 });
