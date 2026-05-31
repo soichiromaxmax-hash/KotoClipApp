@@ -153,7 +153,7 @@ export default function HomeScreen() {
 
   const total = stats?.total ?? 0;
 
-  const progressText = total === 0 ? '学習の進み具合' : 'クイズで自分の語彙を試そう';
+  const progressText = total === 0 ? '学習の進み具合' : '';
 
   return (
     <SafeAreaView style={s.root}>
@@ -222,7 +222,7 @@ export default function HomeScreen() {
 
               <View style={s.heroTop}>
                 <View style={s.mascotBlock}>
-                  <KotoBird size={110} />
+                  <KotoBird size={110} stage={kotoStage(computeLevel(stats?.xp ?? 0))} />
                 </View>
                 <View style={s.statPanel}>
                   <StatItem label="登録語数"   value={total} />
@@ -238,7 +238,7 @@ export default function HomeScreen() {
                     <Text style={s.miniClip}>Clip</Text>
                   </View>
                 </View>
-                <Text style={s.heroTitle}>{progressText}</Text>
+                {!!progressText && <Text style={s.heroTitle}>{progressText}</Text>}
               </View>
 
               {/* XP / Level バー */}
@@ -251,7 +251,10 @@ export default function HomeScreen() {
                 return (
                   <View style={s.xpCard}>
                     <View style={s.xpLabelRow}>
-                      <Text style={s.xpLvBadge}>Lv {lv}</Text>
+                      <View style={s.xpLvBadge}>
+                        <Text style={s.xpLvText}>Lv</Text>
+                        <Text style={s.xpLvNum}>{lv}</Text>
+                      </View>
                       <Text style={s.xpStageName}>{KOTO_STAGE_LABELS[stage]}</Text>
                       <Text style={s.xpTotal}>{xp.toLocaleString()} XP</Text>
                     </View>
@@ -578,13 +581,15 @@ const s = StyleSheet.create({
   xpLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   xpLvBadge: {
     backgroundColor: 'rgba(245,184,75,0.22)',
-    borderRadius: 6,
-    paddingHorizontal: 9,
-    paddingVertical: 3,
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#F5B84B',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 2,
   },
+  xpLvText: { fontSize: 12, fontWeight: '600', color: '#F5B84B', opacity: 0.8 },
+  xpLvNum: { fontSize: 28, fontWeight: '800', color: '#F5B84B', letterSpacing: -1, lineHeight: 30 },
   xpStageName: { fontSize: 12, color: '#8F99A8', flex: 1 },
   xpTotal: { fontSize: 12, fontWeight: '700', color: '#F5B84B' },
   xpTrack: {

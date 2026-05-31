@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { View } from 'react-native';
-import Svg, { Ellipse, Path, Circle, Rect, Line, G } from 'react-native-svg';
+import Svg, { Ellipse, Path, Circle, Rect, Line, G, Polygon, Defs, RadialGradient, Stop } from 'react-native-svg';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -22,6 +22,99 @@ function randomType(): KotoType {
   return (['small', 'medium', 'large'] as KotoType[])[Math.floor(Math.random() * 3)];
 }
 
+// ── アクセサリー ─────────────────────────────────────────────
+
+// Stage 2+: スカーフ
+function Scarf() {
+  return (
+    <G>
+      <Path d="M36,106 Q60,118 84,106 Q82,122 60,124 Q38,122 36,106Z"
+        fill="#E74C3C" opacity="0.85" />
+      <Path d="M60,118 Q64,132 61,148"
+        stroke="#E74C3C" strokeWidth="9" strokeLinecap="round" fill="none" opacity="0.7" />
+    </G>
+  );
+}
+
+// Stage 3+: 丸メガネ
+function RoundGlasses() {
+  return (
+    <G>
+      <Circle cx="40" cy="74" r="13" fill="rgba(255,255,255,0.06)" stroke="#374151" strokeWidth="2.8" />
+      <Circle cx="80" cy="74" r="13" fill="rgba(255,255,255,0.06)" stroke="#374151" strokeWidth="2.8" />
+      <Line x1="53" y1="74" x2="67" y2="74" stroke="#374151" strokeWidth="2.8" />
+      <Line x1="16" y1="68" x2="27" y2="73" stroke="#374151" strokeWidth="2.2" />
+      <Line x1="93" y1="73" x2="104" y2="68" stroke="#374151" strokeWidth="2.2" />
+    </G>
+  );
+}
+
+// Stage 4+: 大きめのメガネ（角ばった）
+function BigGlasses() {
+  return (
+    <G>
+      <Rect x="25" y="63" width="30" height="22" rx="5" fill="rgba(255,255,255,0.07)" stroke="#1E40AF" strokeWidth="2.8" />
+      <Rect x="65" y="63" width="30" height="22" rx="5" fill="rgba(255,255,255,0.07)" stroke="#1E40AF" strokeWidth="2.8" />
+      <Line x1="55" y1="74" x2="65" y2="74" stroke="#1E40AF" strokeWidth="2.8" />
+      <Line x1="14" y1="67" x2="25" y2="72" stroke="#1E40AF" strokeWidth="2.2" />
+      <Line x1="95" y1="72" x2="106" y2="67" stroke="#1E40AF" strokeWidth="2.2" />
+    </G>
+  );
+}
+
+// Stage 5+: 学者帽（角帽）
+function GradCap() {
+  return (
+    <G>
+      <Ellipse cx="60" cy="38" rx="27" ry="7" fill="#1F2937" />
+      <Rect x="42" y="18" width="36" height="20" rx="4" fill="#1F2937" />
+      <Line x1="78" y1="22" x2="94" y2="32" stroke="#F5B84B" strokeWidth="2.5" />
+      <Circle cx="95" cy="33" r="5" fill="#F5B84B" />
+    </G>
+  );
+}
+
+// Stage 5+: 開いた翼
+function SpreadWings() {
+  return (
+    <G>
+      <Path d="M14,92 Q2,70 8,50 Q16,68 24,82Z" fill="#D4B640" opacity="0.9" />
+      <Path d="M106,92 Q118,70 112,50 Q104,68 96,82Z" fill="#D4B640" opacity="0.9" />
+    </G>
+  );
+}
+
+// Stage 6: マント
+function Cape() {
+  return (
+    <Path
+      d="M18,92 Q8,135 32,158 Q60,166 88,158 Q112,135 102,92 Q82,105 60,108 Q38,105 18,92Z"
+      fill="#7C3AED" opacity="0.72" />
+  );
+}
+
+// Stage 6: 金バッジ（星）
+function GoldBadge() {
+  return (
+    <G>
+      <Circle cx="60" cy="95" r="9" fill="#F5B84B" />
+      <Polygon
+        points="60,88 61.8,93 67,93 62.8,96.2 64.4,101.2 60,98.2 55.6,101.2 57.2,96.2 53,93 58.2,93"
+        fill="#0E1116" />
+    </G>
+  );
+}
+
+// Stage 6: 光るオーラ（うっすら放射）
+function LibraryAura() {
+  return (
+    <G opacity="0.4">
+      <Ellipse cx="60" cy="90" rx="52" ry="52" fill="none" stroke="#F5B84B" strokeWidth="1.5" />
+      <Ellipse cx="60" cy="90" rx="42" ry="42" fill="none" stroke="#F5B84B" strokeWidth="1" opacity="0.5" />
+    </G>
+  );
+}
+
 // ── KotoCard（単語カード小道具） ───────────────────────────
 function KotoCard({ x, y, w, h }: { x: number; y: number; w: number; h: number }) {
   const r = Math.round(h * 0.16);
@@ -37,7 +130,7 @@ function KotoCard({ x, y, w, h }: { x: number; y: number; w: number; h: number }
 }
 
 // ── Medium コト鳥（本体のみ） ───────────────────────────────
-function KotoMediumSvg({ pose = 1 }: { pose: Pose }) {
+function KotoMediumSvg({ pose = 1, stage = 1 }: { pose: Pose; stage: number }) {
   function Core() {
     return (
       <G>
@@ -72,62 +165,71 @@ function KotoMediumSvg({ pose = 1 }: { pose: Pose }) {
     );
   }
 
-  if (pose === 1) {
-    return (
+  function Wings(wingPose: Pose) {
+    if (wingPose === 1) return (
       <G>
-        <Core />
-        <KotoCard x={26} y={102} w={48} h={34} />
         <Ellipse cx="24" cy="120" rx="9" ry="8" fill="#D4B640" />
         <Ellipse cx="96" cy="120" rx="9" ry="8" fill="#D4B640" />
-        <Feet />
-        <Clip />
       </G>
     );
-  } else if (pose === 2) {
-    return (
+    if (wingPose === 2) return (
       <G>
-        <Core />
-        <KotoCard x={20} y={105} w={44} h={34} />
         <Ellipse cx="22"  cy="123" rx="9"   ry="8" fill="#D4B640" />
         <Ellipse cx="92"  cy="112" rx="8"   ry="7" fill="#D4B640" />
         <Ellipse cx="82"  cy="106" rx="5.5" ry="6" fill="#D4B640" />
-        <Feet />
-        <Clip />
       </G>
     );
-  } else if (pose === 3) {
-    return (
+    if (wingPose === 3) return (
       <G>
-        <Core />
-        <KotoCard x={26} y={80} w={48} h={34} />
         <Ellipse cx="24" cy="98" rx="9" ry="8" fill="#D4B640" />
         <Ellipse cx="96" cy="98" rx="9" ry="8" fill="#D4B640" />
-        <Feet />
-        <Clip />
       </G>
     );
-  } else {
     return (
       <G>
-        <Core />
-        <KotoCard x={12} y={110} w={44} h={34} />
         <Ellipse cx="20"  cy="128" rx="9"  ry="8" fill="#D4B640" />
         <Ellipse cx="96"  cy="96"  rx="8"  ry="7" fill="#D4B640" />
         <Ellipse cx="98"  cy="86"  rx="5"  ry="7" fill="#D4B640" />
-        <Feet />
-        <Clip />
       </G>
     );
   }
+
+  function Card(cardPose: Pose) {
+    if (cardPose === 1) return <KotoCard x={26} y={102} w={48} h={34} />;
+    if (cardPose === 2) return <KotoCard x={20} y={105} w={44} h={34} />;
+    if (cardPose === 3) return <KotoCard x={26} y={80}  w={48} h={34} />;
+    return                     <KotoCard x={12} y={110} w={44} h={34} />;
+  }
+
+  return (
+    <G>
+      {/* マント（背面）は最初に描画 */}
+      {stage >= 6 && <><LibraryAura /><Cape /></>}
+      {/* 開いた翼（Stage 5）*/}
+      {stage >= 5 && stage < 6 && <SpreadWings />}
+      <Core />
+      {Card(pose)}
+      {Wings(pose)}
+      <Feet />
+      <Clip />
+      {/* アクセサリー（前面に重ねる） */}
+      {stage >= 2 && <Scarf />}
+      {stage === 3 && <RoundGlasses />}
+      {stage >= 4 && <BigGlasses />}
+      {stage >= 5 && <GradCap />}
+      {stage >= 6 && <GoldBadge />}
+    </G>
+  );
 }
 
 // ── メインコンポーネント ────────────────────────────────────
 interface KotoBirdProps {
   size?: number;
   pose?: Pose;
+  stage?: number;
 }
 
-export function KotoBird({ size = 120, pose }: KotoBirdProps) {
+export function KotoBird({ size = 120, pose, stage = 1 }: KotoBirdProps) {
   const selectedPose = useRef(pose ?? randomPose()).current;
   const bobY = useSharedValue(0);
   const h = size * (170 / 120);
@@ -153,7 +255,7 @@ export function KotoBird({ size = 120, pose }: KotoBirdProps) {
       <View style={{ width: size, height: h }}>
         <Svg width={size} height={h} viewBox="0 0 120 170" fill="none">
           <Ellipse cx="60" cy="167" rx="34" ry="5" fill="rgba(15,23,42,0.20)" />
-          <KotoMediumSvg pose={selectedPose} />
+          <KotoMediumSvg pose={selectedPose} stage={stage} />
         </Svg>
       </View>
     </Animated.View>
