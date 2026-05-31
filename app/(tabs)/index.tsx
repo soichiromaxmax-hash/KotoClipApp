@@ -262,27 +262,30 @@ export default function HomeScreen() {
               )}
 
               {/* XP / Level バー */}
-              {(stats?.xp ?? 0) > 0 && (() => {
-                const xp = stats!.xp!;
+              {(() => {
+                const xp = stats?.xp ?? 0;
                 const lv = computeLevel(xp);
                 const prog = xpProgressPct(xp);
                 const toNext = xpToNextLevel(xp);
                 const stage = kotoStage(lv);
                 return (
-                  <View style={s.xpRow}>
+                  <View style={s.xpCard}>
                     <View style={s.xpLabelRow}>
                       <Text style={s.xpLvBadge}>Lv {lv}</Text>
                       <Text style={s.xpStageName}>{KOTO_STAGE_LABELS[stage]}</Text>
-                      <Text style={s.xpToNext}>{lv < 30 ? `次まで ${toNext.toLocaleString()} XP` : 'MAX'}</Text>
+                      <Text style={s.xpTotal}>{xp.toLocaleString()} XP</Text>
                     </View>
                     <View style={s.xpTrack}>
                       <LinearGradient
                         colors={['#F5B84B', '#FFD700']}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 0 }}
-                        style={[s.xpFill, { width: `${prog}%` as any }]}
+                        style={[s.xpFill, { width: `${Math.max(prog, 1)}%` as any }]}
                       />
                     </View>
+                    <Text style={s.xpSub}>
+                      {lv < 30 ? `次のLvまで ${toNext.toLocaleString()} XP（${prog}%）` : 'MAX レベル到達'}
+                    </Text>
                   </View>
                 );
               })()}
@@ -583,26 +586,35 @@ const s = StyleSheet.create({
   },
   progressFill: { height: '100%', borderRadius: 99 },
 
-  xpRow: { marginTop: 10, gap: 5 },
+  xpCard: {
+    marginTop: 12,
+    backgroundColor: 'rgba(245,184,75,0.07)',
+    borderWidth: 1,
+    borderColor: 'rgba(245,184,75,0.22)',
+    borderRadius: 12,
+    padding: 12,
+    gap: 7,
+  },
   xpLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   xpLvBadge: {
-    backgroundColor: 'rgba(245,184,75,0.18)',
+    backgroundColor: 'rgba(245,184,75,0.22)',
     borderRadius: 6,
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-    fontSize: 11,
+    paddingHorizontal: 9,
+    paddingVertical: 3,
+    fontSize: 13,
     fontWeight: '700',
     color: '#F5B84B',
   },
-  xpStageName: { fontSize: 11, color: '#8F99A8', flex: 1 },
-  xpToNext: { fontSize: 11, color: '#64748B' },
+  xpStageName: { fontSize: 12, color: '#8F99A8', flex: 1 },
+  xpTotal: { fontSize: 12, fontWeight: '700', color: '#F5B84B' },
   xpTrack: {
-    height: 4,
+    height: 8,
     backgroundColor: 'rgba(245,184,75,0.12)',
     borderRadius: 99,
     overflow: 'hidden',
   },
   xpFill: { height: '100%', borderRadius: 99 },
+  xpSub: { fontSize: 11, color: '#64748B', textAlign: 'right' },
 
   // ── コンテンツ ──
   content: {

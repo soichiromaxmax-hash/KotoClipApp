@@ -311,8 +311,20 @@ export default function StudyScreen() {
     }
 
     try {
-      await api.postReview(word.id, rating, elapsed);
-      applyResult(isCorrect, correctAnswer);
+      const res = await api.postReview(word.id, rating, elapsed);
+      const xpGain: number = res?.xp_gain ?? 0;
+      if (isCorrect) {
+        correctRef.current += 1;
+        setCorrect((c) => c + 1);
+        const xpMsg = xpGain > 0 ? ` +${xpGain} XP` : '';
+        setFeedback({ correct: true, msg: `正解！${xpMsg} 次回はもっと後に出てきます。` });
+      } else {
+        wrongRef.current += 1;
+        setWrong((w) => w + 1);
+        const xpMsg = xpGain < 0 ? ` ${xpGain} XP` : '';
+        setFeedback({ correct: false, msg: `不正解…${xpMsg} 正解: ${correctAnswer}。もう一度出てきます。` });
+      }
+      setPhase('feedback');
     } catch (e) {
       console.warn('[study] postReview failed:', e);
       setSaveError({ wordId: word.id, rating, elapsed, isCorrect, correctAnswer });
@@ -326,6 +338,7 @@ export default function StudyScreen() {
       await api.postReview(saveError.wordId, saveError.rating, saveError.elapsed);
       const { isCorrect, correctAnswer } = saveError;
       setSaveError(null);
+      // リトライ時はXP表示なしで通常フィードバック
       applyResult(isCorrect, correctAnswer);
     } catch {
       // still failing — keep showing the error
