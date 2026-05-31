@@ -26,6 +26,20 @@ import {
   syncNotifications,
 } from '@/lib/notifications';
 
+const LEARNING_LANGS = [
+  { key: 'en', label: '英語' },
+  { key: 'es', label: 'スペイン語' },
+  { key: 'zh', label: '中国語' },
+  { key: 'ja', label: '日本語' },
+];
+
+const NATIVE_LANGS = [
+  { key: 'ja', label: '日本語' },
+  { key: 'en', label: '英語' },
+  { key: 'es', label: 'スペイン語' },
+  { key: 'zh', label: '中国語' },
+];
+
 const NOTIF_ROWS = [
   { key: 'notification_daily_enabled',     label: '毎日の学習リマインダー', sub: '設定時刻に1日1回' },
   { key: 'notification_streak_enabled',    label: 'ストリーク通知',         sub: '連続学習を継続中のとき' },
@@ -64,6 +78,8 @@ export default function SettingsScreen() {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
   const [showTimePicker, setShowTimePicker] = useState(false);
+  const [showLearningLangPicker, setShowLearningLangPicker] = useState(false);
+  const [showNativeLangPicker, setShowNativeLangPicker] = useState(false);
   const [notifPerm, setNotifPerm] = useState<'granted' | 'denied' | 'undetermined' | null>(null);
 
   useEffect(() => {
@@ -181,6 +197,46 @@ export default function SettingsScreen() {
           </View>
         )}
 
+        {/* 学習設定 */}
+        <Text style={s.sectionHeader}>学習設定</Text>
+        <View style={[s.card, s.cardNoPad]}>
+          {/* 学習言語 */}
+          <TouchableOpacity
+            style={[s.langRow, s.notifRowBorder]}
+            onPress={() => setShowLearningLangPicker(true)}
+            activeOpacity={0.7}
+          >
+            <View style={s.notifText}>
+              <Text style={s.notifLabel}>学習言語</Text>
+              <Text style={s.notifSub}>保存・復習する単語の言語</Text>
+            </View>
+            <View style={s.langValueWrap}>
+              <Text style={s.langValue}>
+                {LEARNING_LANGS.find(l => l.key === (settings?.learning_language ?? 'en'))?.label ?? '英語'}
+              </Text>
+              <Text style={s.langChevron}>›</Text>
+            </View>
+          </TouchableOpacity>
+
+          {/* 説明言語 */}
+          <TouchableOpacity
+            style={s.langRow}
+            onPress={() => setShowNativeLangPicker(true)}
+            activeOpacity={0.7}
+          >
+            <View style={s.notifText}>
+              <Text style={s.notifLabel}>説明言語</Text>
+              <Text style={s.notifSub}>意味・例文を表示する言語</Text>
+            </View>
+            <View style={s.langValueWrap}>
+              <Text style={s.langValue}>
+                {NATIVE_LANGS.find(l => l.key === (settings?.native_language ?? 'ja'))?.label ?? '日本語'}
+              </Text>
+              <Text style={s.langChevron}>›</Text>
+            </View>
+          </TouchableOpacity>
+        </View>
+
         {/* 通知設定 */}
         <Text style={s.sectionHeader}>通知設定</Text>
 
@@ -263,6 +319,56 @@ export default function SettingsScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      {/* 学習言語ピッカー */}
+      <Modal visible={showLearningLangPicker} transparent animationType="slide">
+        <TouchableOpacity style={s.modalOverlay} activeOpacity={1} onPress={() => setShowLearningLangPicker(false)} />
+        <View style={s.modalSheet}>
+          <View style={s.modalHeader}>
+            <Text style={s.modalTitle}>学習言語</Text>
+            <TouchableOpacity onPress={() => setShowLearningLangPicker(false)}>
+              <Text style={s.modalClose}>完了</Text>
+            </TouchableOpacity>
+          </View>
+          {LEARNING_LANGS.map((lang) => {
+            const active = (settings?.learning_language ?? 'en') === lang.key;
+            return (
+              <TouchableOpacity
+                key={lang.key}
+                style={[s.timeOption, active && s.timeOptionActive]}
+                onPress={() => { saveSetting('learning_language', lang.key); setShowLearningLangPicker(false); }}
+              >
+                <Text style={[s.timeOptionText, active && s.timeOptionTextActive]}>{lang.label}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      </Modal>
+
+      {/* 説明言語ピッカー */}
+      <Modal visible={showNativeLangPicker} transparent animationType="slide">
+        <TouchableOpacity style={s.modalOverlay} activeOpacity={1} onPress={() => setShowNativeLangPicker(false)} />
+        <View style={s.modalSheet}>
+          <View style={s.modalHeader}>
+            <Text style={s.modalTitle}>説明言語</Text>
+            <TouchableOpacity onPress={() => setShowNativeLangPicker(false)}>
+              <Text style={s.modalClose}>完了</Text>
+            </TouchableOpacity>
+          </View>
+          {NATIVE_LANGS.map((lang) => {
+            const active = (settings?.native_language ?? 'ja') === lang.key;
+            return (
+              <TouchableOpacity
+                key={lang.key}
+                style={[s.timeOption, active && s.timeOptionActive]}
+                onPress={() => { saveSetting('native_language', lang.key); setShowNativeLangPicker(false); }}
+              >
+                <Text style={[s.timeOptionText, active && s.timeOptionTextActive]}>{lang.label}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      </Modal>
 
       {/* 時刻ピッカー モーダル */}
       <Modal visible={showTimePicker} transparent animationType="slide">
@@ -447,6 +553,17 @@ const s = StyleSheet.create({
   timeValue: { fontSize: 16, color: '#E9EDF2' },
   timeValueDisabled: { color: '#6B7280' },
   timeChevron: { fontSize: 20, color: '#6B7280' },
+
+  langRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 14,
+    gap: 12,
+  },
+  langValueWrap: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  langValue: { fontSize: 14, color: '#2DD4BF', fontWeight: '600' },
+  langChevron: { fontSize: 18, color: '#4B5563' },
 
   notifPermissionBtn: {
     flexDirection: 'row',

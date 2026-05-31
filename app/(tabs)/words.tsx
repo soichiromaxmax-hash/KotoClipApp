@@ -158,9 +158,31 @@ export default function WordsScreen() {
     );
   }
 
+  const FREE_LIMIT = 100;
+  const countPct = Math.min((words.length / FREE_LIMIT) * 100, 100);
+  const countColor = words.length >= FREE_LIMIT ? '#EF4444' : words.length >= 80 ? '#F59E0B' : '#2DD4BF';
+
   return (
     <SafeAreaView style={styles.root}>
       <Text style={styles.title}>単語帳</Text>
+
+      {/* 単語数カウンター */}
+      {!loading && words.length > 0 && (
+        <View style={styles.countBar}>
+          <View style={styles.countRow}>
+            <Text style={styles.countText}>
+              <Text style={[styles.countNum, { color: countColor }]}>{words.length}</Text>
+              <Text style={styles.countSep}> / {FREE_LIMIT}語</Text>
+            </Text>
+            <Text style={[styles.countLabel, { color: countColor }]}>
+              {words.length >= FREE_LIMIT ? '無料プランの上限です' : words.length >= 80 ? 'もうすぐ上限です' : '無料プラン'}
+            </Text>
+          </View>
+          <View style={styles.countTrack}>
+            <View style={[styles.countFill, { width: `${countPct}%` as any, backgroundColor: countColor }]} />
+          </View>
+        </View>
+      )}
 
       {/* 検索 */}
       <TextInput
@@ -256,6 +278,15 @@ export default function WordsScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#0E1116' },
   title: { color: '#F9FAFB', fontSize: 22, fontWeight: '700', marginHorizontal: 16, marginTop: 16, marginBottom: 12 },
+
+  countBar: { marginHorizontal: 16, marginBottom: 12, gap: 6 },
+  countRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
+  countText: {},
+  countNum: { fontSize: 14, fontWeight: '700' },
+  countSep: { fontSize: 12, color: '#6B7280' },
+  countLabel: { fontSize: 11, fontWeight: '600' },
+  countTrack: { height: 3, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 99, overflow: 'hidden' },
+  countFill: { height: '100%', borderRadius: 99 },
 
   searchInput: {
     backgroundColor: '#151A22',
