@@ -205,4 +205,11 @@ export const api = {
 
   updateSetting: (key: string, value: string | number) =>
     _fetch('/settings', { method: 'POST', body: JSON.stringify({ key, value: String(value) }) }),
+
+  getGamification: () => _fetch('/gamification'),
+
+  awardXp: (action: 'session_complete' | 'combo_5' | 'weekly_report') =>
+    _fetch('/gamification/xp', { method: 'POST', body: JSON.stringify({ action }) }),
+
+  getWeakWords: (limit = 20) => _fetch(`/words/weak?limit=${limit}`),
 };

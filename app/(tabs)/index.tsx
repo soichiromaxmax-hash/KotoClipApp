@@ -13,6 +13,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { api } from '@/lib/api';
 import { KotoBird } from '@/components/KotoBird';
 import { getCachedStats, getCachedWild, setCachedStats, setCachedWild, resetHomeCache } from '@/lib/homeCache';
+import { computeLevel, xpProgressPct, xpToNextLevel, heroColors, kotoStage, KOTO_STAGE_LABELS } from '@/lib/gamification';
 
 interface Stats {
   due: number;
@@ -22,6 +23,7 @@ interface Stats {
   reliable_count: number;
   today_count?: number;
   wild_known_count?: number;
+  xp?: number;
 }
 
 interface Encounter {
@@ -210,7 +212,7 @@ export default function HomeScreen() {
           <>
             {/* ── ヒーローセクション ── */}
             <LinearGradient
-              colors={['#0E1116', '#121720']}
+              colors={heroColors(computeLevel(stats?.xp ?? 0))}
               start={{ x: 0, y: 0 }}
               end={{ x: 0, y: 1 }}
               style={s.hero}
@@ -258,6 +260,32 @@ export default function HomeScreen() {
                   />
                 </View>
               )}
+
+              {/* XP / Level バー */}
+              {(stats?.xp ?? 0) > 0 && (() => {
+                const xp = stats!.xp!;
+                const lv = computeLevel(xp);
+                const prog = xpProgressPct(xp);
+                const toNext = xpToNextLevel(xp);
+                const stage = kotoStage(lv);
+                return (
+                  <View style={s.xpRow}>
+                    <View style={s.xpLabelRow}>
+                      <Text style={s.xpLvBadge}>Lv {lv}</Text>
+                      <Text style={s.xpStageName}>{KOTO_STAGE_LABELS[stage]}</Text>
+                      <Text style={s.xpToNext}>{lv < 30 ? `次まで ${toNext.toLocaleString()} XP` : 'MAX'}</Text>
+                    </View>
+                    <View style={s.xpTrack}>
+                      <LinearGradient
+                        colors={['#F5B84B', '#FFD700']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={[s.xpFill, { width: `${prog}%` as any }]}
+                      />
+                    </View>
+                  </View>
+                );
+              })()}
             </LinearGradient>
 
             {/* ── コンテンツ ── */}
@@ -554,6 +582,27 @@ const s = StyleSheet.create({
     overflow: 'hidden',
   },
   progressFill: { height: '100%', borderRadius: 99 },
+
+  xpRow: { marginTop: 10, gap: 5 },
+  xpLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  xpLvBadge: {
+    backgroundColor: 'rgba(245,184,75,0.18)',
+    borderRadius: 6,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#F5B84B',
+  },
+  xpStageName: { fontSize: 11, color: '#8F99A8', flex: 1 },
+  xpToNext: { fontSize: 11, color: '#64748B' },
+  xpTrack: {
+    height: 4,
+    backgroundColor: 'rgba(245,184,75,0.12)',
+    borderRadius: 99,
+    overflow: 'hidden',
+  },
+  xpFill: { height: '100%', borderRadius: 99 },
 
   // ── コンテンツ ──
   content: {

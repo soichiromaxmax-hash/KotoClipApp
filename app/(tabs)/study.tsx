@@ -42,7 +42,7 @@ interface Question {
   answer: string;
 }
 
-type Mode = 'scheduled' | 'free';
+type Mode = 'scheduled' | 'free' | 'weak';
 type Phase = 'loading' | 'question' | 'feedback' | 'result' | 'empty' | 'error';
 
 // ─── ユーティリティ ─────────────────────────────────────────────────────────
@@ -244,6 +244,7 @@ export default function StudyScreen() {
   const correctRef = useRef(0);
   const wrongRef = useRef(0);
   const poolRef = useRef<Word[]>([]);
+  const comboRef = useRef(0);  // 連続正解カウント
 
   const loadQueue = useCallback(async (m: Mode) => {
     setPhase('loading');
@@ -259,6 +260,8 @@ export default function StudyScreen() {
     try {
       const words: Word[] = m === 'free'
         ? await api.getAllWords(10, true)
+        : m === 'weak'
+        ? await api.getWeakWords(20)
         : await api.getDue(20);
       if (!Array.isArray(words) || words.length === 0) {
         resetHomeCache();
@@ -417,11 +420,26 @@ export default function StudyScreen() {
     }
   }
 
-  async function next() {
+  async function next(wasCorrect = false) {
+    // コンボ追跡
+    if (wasCorrect) {
+      comboRef.current += 1;
+      if (comboRef.current === 5) {
+        api.awardXp('combo_5').catch(() => {});
+      }
+      if (comboRef.current === 10) {
+        // combo_10 バッジ条件（クライアント側で判定）
+        api.awardXp('combo_5').catch(() => {}); // +10相当（combo_5を2回）
+      }
+    } else {
+      comboRef.current = 0;
+    }
+
     const nextIdx = idx + 1;
     if (nextIdx >= queue.length) {
       resetHomeCache();
       setPhase('result');
+      api.awardXp('session_complete').catch(() => {});  // セッション完了 +30XP
       checkShareTriggers();
       checkNotificationTriggers();
       return;
@@ -442,14 +460,20 @@ export default function StudyScreen() {
         <SharePrompt payload={sharePayload} onClose={() => setSharePayload(null)} />
       )}
       <View style={styles.modeBar}>
-        {(['scheduled', 'free'] as Mode[]).map((m) => (
+        {([
+          ['scheduled', '復習'],
+          ['free',      'クイズ'],
+          ['weak',      '苦手語'],
+        ] as [Mode, string][]).map(([m, label]) => (
           <TouchableOpacity
             key={m}
-            style={[styles.modeTab, mode === m && styles.modeTabActive]}
+            style={[styles.modeTab, mode === m && styles.modeTabActive,
+                    m === 'weak' && styles.modeTabWeak, m === 'weak' && mode === m && styles.modeTabWeakActive]}
             onPress={() => setMode(m)}
           >
-            <Text style={[styles.modeTabText, mode === m && styles.modeTabTextActive]}>
-              {m === 'scheduled' ? '復習' : 'クイズ練習'}
+            <Text style={[styles.modeTabText, mode === m && styles.modeTabTextActive,
+                          m === 'weak' && mode !== m && styles.modeTabTextWeak]}>
+              {label}
             </Text>
           </TouchableOpacity>
         ))}
@@ -516,7 +540,7 @@ export default function StudyScreen() {
                       <Text style={styles.feedbackText}>{feedback.msg}</Text>
                     </View>
                   )}
-                  <TouchableOpacity style={styles.primaryBtn} onPress={next}>
+                  <TouchableOpacity style={styles.primaryBtn} onPress={() => next(feedback?.correct ?? false)}>
                     <Text style={styles.primaryBtnText}>
                       {idx + 1 >= queue.length ? '結果を見る' : '次へ'}
                     </Text>
@@ -559,8 +583,11 @@ const styles = StyleSheet.create({
   },
   modeTab: { flex: 1, paddingVertical: 8, borderRadius: 8, alignItems: 'center' },
   modeTabActive: { backgroundColor: '#263041' },
-  modeTabText: { color: '#6B7280', fontWeight: '600', fontSize: 14 },
+  modeTabWeak: {},
+  modeTabWeakActive: { backgroundColor: 'rgba(239,68,68,0.15)' },
+  modeTabText: { color: '#6B7280', fontWeight: '600', fontSize: 13 },
   modeTabTextActive: { color: '#2DD4BF' },
+  modeTabTextWeak: { color: '#EF4444' },
 
   header: {
     flexDirection: 'row',
