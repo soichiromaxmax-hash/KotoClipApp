@@ -26,7 +26,7 @@ app/
 lib/
 ├── api.ts               API クライアント（全エンドポイント）
 ├── homeCache.ts         ホーム統計キャッシュ（モジュールレベルシングルトン）
-└── notifications.ts     通知ライブラリ（expo-notifications ~0.31.0）
+└── notifications.ts     通知ライブラリ（expo-notifications ~55.0.23）
 
 context/
 └── auth.tsx             AuthContext（state: loading/authenticated/unauthenticated）
