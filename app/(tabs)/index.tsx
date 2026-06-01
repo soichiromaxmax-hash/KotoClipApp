@@ -487,7 +487,7 @@ const s = StyleSheet.create({
     gap: 14,
     marginBottom: 18,
   },
-  mascotBlock: { width: 110 },
+  mascotBlock: {},
   statPanel: {
     flex: 1,
     flexDirection: 'row',

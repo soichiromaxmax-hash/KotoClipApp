@@ -39,12 +39,12 @@ export function kotoStage(level: number): 1 | 2 | 3 | 4 | 5 | 6 {
 
 /** Kotoステージの説明 */
 export const KOTO_STAGE_LABELS: Record<number, string> = {
-  1: '初心者Koto',
-  2: '学習者Koto',
-  3: 'Scholar Koto',
-  4: 'Researcher Koto',
-  5: 'Word Wizard Koto',
-  6: 'KotoClip Master',
+  1: 'ひよこ',
+  2: '小学生',
+  3: '高校生',
+  4: 'ビジネス',
+  5: '研究者',
+  6: '卒業生',
 };
 
 // ── ヒーロー背景カラー（レベル帯ごと） ──────────────────────────────────
