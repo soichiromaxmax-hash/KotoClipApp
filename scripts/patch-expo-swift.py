@@ -31,6 +31,38 @@ def patch(path_str: str, replacements: list) -> bool:
     return False
 
 # ── expo-modules-core ─────────────────────────────────────────────────────────
+# Swift 5.0 モードでは `: @MainActor Protocol` 構文が未対応 → @MainActor を除去
+# （Podfile の SWIFT_STRICT_CONCURRENCY='minimal' で actor isolation は抑制済み）
+
+patch(
+    'expo-modules-core/ios/Core/Views/SwiftUI/SwiftUIHostingView.swift',
+    [
+        (
+            'public final class HostingView<Props: ViewProps, ContentView: View<Props>>: ExpoView, @MainActor AnyExpoSwiftUIHostingView {',
+            'public final class HostingView<Props: ViewProps, ContentView: View<Props>>: ExpoView, AnyExpoSwiftUIHostingView {'
+        ),
+    ]
+)
+
+patch(
+    'expo-modules-core/ios/Core/Views/SwiftUI/SwiftUIVirtualView.swift',
+    [
+        (
+            'extension ExpoSwiftUI.SwiftUIVirtualView: @MainActor ExpoSwiftUI.ViewWrapper {',
+            'extension ExpoSwiftUI.SwiftUIVirtualView: ExpoSwiftUI.ViewWrapper {'
+        ),
+    ]
+)
+
+patch(
+    'expo-modules-core/ios/Core/Views/ViewDefinition.swift',
+    [
+        (
+            'extension UIView: @MainActor AnyArgument {',
+            'extension UIView: AnyArgument {'
+        ),
+    ]
+)
 
 # URLAuthenticationChallengeForwardSender:
 # Sendable 宣言クラスに non-Sendable な completionHandler プロパティ → エラー
