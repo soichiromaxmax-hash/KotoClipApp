@@ -10,7 +10,8 @@
     "web": "expo start --web",
     "lint": "eslint . --no-cache",
     "release:ios:check": "expo config --type introspect && eslint . --no-cache",
-    "release:ios:build": "eas build --platform ios --profile production"
+    "release:ios:build": "eas build --platform ios --profile production",
+    "postinstall": "python3 scripts/patch-expo-swift.py || true"
   },
   "dependencies": {
     "@expo-google-fonts/lobster-two": "^0.4.1",

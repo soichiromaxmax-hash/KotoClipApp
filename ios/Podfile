@@ -61,5 +61,15 @@ target 'KotoClip' do
       :mac_catalyst_enabled => false,
       :ccache_enabled => ccache_enabled?(podfile_properties),
     )
+
+    # Swift 6 concurrency patch for EAS Build
+    # pods を Swift 5 モードでコンパイルして actor isolation エラーを警告化→抑制
+    installer.pods_project.targets.each do |target|
+      target.build_configurations.each do |cfg|
+        cfg.build_settings['SWIFT_VERSION']                 = '5.0'
+        cfg.build_settings['SWIFT_STRICT_CONCURRENCY']      = 'minimal'
+        cfg.build_settings['GCC_TREAT_WARNINGS_AS_ERRORS']  = 'NO'
+      end
+    end
   end
 end
