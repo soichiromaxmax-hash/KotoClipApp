@@ -15,7 +15,11 @@
       }
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "credentialsSource": "local",
+      "ios": {
+        "image": "macos-sonoma-14.7-xcode-16.3"
+      }
     }
   },
   "submit": {
