@@ -37,16 +37,6 @@ export function kotoStage(level: number): 1 | 2 | 3 | 4 | 5 | 6 {
   return 6;
 }
 
-/** レベルに対応する背景テーマ名 */
-export function bgTheme(level: number): string {
-  if (level <= 5)  return '小さな机';
-  if (level <= 10) return '語彙の部屋';
-  if (level <= 15) return '読書の森';
-  if (level <= 20) return '文脈の街';
-  if (level <= 25) return '言葉の空';
-  return 'KotoClip Library';
-}
-
 /** Kotoステージの説明 */
 export const KOTO_STAGE_LABELS: Record<number, string> = {
   1: '初心者Koto',
@@ -56,23 +46,6 @@ export const KOTO_STAGE_LABELS: Record<number, string> = {
   5: 'Word Wizard Koto',
   6: 'KotoClip Master',
 };
-
-// ── バッジ定義 ────────────────────────────────────────────────────────────
-
-export const BADGE_DEFS = {
-  first_word:  { name: 'はじめの一歩', desc: '初めて単語を保存',     xp: 50,  emoji: '📝' },
-  streak_7:    { name: '7日連続',       desc: '7日連続達成',           xp: 100, emoji: '🔥' },
-  streak_30:   { name: '30日連続',      desc: '30日連続達成',          xp: 300, emoji: '💎' },
-  words_100:   { name: '100語保存',     desc: '100語保存',             xp: 200, emoji: '📚' },
-  words_500:   { name: '500語保存',     desc: '500語保存',             xp: 300, emoji: '🏆' },
-  mastered_50: { name: '50語定着',      desc: '50語を完全に定着',      xp: 200, emoji: '⭐' },
-  weak_10:     { name: '苦手克服',      desc: '苦手語を10語克服',      xp: 150, emoji: '💪' },
-  combo_10:    { name: '10問連続正解',  desc: '10問連続正解',          xp: 100, emoji: '🎯' },
-  weekly_5:    { name: '週間完走',      desc: '1週間に5日学習',        xp: 100, emoji: '📅' },
-  level_30:    { name: 'KotoClip Master', desc: 'Lv30到達',           xp: 500, emoji: '👑' },
-} as const;
-
-export type BadgeId = keyof typeof BADGE_DEFS;
 
 // ── ヒーロー背景カラー（レベル帯ごと） ──────────────────────────────────
 

@@ -31,6 +31,9 @@ interface Word {
   context?: string;
   reps?: number;
   created_at?: string;
+  stability?: number;
+  next_review?: string;
+  last_reviewed?: string;
   _q_type?: 'choice' | 'reverse';
 }
 
@@ -47,15 +50,22 @@ type Phase = 'loading' | 'question' | 'feedback' | 'result' | 'empty' | 'error';
 
 // ─── ユーティリティ ─────────────────────────────────────────────────────────
 
-function pickFreeType(usedTypes: string[]): 'choice' | 'reverse' {
-  const pool: ('choice' | 'reverse')[] = ['choice', 'reverse'];
-  const unused = pool.filter((t) => !usedTypes.includes(t));
-  const candidates = unused.length > 0 ? unused : pool;
-  return candidates[Math.floor(Math.random() * candidates.length)];
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
 }
 
-function shuffle<T>(arr: T[]): T[] {
-  return [...arr].sort(() => Math.random() - 0.5);
+// FSRS-4.5 の保持率計算（サーバーと同じパラメータ）
+const FSRS_DECAY = -0.5;
+const FSRS_FACTOR = 0.9 ** (1 / FSRS_DECAY) - 1; // ≈ 0.2346
+
+function fsrsRetention(stability: number, elapsedDays: number): number {
+  if (stability <= 0 || elapsedDays <= 0) return 1;
+  return Math.pow(1 + FSRS_FACTOR * elapsedDays / stability, FSRS_DECAY);
 }
 
 const FALLBACK_MEANINGS = [
@@ -236,10 +246,9 @@ export default function StudyScreen() {
   const [errorMsg, setErrorMsg] = useState('');
   const [sharePayload, setSharePayload] = useState<SharePayload | null>(null);
   const [saveError, setSaveError] = useState<{
-    wordId: number; rating: 'good' | 'again'; elapsed: number;
+    wordId: number; rating: 'good' | 'hard' | 'easy' | 'again'; elapsed: number;
     isCorrect: boolean; correctAnswer: string;
   } | null>(null);
-  const startTime = useRef(Date.now());
   const masteredWordRef = useRef<Word | null>(null);
   const correctRef = useRef(0);
   const wrongRef = useRef(0);
@@ -259,9 +268,9 @@ export default function StudyScreen() {
     wrongRef.current = 0;
     try {
       const words: Word[] = m === 'free'
-        ? await api.getAllWords(10, true)
+        ? await api.getAllWords()
         : m === 'weak'
-        ? await api.getWeakWords(20)
+        ? await api.getWeakWords(10)
         : await api.getDue(20);
       if (!Array.isArray(words) || words.length === 0) {
         resetHomeCache();
@@ -269,10 +278,68 @@ export default function StudyScreen() {
         setPhase('empty');
         return;
       }
-      const entries = shuffle(words).slice(0, 20).map((w) => ({
-        ...w,
-        _q_type: m === 'free' ? pickFreeType([]) : undefined,
-      }));
+
+      let entries: (Word & { _q_type?: 'choice' | 'reverse' })[];
+
+      if (m === 'free') {
+        // ── 忘却曲線 × 重み付きランダムサンプリング ──────────────────
+        // 忘却度が高い単語ほど選ばれやすいが、全単語に出題チャンスがある
+        // 10語それぞれ1問（choiceかreverseをランダム割り当て）= 10問
+        const SESSION_WORDS = 10;
+        const nowMs = Date.now();
+        const todayStr = new Date().toISOString().slice(0, 10);
+
+        const withWeights = words.map((w) => {
+          const stability = w.stability ?? 0;
+          const reps = w.reps ?? 0;
+          const lastReviewed = w.last_reviewed ?? null;
+          const nextReview = w.next_review ?? todayStr;
+          const elapsedDays = lastReviewed
+            ? (nowMs - new Date(lastReviewed).getTime()) / 86400000
+            : 0;
+
+          let weight: number;
+          if (reps === 0) {
+            weight = 4;  // 未学習: 最高重み
+          } else {
+            const retention = fsrsRetention(stability, elapsedDays);
+            if (nextReview <= todayStr) {
+              weight = 1 + (1 - retention) * 3;  // 期限超過: 1〜4（忘れているほど重い）
+            } else {
+              weight = 0.2 + (1 - retention) * 0.8;  // 学習中: 0.2〜1.0
+            }
+          }
+          return { ...w, _weight: weight };
+        });
+
+        // 重み付きランダムサンプリング（復元なし）
+        const candidates = [...withWeights];
+        const sampledPool: typeof withWeights = [];
+        const count = Math.min(SESSION_WORDS, candidates.length);
+        let totalWeight = candidates.reduce((sum, c) => sum + c._weight, 0);
+
+        while (sampledPool.length < count) {
+          let r = Math.random() * totalWeight;
+          let chosen = candidates.length - 1;
+          for (let i = 0; i < candidates.length; i++) {
+            r -= candidates[i]._weight;
+            if (r <= 0) { chosen = i; break; }
+          }
+          totalWeight -= candidates[chosen]._weight;
+          sampledPool.push(candidates.splice(chosen, 1)[0]);
+        }
+
+        // 各単語に出題タイプをランダム割り当て → シャッフル
+        entries = shuffle(sampledPool).map((w) => ({
+          ...w,
+          _q_type: (Math.random() < 0.5 ? 'choice' : 'reverse') as 'choice' | 'reverse',
+        }));
+      } else {
+        entries = shuffle(words).slice(0, m === 'weak' ? 10 : 20).map((w) => ({
+          ...w,
+          _q_type: undefined,
+        }));
+      }
       poolRef.current = entries;
       setQueue(entries);
       setIdx(0);
@@ -301,9 +368,33 @@ export default function StudyScreen() {
     setPhase('feedback');
   }
 
-  async function onAnswer(rating: 'good' | 'again', isCorrect: boolean) {
+  async function onAnswer(_rawRating: 'good' | 'again', isCorrect: boolean) {
     const word = queue[idx];
-    const elapsed = Math.max(1, Math.round(((Date.now() - startTime.current) / 1000 / 86400) * 10) / 10);
+
+    // 実際の経過日数（FSRSが忘却曲線を計算するために使う）
+    const lastReviewed = word.last_reviewed ?? null;
+    const elapsed = lastReviewed
+      ? Math.max(0.1, Math.round((Date.now() - new Date(lastReviewed).getTime()) / 86400000 * 10) / 10)
+      : 1.0;
+
+    // 保持率から FSRS 評価を自動決定（4段階評価で間隔の精度を上げる）
+    const stability = word.stability ?? 0;
+    const retention = stability > 0 && (word.reps ?? 0) > 0
+      ? fsrsRetention(stability, elapsed)
+      : -1;
+    let rating: 'again' | 'hard' | 'good' | 'easy';
+    if (!isCorrect) {
+      rating = 'again';
+    } else if (retention < 0 || (word.reps ?? 0) === 0) {
+      rating = 'good';           // 初回 or stability 不明
+    } else if (retention < 0.5) {
+      rating = 'hard';           // ほぼ忘れていたが思い出した → 間隔は短めに
+    } else if (retention >= 0.85) {
+      rating = 'easy';           // しっかり覚えていた → 間隔を大きく伸ばす
+    } else {
+      rating = 'good';           // 通常の想起
+    }
+
     const correctAnswer = question?.answer ?? word.meaning;
 
     if (isCorrect && (word.reps ?? 0) >= 4 && !masteredWordRef.current) {
@@ -461,7 +552,6 @@ export default function StudyScreen() {
     setIdx(nextIdx);
     setFeedback(null);
     setQuestion(buildQuestion(nextWord, nextWord._q_type ?? 'choice', poolRef.current));
-    startTime.current = Date.now();
     setPhase('question');
   }
 

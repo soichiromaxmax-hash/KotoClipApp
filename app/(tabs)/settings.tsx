@@ -577,9 +577,7 @@ const s = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 12,
   },
-  timeRowDisabled: { opacity: 0.4 },
   timeValue: { fontSize: 16, color: '#E9EDF2' },
-  timeValueDisabled: { color: '#6B7280' },
   timeChevron: { fontSize: 20, color: '#6B7280' },
 
   planCard: {

@@ -26,21 +26,9 @@ export type SharePayload = StreakPayload | WordMasteredPayload;
 
 const STREAK_MILESTONES = [7, 30, 50, 80, 100];
 
-const STREAK_COPY: Record<number, string> = {
-  7: '学習のリズムができてきた。',
-  30: '英語学習、ちゃんと続いてる。',
-  50: 'ここまで来たら、もう習慣。',
-  80: '記憶が積み上がってきた。',
-  100: '100日連続。これはもう実力。',
-};
-
-export function isStreakMilestone(days: number): boolean {
+function isStreakMilestone(days: number): boolean {
   if (STREAK_MILESTONES.includes(days)) return true;
   return days > 100 && (days - 100) % 20 === 0;
-}
-
-export function getStreakCopy(days: number): string {
-  return STREAK_COPY[days] ?? '今日も、記憶にクリップ。';
 }
 
 export function getMasteryRank(reviewCount: number, days: number): 'S' | 'A' | 'B' {

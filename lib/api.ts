@@ -200,7 +200,7 @@ export const api = {
   retranslate: (id: number) =>
     _fetch(`/words/${id}/retranslate`, { method: 'POST' }),
 
-  postReview: (wordId: number, rating: 'good' | 'hard' | 'again', elapsedDays = 1) =>
+  postReview: (wordId: number, rating: 'good' | 'hard' | 'easy' | 'again', elapsedDays = 1) =>
     _fetch('/study/review', { method: 'POST', body: JSON.stringify({ word_id: wordId, rating, elapsed_days: elapsedDays }) }),
 
   updateSetting: (key: string, value: string | number) =>

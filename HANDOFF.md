@@ -1,42 +1,92 @@
-# KotoClip — 完全引き継ぎメモ
+# KotoClip — 引き継ぎメモ
 
-**更新日: 2026-05-29**
+**更新日: 2026-06-01**
 
 ---
 
 ## このアプリとは
 
-語彙学習iOSアプリ。単語をクリップして、フラッシュカードやクイズで復習する。
+英語を読みながら出会った単語を保存し、スペースド・リピティション（間隔反復）で復習するiOSアプリ。  
 Share Extension でブラウザやアプリから単語を直接追加できる。
 
 - バンドルID: `jp.kotoclip.app`
-- バックエンド: Render にホスティング（詳細は HANDOVER.md）
-- フロントエンド: React Native (Expo SDK 54 / expo-router)
+- バックエンド: `https://kotoclip.onrender.com`（Render.com 無料プラン）
+- フロントエンド: React Native（Expo SDK ~56.0.0-preview.7 / expo-router v4）
 
 ---
 
-## 現在の状態（2026-05-29）
+## 現在の状態（2026-06-01）
 
-| 項目 | 状態 |
+| 項目 | 値 |
 |---|---|
-| iPhoneにインストール済みのビルド | TestFlight ビルド #36（Codemagicで作成） |
+| buildNumber（app.json） | **53** |
+| TestFlight | ビルド #36 がインストール済み（古いビルド。Codemagic製） |
 | OTA更新（eas update） | **使えない**（Codemagicビルドは非対応） |
-| EAS Build 無料枠 | **6月1日まで使い切り** |
-| 次にやること | **6月1日に EAS Build でビルド → 以後は eas update で開発** |
+| EAS Build 無料枠 | **本日リセット済み** |
+| コード状態 | push済み。EAS Buildを実行すれば反映される |
 
-### 6月1日にやること（これだけ）
+### 今すぐやること（EAS Build）
 
 ```
 cd "C:\Users\SoichiroKamibeppu(MC\KotoClipApp"
 npx eas build --platform ios --profile production --auto-submit
 ```
 
-30〜40分で TestFlight に自動送信される。
-このビルドがiPhoneに入って初めて、以後の OTA 更新が使えるようになる。
+---
+
+## 直近のコード変更内容（このビルドで反映される）
+
+EAS 無料枠が明日（6/1）リセットされる。以下の手順で進める：
+
+1. 上記の未コミット変更をコミット・push
+2. EAS Build 実行（30〜40分で TestFlight 自動送信）
+3. このビルドが iPhone に入ったら、以後は `eas update` だけで更新できる
 
 ---
 
-## アカウント一覧
+## 直近のコード変更内容（このビルドで反映される）
+
+### クイズ練習（自由練習）モードの大幅改修
+
+**変更ファイル:** `app/(tabs)/study.tsx`, `lib/api.ts`
+
+1. **単語選択: 重み付きランダムサンプリング**  
+   全登録単語をFSRS保持率でスコアリングし、忘却度が高い単語ほど選ばれやすい確率的サンプリングで10語を選出。毎回異なる顔ぶれになる。
+
+2. **セッション構成: 10語×各1問 = 10問**  
+   旧: 5語×2問（同じ単語が必ず2回出る）→ 単調  
+   新: 10語×1問（choice/reverseをランダム割り当て）→ 毎回多様
+
+3. **FSRS elapsed_days の修正**  
+   旧: 常に1日固定（バグ）  
+   新: `word.last_reviewed` から実際の経過日数を計算
+
+4. **FSRS 4段階評価の自動適用**  
+   旧: 正解=`good`/不正解=`again` の2択  
+   新: 保持率から `easy`/`good`/`hard`/`again` を自動判定
+
+### 不要コードの削除（軽量化）
+- `startTime` ref（未使用）
+- `bgTheme()`, `BADGE_DEFS`, `BadgeId`（gamification.ts・どこからも未使用）
+- `getStreakCopy()`, `STREAK_COPY`（shareCard.ts・どこからも未使用）
+- `progressText`, `heroCaption`, `progressTrack` 等の未使用スタイル・変数
+
+---
+
+## 最近追加した機能（直近のコミット）
+
+| コミット | 内容 |
+|---|---|
+| `efa9861` | Koto キャラのステージ装飾・Lvバッジ大型化・進捗テキスト削除 |
+| `eef7148` | 「確実に習得」バー・キャプション・進捗テキストをホームから削除 |
+| `9785199` | クイズフィードバックに XP ±表示・ホームの XP バー大型化 |
+| `34ca3b1` | ゲーミフィケーション：XP バー・ウィークワードモード・コンボ追跡 |
+| `35e1893` | lint/doctor エラー全解消・残バグ修正 |
+| `0a4273b` | 通知・スプラッシュ・wild エラー・単語追加 UX・API 安全性 修正 |
+
+---
+
+## アカウント一覧（受け取るもの）
 
 | サービス | アカウント / 情報 |
 |---|---|
@@ -44,11 +94,12 @@ npx eas build --platform ios --profile production --auto-submit
 | Apple Team ID | `9U2YJ4XL4K` |
 | App Store Connect API Key ID | `HK23GAU47L` |
 | App Store Connect Issuer ID | `39ebdc7c-2b5d-47b6-9a67-da83b74103fc` |
-| .p8 ファイル（ローカル保存場所） | `C:\Users\SoichiroKamibeppu(MC\OneDrive\Desktop\ChatGPT Vocab Test\AuthKey_HK23GAU47L.p8` |
-| Expo / EAS アカウント | soichiromax |
+| .p8 ファイル（ローカル） | `C:\Users\SoichiroKamibeppu(MC\OneDrive\Desktop\ChatGPT Vocab Test\AuthKey_HK23GAU47L.p8` |
+| Expo / EAS | soichiromax |
 | EAS ダッシュボード | https://expo.dev/accounts/soichiromax/projects/kotoclip |
 | GitHub リポジトリ | https://github.com/soichiromaxmax-hash/KotoClipApp |
 | App Store Connect アプリID | `6765753980` |
+| バックエンド（Render） | オーナーから口頭で伝える |
 
 ---
 
@@ -57,35 +108,32 @@ npx eas build --platform ios --profile production --auto-submit
 ### パターン①：画面修正・バグ修正・機能追加（毎日の作業）
 
 コードを変えたら：
-
 ```
 cd "C:\Users\SoichiroKamibeppu(MC\KotoClipApp"
 npx eas update --branch production --environment production --message "変更内容のメモ"
 ```
-
-iPhoneのアプリを完全に閉じて（バックグラウンドから消す）再度開くと反映される。
+iPhone のアプリを完全に閉じて再起動すると反映される。  
 **ビルド不要・無料・1〜2分で完了。**
 
-> ※ 6月1日以降、EAS ビルドをインストールしてから使える。
+> ※ 6月1日以降の EAS ビルドをインストールしてから使える。
 
 ---
 
-### パターン②：TestFlight に新しいバージョンを送る（月1〜2回）
+### パターン②：TestFlight に新しいビルドを送る（月1〜2回）
 
 ```
 cd "C:\Users\SoichiroKamibeppu(MC\KotoClipApp"
 npx eas build --platform ios --profile production --auto-submit
 ```
-
-30〜40分で TestFlight に自動送信される。
+30〜40分で TestFlight に自動送信される。  
 **EAS 無料枠: 30回/月（毎月1日リセット）**
 
 ---
 
 ### パターン③：Swift・ネイティブコードを変えたとき
 
-`targets/share-extension/ShareViewController.swift` や
-`modules/shared-storage/ios/SharedStorageModule.swift` を変えた場合は
+`targets/share-extension/ShareViewController.swift` や  
+`modules/shared-storage/ios/SharedStorageModule.swift` を変えた場合は  
 パターン①では反映されない。パターン②のフルビルドが必要。
 
 ---
@@ -96,24 +144,23 @@ npx eas build --platform ios --profile production --auto-submit
 KotoClipApp/
 │
 ├── app/                            ← 画面ファイル。ここをよく触る
-│   ├── _layout.tsx                 ルート（認証チェック・フォント読み込み）
-│   ├── flashcard.tsx               フラッシュカード画面
-│   ├── how-to.tsx                  使い方画面
+│   ├── _layout.tsx                 ルート（認証・フォント・Renderウォームアップ）
+│   ├── flashcard.tsx               フラッシュカード（10枚バッチ）
+│   ├── how-to.tsx                  使い方説明
 │   ├── auth/login.tsx              ログイン・新規登録
 │   ├── word/[id].tsx               単語詳細・削除・AI再翻訳
 │   └── (tabs)/
-│       ├── index.tsx               ホーム画面（統計・ボタン）
-│       ├── study.tsx               4択クイズ画面
-│       ├── add.tsx                 単語追加画面
-│       ├── words.tsx               単語一覧
-│       └── settings.tsx            設定・ログアウト
+│       ├── index.tsx               ホーム（XPバー・統計・CTAカード）
+│       ├── study.tsx               クイズ練習（4択のみ・スケジュール/フリー/ウィーク）
+│       ├── add.tsx                 単語追加
+│       ├── words.tsx               単語一覧（フィルター・ソート）
+│       └── settings.tsx            設定（通知・プラン・ログアウト）
 │
 ├── lib/
 │   ├── api.ts                      ★ API呼び出しはすべてここ経由
-│   └── notifications.ts            通知のスケジュール管理
+│   └── notifications.ts            通知スケジュール管理
 │
-├── context/
-│   └── auth.tsx                    ログイン状態の管理（useAuth フック）
+├── context/auth.tsx                ログイン状態（useAuth フック）
 │
 ├── components/
 │   ├── KotoBird.tsx                黄色い鳥キャラ（絵文字で代替しない）
@@ -121,24 +168,24 @@ KotoClipApp/
 │   └── SplashAnimation.tsx         起動時アニメーション
 │
 ├── targets/share-extension/
-│   └── ShareViewController.swift   Share Extension（Safariなどから単語を追加する機能）
+│   └── ShareViewController.swift   Share Extension（Safari等から単語追加）
 │
-├── modules/shared-storage/
-│   └── ios/SharedStorageModule.swift   メインアプリとShare Extensionでトークンを共有する仕組み
+├── modules/shared-storage/ios/
+│   └── SharedStorageModule.swift   App Group UserDefaults（トークン共有）
 │
 ├── plugins/
-│   ├── withShareExtension.js       Share ExtensionをXcodeプロジェクトに組み込む設定
-│   └── withoutPushEntitlement.js   不要なプッシュ通知権限を除去
+│   ├── withShareExtension.js       Share Extension を Xcode に組み込む
+│   └── withoutPushEntitlement.js   不要プッシュ権限を除去
 │
 ├── ci_scripts/
-│   └── ci_post_clone.sh            ← 絶対に触るな（iOSビルド用パッチが大量に入っている）
+│   └── ci_post_clone.sh            ← 絶対に触るな（Swift 6パッチ大量）
 │
-├── ios/                            ← 触るな（自動生成。手動で変えると壊れる）
+├── ios/                            ← 触るな（expo prebuild で自動生成）
 │
-├── app.json                        アプリ基本設定（バンドルID・EASプロジェクトID等）
-├── eas.json                        EAS Build/Update のプロファイル設定
-├── HANDOFF.md                      このファイル
-└── HANDOVER.md                     アプリ全体の設計・API仕様・デザインルール
+├── app.json                        基本設定（buildNumber: 53）
+├── eas.json                        EAS Build/Update プロファイル
+├── HANDOFF.md                      このファイル（引き継ぎメモ）
+└── HANDOVER.md                     設計・API・デザインルール詳細
 ```
 
 ---
@@ -147,41 +194,29 @@ KotoClipApp/
 
 | ファイル / フォルダ | 判断 | 理由 |
 |---|---|---|
-| `app/` 以下 | **自由に触る** | JSの変更はeas updateで即反映 |
+| `app/` 以下 | **自由に触る** | JS変更は eas update で即反映 |
 | `lib/api.ts` | **自由に触る** | |
 | `context/auth.tsx` | **自由に触る** | |
 | `components/KotoBird.tsx` | **自由に触る** | |
-| `targets/share-extension/ShareViewController.swift` | 触れる（要フルビルド） | Swift変更はeas updateでは反映されない |
-| `components/Onboarding.tsx` | **絶対触るな** | 確定版。変えると画面が壊れる |
-| `ci_scripts/ci_post_clone.sh` | **絶対触るな** | Swift 6バグへのパッチが大量に入っている。変えるとビルドが何十個ものエラーで失敗する |
-| `ios/` 以下全般 | **触るな** | expo prebuildで自動生成される。手動で変えても次のビルドで上書きされる |
+| `targets/share-extension/ShareViewController.swift` | 触れる（要フルビルド） | Swift変更は eas update 不可 |
+| `components/Onboarding.tsx` | **絶対触るな** | 確定版。変えると壊れる |
+| `ci_scripts/ci_post_clone.sh` | **絶対触るな** | Swift 6バグへのパッチが大量。変えるとビルドが何十ものエラーで失敗する |
+| `ios/` 以下 | **触るな** | expo prebuild で上書きされる |
 
 ---
 
-## Apple Developer Portal の確認場所
+## デザインルール（必ず守る）
 
-ビルドが失敗したときだけ確認する。基本は変更不要。
+| 色名 | 値 |
+|---|---|
+| 背景 | `#0E1116` |
+| メインカラー（ティール） | `#2DD4BF` |
+| ミュートテキスト | `#8F99A8`（**`#6B7280` は間違い**） |
+| 正解 | `#7CFFB2` |
+| 不正解 | `#FF6B6B` |
 
-**App Group の設定（設定済み・変更不要）**
-- `jp.kotoclip.app` に `group.jp.kotoclip.app` が紐付いている
-- `jp.kotoclip.app.share` に `group.jp.kotoclip.app` が紐付いている
-- 確認URL: https://developer.apple.com/account/resources/identifiers/list
-
-**Distribution 証明書（上限3枚）**
-- 確認・削除URL: https://developer.apple.com/account/resources/certificates/list
-- 上限に達したら古いものを削除してからビルドする
-
----
-
-## GitHub Actions ワークフロー（使わなくてよい）
-
-`.github/workflows/build-testflight.yml` が存在するが、
-**EAS Build が使える間は使わなくてよい。**
-
-EAS Build は iOS 環境が整ったサーバーで動くため、GitHub Actions のような
-「iOS SDKのダウンロードが必要」という問題が発生しない。
-
-実行する場合: https://github.com/soichiromaxmax-hash/KotoClipApp/actions/workflows/build-testflight.yml
+**フォント:** LobsterTwo_700Bold（Koto）/ SpaceGrotesk_700Bold（Clip）  
+**KotoBird:** `components/KotoBird.tsx` の1種類のみ。絵文字で代替しない。
 
 ---
 
@@ -189,13 +224,71 @@ EAS Build は iOS 環境が整ったサーバーで動くため、GitHub Actions
 
 | バグ | 状況 |
 |---|---|
-| 起動時にアクセスできないことがある | バックエンド（Render）のスリープが原因の可能性。要調査 |
+| 起動時にアクセスできないことがある | Render のスリープが原因（15分で寝る）。`_layout.tsx` の `useRenderWarmup()` でpingを送っているが完全ではない |
 | iOS の通知設定が Settings 画面から機能しない | `lib/notifications.ts` と `app/(tabs)/settings.tsx` を要確認 |
 
 ---
 
-## eas update でボタンを追加した（次のビルドで確認できる変更）
+## Apple Developer Portal の確認場所
 
-- フラッシュカード終了後の画面に「違う10枚へ」ボタンを追加済み（コミット済み）
-- 現在 TestFlight に入っているビルドは Codemagic 製のため OTA が届かない
-- 6月1日の EAS ビルド後に確認できる
+**App Group（設定済み・変更不要）**
+- `jp.kotoclip.app` → `group.jp.kotoclip.app`
+- `jp.kotoclip.app.share` → `group.jp.kotoclip.app`
+- 確認: https://developer.apple.com/account/resources/identifiers/list
+
+**Distribution 証明書（上限3枚）**
+- 確認・削除: https://developer.apple.com/account/resources/certificates/list
+- 上限に達したら古いものを削除してからビルドする
+
+---
+
+## よくあるエラー
+
+| 症状 | 対処 |
+|---|---|
+| `eas build` 失敗 | Apple Developer Portal で `group.jp.kotoclip.app` App Group を確認 |
+| `eas submit` 失敗 | eas.json に `ascAppId: "6765753980"` が入っているか確認 |
+| ホームが接続エラー | Render cold start（最大30秒）→「再試行」ボタンを押す |
+| AI例文が出ない | server.py のデプロイ確認 |
+| Share Extension が毎回ログイン要求 | Apple Developer Portal で App Group 作成 → 再ビルド |
+| フォントが出ない | `_layout.tsx` の `useFonts` を確認 |
+| 証明書上限エラー | Developer Portal で古い Distribution 証明書を削除 |
+
+---
+
+## プレミアムプラン対応（将来の選択肢）
+
+### 単語上限を500語に引き上げる際の対応
+
+現在の無料プランは100語上限。プレミアムで500語に拡張する場合、クイズ画面（`app/(tabs)/study.tsx`）の自由練習モードは全単語を取得してからFSRS重み付きサンプリングを行っている。
+
+**500語での処理量：** アルゴリズム自体は O(N) なので約0.1ms以下。問題なし。
+
+**唯一の懸念はネットワーク転送量：**
+- 現在（100語）: `getAllWords()` ≈ 50〜80KB
+- プレミアム（500語）: ≈ 250〜400KB（LTEで30〜50ms増）
+
+Render のコールドスタート（最大30秒）に比べれば誤差だが、もし問題になった場合は以下のエンドポイントをバックエンドに追加する：
+
+```python
+# anki_app/server.py に追加
+@app.get('/api/study/priority')
+def get_priority_list(uid: str = Depends(_user_dep)):
+    """FSRS優先度スコア計算に必要な最小フィールドだけ返す"""
+    # id, stability, reps, last_reviewed, next_review, word, meaning, context のみ
+    # → 1単語 ≈ 80バイト、500語でも40KB
+```
+
+フロント側は `getAllWords()` の代わりにこのエンドポイントを呼ぶよう `lib/api.ts` を修正するだけ。**今は不要・問題が出てから対応すれば十分。**
+
+---
+
+## Claude Code を使う場合
+
+このプロジェクトには Claude Code 用の設定が入っている：
+
+- `CLAUDE.md` — プロジェクト概要（Claude が自動で読む）
+- `.claude/skills/` — 詳細仕様ファイル（Claude が必要に応じて参照）
+
+Claude Code でリポジトリを開くと自動で `CLAUDE.md` を読んで理解した状態で会話できる。  
+詳細な仕様が必要になったら「share-extensionの仕様を見せて」などと言えばスキルファイルを参照する。

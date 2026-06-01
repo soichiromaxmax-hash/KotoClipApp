@@ -153,8 +153,6 @@ export default function HomeScreen() {
 
   const total = stats?.total ?? 0;
 
-  const progressText = total === 0 ? '学習の進み具合' : '';
-
   return (
     <SafeAreaView style={s.root}>
       <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
@@ -238,7 +236,6 @@ export default function HomeScreen() {
                     <Text style={s.miniClip}>Clip</Text>
                   </View>
                 </View>
-                {!!progressText && <Text style={s.heroTitle}>{progressText}</Text>}
               </View>
 
               {/* XP / Level バー */}
@@ -548,26 +545,6 @@ const s = StyleSheet.create({
     lineHeight: 27,
     fontFamily: 'SpaceGrotesk_700Bold',
   },
-  heroTitle: {
-    fontSize: 26,
-    fontWeight: '400',
-    color: '#E9EDF2',
-    lineHeight: 34,
-    letterSpacing: 0,
-  },
-  heroCaption: {
-    marginTop: 8,
-    fontSize: 12,
-    color: '#8F99A8',
-    lineHeight: 18,
-  },
-  progressTrack: {
-    height: 6,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderRadius: 99,
-    overflow: 'hidden',
-  },
-  progressFill: { height: '100%', borderRadius: 99 },
 
   xpCard: {
     marginTop: 12,
