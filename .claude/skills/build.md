@@ -54,7 +54,7 @@ eas build --platform ios --profile production
 | 項目 | 状態 |
 |---|---|
 | ビルドパイプライン | EAS Build のみ（Codemagic・Xcode Cloud は廃止済み）|
-| TestFlight | 未提出（iOS 26 API エラーパッチ中）|
+| TestFlight | 未提出（iOS 26 API パッチ適用済み・次ビルドで通過見込み）|
 | OTA 更新（eas update） | EAS Build 成功後に利用可能 |
 
 ### 日常開発フロー
