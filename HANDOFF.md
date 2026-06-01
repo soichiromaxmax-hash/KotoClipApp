@@ -4,6 +4,79 @@
 
 ---
 
+## ▶ まずここを読む（引き継ぎ者へ）
+
+このファイル（`HANDOFF.md`）を最初から最後まで読めば、一人で開発を続けられる状態になることを目標に書いてある。
+
+### STEP 1 — 前任者から受け取るもの（5つ）
+
+以下をすべて受け取ってから開発を始める。
+
+| # | 何を | どうやって |
+|---|---|---|
+| ① | `.p8` ファイル（App Store Connect API キー） | ファイルを直接受け取る。紛失したら再発行不可 |
+| ② | GitHub リポジトリへの招待 | https://github.com/soichiromaxmax-hash/KotoClipApp/settings/access にメールアドレスを登録してもらう |
+| ③ | Apple Developer への招待 | https://developer.apple.com/account/people にメールアドレスで招待してもらう |
+| ④ | EAS（Expo）への招待 | https://expo.dev/accounts/soichiromax/settings/members にメールアドレスで招待してもらう |
+| ⑤ | Render（バックエンド）のログイン情報 | 口頭または文章で受け取る |
+
+---
+
+### STEP 2 — 手元の環境を整える
+
+```bash
+# 1. リポジトリをクローン
+git clone https://github.com/soichiromaxmax-hash/KotoClipApp.git
+cd KotoClipApp
+
+# 2. 依存パッケージをインストール
+npm install
+
+# 3. EAS CLI をインストール（初回のみ）
+npm install -g eas-cli
+
+# 4. EAS にログイン
+eas login
+# → soichiromax アカウントで招待を受けたメールアドレスを使う
+```
+
+---
+
+### STEP 3 — iPhone に最新ビルドを入れる
+
+1. iPhone に **TestFlight** アプリを入れる
+2. TestFlight を開き、KotoClip ビルド **#54** を「テスト」→「アップデート」でインストール
+3. これで以後の更新は `eas update` だけで iPhone に届く（再ビルド不要）
+
+---
+
+### STEP 4 — 動作確認
+
+```bash
+cd KotoClipApp
+
+# 何か1行変えてOTA更新を試す（例：どこかのテキストを1文字変えて保存）
+eas update --branch production --environment production --message "動作確認"
+```
+1〜2分後に iPhone のアプリを完全終了→再起動すると変更が反映される。これが基本の開発サイクル。
+
+---
+
+### このメモの読み方
+
+| セクション | 読む理由 |
+|---|---|
+| **このアプリとは** | アプリの全体像を把握する |
+| **現在の状態** | 今どこまで進んでいるかを確認する |
+| **開発のやり方** | 日常の作業手順を覚える |
+| **Koto キャラクター** | デザインを変えるときに読む |
+| **クイズ練習モード** | 学習アルゴリズムを変えるときに読む |
+| **デザインルール** | UI を触るときに必ず確認する |
+| **既知のバグ** | 「なぜこう動くのか」の背景を知る |
+| **よくあるエラー** | 詰まったときに引く |
+
+---
+
 ## このアプリとは
 
 英語を読みながら出会った単語を保存し、スペースド・リピティション（間隔反復）で復習するiOSアプリ。  
