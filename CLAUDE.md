@@ -5,7 +5,7 @@
 核心コピー: 「読んだ英語が、そのまま単語帳になる」
 
 ## 技術スタック
-- Expo SDK ~56.0.0-preview.7 / React Native 0.85.2 / expo-router v4
+- Expo SDK ~55.0.26 / React Native 0.83.6 / expo-router ~55.0.16
 - バックエンド: FastAPI（`https://kotoclip.onrender.com/api`）
 - ビルド: EAS Build のみ（SharedStorage ネイティブモジュールのため Expo Go 不可）
 - バンドルID: `jp.kotoclip.app` / App Group: `group.jp.kotoclip.app`
@@ -17,12 +17,12 @@
 - 学習モード: クイズ練習（4択のみ・穴埋めなし）/ フラッシュカード（10枚バッチ）
 - キャラクター: KotoBird（黄色い鳥）= `components/KotoBird.tsx` 1種類のみ
 - Share Extension: 認証不要でAI翻訳表示、保存時のみログイン要求
-- 通知: expo-notifications ~0.31.0 / 毎日リマインダー / 週次サマリー / マイルストーン / ストリーク
+- 通知: expo-notifications ~55.0.23 / 毎日リマインダー / 週次サマリー / マイルストーン / ストリーク
 - SNS共有: iOS純正シェートシートのみ（TikTok・プラットフォーム別分岐なし）
 
-## 現在のフェーズ（2026-05-10）
-Build #39（EAS）。TestFlight 未提出。
-次ステップ: コミット → push → EAS Build → TestFlight 確認 → App Store 審査。
+## 現在のフェーズ（2026-06-01）
+Build #53（EAS、buildNumber はEASがremote管理するため app.json の値は参照されない）。TestFlight 未提出。
+次ステップ: EAS Build → TestFlight 確認 → App Store 審査。
 
 ## 禁止事項
 - `from 'expo-router/react-navigation'` や `from 'expo-router/js-tabs'` は使わない（解決不可）
@@ -40,7 +40,7 @@ Build #39（EAS）。TestFlight 未提出。
 
 > **Check for app config fields that may not be synced in a non-CNG project**
 
-`ios/` が git に含まれるため出る警告。EAS Build は `expo prebuild` でネイティブを再生成するため実害なし。`app.json` のプラグイン・アイコン等を変更したら次回 EAS Build で反映を確認すること。
+`ios/` が git に含まれるため出る警告。EAS Build は `ios/` がコミット済みの場合 `expo prebuild` を実行しない（コミット済みのネイティブコードをそのまま使用する）。`app.json` のプラグイン・アイコン等を変更した場合はローカルで `npx expo prebuild` を実行してコミットしてから EAS Build を行うこと。
 
 ## 詳細が必要なとき
 - デザイントークン・KotoBird仕様 → `.claude/skills/design.md`

@@ -24,8 +24,7 @@ eas build --platform ios --profile production
 | EAS Project ID | `f90b1ad4-f8a9-4345-84f5-e1a5d443dbad` |
 
 ## app.json buildNumber の更新ルール
-ビルドを提出するたびに `buildNumber` を +1 する（現在: **39**）。
-`app.json` の `ios.buildNumber` フィールドを文字列で更新する。
+`eas.json` に `appVersionSource: "remote"` と `autoIncrement: true` が設定されているため、EAS が自動でビルド番号を管理する。`app.json` の `buildNumber` は EAS では無視される。
 
 ## TestFlight確認チェックリスト
 - [ ] スプラッシュアニメーション（約5秒、詰まったら6.5秒後に強制終了する）
@@ -50,15 +49,15 @@ eas build --platform ios --profile production
 - プライバシーポリシーURL: https://kotoclip.onrender.com/privacy.html
 - カテゴリ: 教育 / 年齢区分: 4歳以上
 
-## 現在のフェーズ（2026-05-31）
+## 現在のフェーズ（2026-06-01）
 
 | 項目 | 状態 |
 |---|---|
-| TestFlight 最新ビルド | Codemagic 製（eas update 非対応） |
-| OTA 更新（eas update） | **現在不可**（Codemagic ビルドはチャンネル不明） |
-| 6月1日以降 | EAS Build → TestFlight → 以後 eas update が使える |
+| ビルドパイプライン | EAS Build のみ（Codemagic・Xcode Cloud は廃止済み）|
+| TestFlight | 未提出（iOS 26 API エラーパッチ中）|
+| OTA 更新（eas update） | EAS Build 成功後に利用可能 |
 
-### 日常開発フロー（6月1日以降）
+### 日常開発フロー
 
 ```bash
 # JS/TSの変更（毎日の作業）← ビルド不要
@@ -85,7 +84,7 @@ npx eas build --platform ios --profile production --auto-submit
 - [x] 通知 trigger フォーマット修正（SchedulableTriggerInputTypes.CALENDAR）
 
 ## 未完了 ⏳（優先順）
-1. **6月1日に EAS Build 実行**: `eas build --platform ios --profile production --auto-submit`
+1. **EAS Build 実行**: `eas build --platform ios --profile production --auto-submit`（iOS 26 Toolbar パッチ適用済み、ビルド通過見込み）
 2. **Share Extension 動作確認**: App Group `group.jp.kotoclip.app` を Developer Portal で作成・紐付け → 再ビルド
 3. App Store Connect でメタデータ入力・審査提出
 4. 起動時アクセスエラー（Render スリープ）の対策

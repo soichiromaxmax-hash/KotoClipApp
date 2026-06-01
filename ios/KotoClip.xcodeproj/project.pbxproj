@@ -468,7 +468,7 @@
 				SKIP_INSTALL = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = jp.kotoclip.app.share;
 				SWIFT_VERSION = 6.0;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				CODE_SIGN_ENTITLEMENTS = "ShareExtension/ShareExtension.entitlements";
 				CODE_SIGN_STYLE = Automatic;
@@ -485,7 +485,7 @@
 				SKIP_INSTALL = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = jp.kotoclip.app.share;
 				SWIFT_VERSION = 6.0;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				CODE_SIGN_ENTITLEMENTS = "ShareExtension/ShareExtension.entitlements";
 				CODE_SIGN_STYLE = Automatic;
