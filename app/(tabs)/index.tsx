@@ -209,32 +209,49 @@ export default function HomeScreen() {
               end={{ x: 0, y: 1 }}
               style={s.hero}
             >
-              {/* 放射グロー（LinearGradientで近似） */}
+              {/* 天井グロー */}
               <LinearGradient
-                colors={['rgba(45,212,191,0.08)', 'transparent']}
-                style={StyleSheet.absoluteFill}
-                start={{ x: 0.18, y: 0.16 }}
-                end={{ x: 0.84, y: 0.76 }}
+                colors={['rgba(180,120,40,0.22)', 'transparent']}
+                style={s.ceilingGlow}
+                start={{ x: 0.5, y: 0 }}
+                end={{ x: 0.5, y: 1 }}
                 pointerEvents="none"
               />
 
-              <View style={s.heroTop}>
-                <View style={s.mascotBlock}>
-                  <KotoBird size={110} stage={kotoStage(computeLevel(stats?.xp ?? 0))} />
-                </View>
-                <View style={s.statPanel}>
-                  <StatItem label="登録語数"   value={total} />
-                  <StatItem label="定着済み"   value={stats?.mastered ?? 0} />
-                  <StatItem label="連続日数"   value={stats?.streak ?? 0} />
-                </View>
+              {/* 浮かぶ単語チップ（背景装飾） */}
+              <View style={StyleSheet.absoluteFill} pointerEvents="none">
+                {([
+                  { word: 'achieve', top:  10, left:   6, rotate: '-8deg' },
+                  { word: 'curious', top:  48, left:   4, rotate: '-4deg' },
+                  { word: 'focus',   top:   8, right:  8, rotate:  '6deg' },
+                  { word: 'insight', top:  42, right: 10, rotate:  '3deg' },
+                  { word: 'growth',  top:  76, right:  6, rotate: '-5deg' },
+                ] as const).map(({ word, top, left, right, rotate }) => (
+                  <View key={word} style={[s.floatingChip, { top, left, right, transform: [{ rotate }] }]}>
+                    <Text style={s.floatingChipText}>{word}</Text>
+                  </View>
+                ))}
               </View>
 
-              <View style={s.brandCopy}>
+              {/* ロゴ（中央・上部） */}
+              <View style={s.logoCenter}>
                 <View style={s.miniLogoRow}>
                   <Text style={s.miniKoto}>Koto</Text>
                   <View style={s.miniClipBox}>
                     <Text style={s.miniClip}>Clip</Text>
                   </View>
+                </View>
+              </View>
+
+              {/* コト + 統計パネル */}
+              <View style={s.heroTop}>
+                <View style={s.mascotBlock}>
+                  <KotoBird size={130} stage={kotoStage(computeLevel(stats?.xp ?? 0))} />
+                </View>
+                <View style={s.statPanel}>
+                  <StatItem icon="🔖" label="確実に習得" value={stats?.mastered ?? 0} />
+                  <StatItem icon="📖" label="登録語数"   value={total} />
+                  <StatItem icon="🔥" label="連続日数"   value={stats?.streak ?? 0} />
                 </View>
               </View>
 
@@ -396,10 +413,13 @@ export default function HomeScreen() {
   );
 }
 
-function StatItem({ label, value }: { label: string; value: number | string }) {
+function StatItem({ label, value, icon }: { label: string; value: number | string; icon?: string }) {
   return (
     <View style={s.statItem}>
-      <Text style={s.statLabel}>{label}</Text>
+      <View style={s.statLabelRow}>
+        {icon && <Text style={s.statIcon}>{icon}</Text>}
+        <Text style={s.statLabel}>{label}</Text>
+      </View>
       <Text style={s.statValue}>{value}</Text>
     </View>
   );
@@ -474,47 +494,82 @@ const s = StyleSheet.create({
 
   // ── ヒーロー ──
   hero: {
-    paddingTop: 28,
+    paddingTop: 20,
     paddingHorizontal: 18,
     paddingBottom: 26,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255,255,255,0.06)',
     overflow: 'hidden',
   },
+  ceilingGlow: {
+    position: 'absolute',
+    top: 0,
+    left: '10%',
+    right: '10%',
+    height: 90,
+  },
+  floatingChip: {
+    position: 'absolute',
+    backgroundColor: 'rgba(10,14,20,0.55)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.09)',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  floatingChipText: {
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.38)',
+    fontWeight: '500',
+    letterSpacing: 0.3,
+  },
+  logoCenter: {
+    alignItems: 'center',
+    marginBottom: 10,
+  },
   heroTop: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 14,
+    alignItems: 'center',
+    gap: 12,
     marginBottom: 18,
   },
   mascotBlock: {},
   statPanel: {
     flex: 1,
-    flexDirection: 'row',
-    backgroundColor: 'rgba(29,36,48,0.86)',
-    borderRadius: 12,
+    flexDirection: 'column',
+    backgroundColor: 'rgba(10,14,20,0.72)',
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.08)',
-    paddingVertical: 14,
-    paddingHorizontal: 10,
-    marginTop: 4,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    gap: 0,
   },
-  statItem: { flex: 1, alignItems: 'center' },
+  statItem: {
+    paddingVertical: 9,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.06)',
+  },
+  statLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginBottom: 2,
+  },
+  statIcon: { fontSize: 11 },
   statLabel: {
     fontSize: 10,
     color: '#8F99A8',
-    textTransform: 'uppercase',
-    letterSpacing: 1.4,
-    marginBottom: 8,
+    letterSpacing: 0.5,
   },
   statValue: {
-    fontSize: 28,
-    fontWeight: '500',
+    fontSize: 26,
+    fontWeight: '700',
     color: '#F8FAFC',
-    letterSpacing: -1.4,
+    letterSpacing: -1.2,
+    lineHeight: 30,
   },
 
-  brandCopy: { marginBottom: 18 },
   miniLogoRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
