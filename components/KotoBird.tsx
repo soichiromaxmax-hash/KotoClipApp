@@ -24,93 +24,145 @@ function randomType(): KotoType {
 
 // ── アクセサリー ─────────────────────────────────────────────
 
-// Stage 2+: スカーフ
+// Stage 2+: ティールスカーフ
 function Scarf() {
   return (
     <G>
-      <Path d="M36,106 Q60,118 84,106 Q82,122 60,124 Q38,122 36,106Z"
-        fill="#E74C3C" opacity="0.85" />
-      <Path d="M60,118 Q64,132 61,148"
-        stroke="#E74C3C" strokeWidth="9" strokeLinecap="round" fill="none" opacity="0.7" />
+      <Path d="M30,102 Q60,116 90,102 Q88,122 60,124 Q32,122 30,102Z"
+        fill="#0B4F40" opacity="0.95" />
+      <Path d="M30,102 Q60,112 90,102"
+        stroke="#2DD4BF" strokeWidth="1.8" fill="none" opacity="0.55" />
+      <Path d="M44,118 Q40,134 42,150"
+        stroke="#0B4F40" strokeWidth="11" strokeLinecap="round" fill="none" />
+      <Path d="M44,118 Q40,132 42,148"
+        stroke="#2DD4BF" strokeWidth="2.5" strokeLinecap="round" fill="none" opacity="0.4" />
     </G>
   );
 }
 
-// Stage 3+: 丸メガネ
+// Stage 3+: 丸メガネ（グリント付き）
 function RoundGlasses() {
   return (
     <G>
-      <Circle cx="40" cy="74" r="13" fill="rgba(255,255,255,0.06)" stroke="#374151" strokeWidth="2.8" />
-      <Circle cx="80" cy="74" r="13" fill="rgba(255,255,255,0.06)" stroke="#374151" strokeWidth="2.8" />
-      <Line x1="53" y1="74" x2="67" y2="74" stroke="#374151" strokeWidth="2.8" />
-      <Line x1="16" y1="68" x2="27" y2="73" stroke="#374151" strokeWidth="2.2" />
-      <Line x1="93" y1="73" x2="104" y2="68" stroke="#374151" strokeWidth="2.2" />
+      <Circle cx="40" cy="74" r="13" fill="rgba(45,212,191,0.06)" stroke="#1A2E2A" strokeWidth="3" />
+      <Circle cx="80" cy="74" r="13" fill="rgba(45,212,191,0.06)" stroke="#1A2E2A" strokeWidth="3" />
+      <Line x1="53" y1="74" x2="67" y2="74" stroke="#1A2E2A" strokeWidth="2.5" />
+      <Line x1="16" y1="68" x2="27" y2="73" stroke="#1A2E2A" strokeWidth="2" />
+      <Line x1="93" y1="73" x2="104" y2="68" stroke="#1A2E2A" strokeWidth="2" />
+      <Circle cx="35" cy="69" r="3.5" fill="rgba(255,255,255,0.45)" />
+      <Circle cx="75" cy="69" r="3.5" fill="rgba(255,255,255,0.45)" />
     </G>
   );
 }
 
-// Stage 4+: 大きめのメガネ（角ばった）
-function BigGlasses() {
+// Stage 4+: 革製サッチェルバッグ
+function Satchel() {
   return (
     <G>
-      <Rect x="25" y="63" width="30" height="22" rx="5" fill="rgba(255,255,255,0.07)" stroke="#1E40AF" strokeWidth="2.8" />
-      <Rect x="65" y="63" width="30" height="22" rx="5" fill="rgba(255,255,255,0.07)" stroke="#1E40AF" strokeWidth="2.8" />
-      <Line x1="55" y1="74" x2="65" y2="74" stroke="#1E40AF" strokeWidth="2.8" />
-      <Line x1="14" y1="67" x2="25" y2="72" stroke="#1E40AF" strokeWidth="2.2" />
-      <Line x1="95" y1="72" x2="106" y2="67" stroke="#1E40AF" strokeWidth="2.2" />
+      <Rect x="4" y="90" width="26" height="32" rx="5"
+        fill="#0D3526" stroke="#2DD4BF" strokeWidth="1.5" opacity="0.95" />
+      <Path d="M4,106 Q17,110 30,106"
+        stroke="#2DD4BF" strokeWidth="1.5" fill="none" opacity="0.6" />
+      <Path d="M10,90 Q7,80 11,75"
+        stroke="#165A40" strokeWidth="3.5" strokeLinecap="round" fill="none" />
+      <Circle cx="17" cy="107" r="4" fill="#F5B84B" />
+      <Circle cx="17" cy="107" r="2.2" fill="#C4882A" />
     </G>
   );
 }
 
-// Stage 5+: 学者帽（角帽）
+// Stage 5+: 学者帽（ティールタッセル）
 function GradCap() {
   return (
     <G>
-      <Ellipse cx="60" cy="38" rx="27" ry="7" fill="#1F2937" />
-      <Rect x="42" y="18" width="36" height="20" rx="4" fill="#1F2937" />
-      <Line x1="78" y1="22" x2="94" y2="32" stroke="#F5B84B" strokeWidth="2.5" />
-      <Circle cx="95" cy="33" r="5" fill="#F5B84B" />
+      <Ellipse cx="60" cy="38" rx="28" ry="7.5" fill="#0D2820" />
+      <Rect x="41" y="17" width="38" height="21" rx="5" fill="#0D2820" />
+      <Path d="M32,38 Q60,44 88,38" stroke="#2DD4BF" strokeWidth="1.2" fill="none" opacity="0.4" />
+      <Line x1="78" y1="22" x2="98" y2="36" stroke="#2DD4BF" strokeWidth="2.5" strokeLinecap="round" />
+      <Circle cx="98" cy="37" r="5.5" fill="#2DD4BF" />
+      <Circle cx="98" cy="37" r="3" fill="#0D9E8A" />
     </G>
   );
 }
 
-// Stage 5+: 開いた翼
+// Stage 5+: 広げた翼（ゴールド）
 function SpreadWings() {
   return (
     <G>
-      <Path d="M14,92 Q2,70 8,50 Q16,68 24,82Z" fill="#D4B640" opacity="0.9" />
-      <Path d="M106,92 Q118,70 112,50 Q104,68 96,82Z" fill="#D4B640" opacity="0.9" />
+      <Path d="M14,92 Q0,66 6,44 Q16,66 24,82Z" fill="#D4B640" opacity="0.9" />
+      <Path d="M106,92 Q120,66 114,44 Q104,66 96,82Z" fill="#D4B640" opacity="0.9" />
+      <Path d="M14,92 Q3,70 7,50" stroke="#C4A830" strokeWidth="1.2" fill="none" opacity="0.5" />
+      <Path d="M106,92 Q117,70 113,50" stroke="#C4A830" strokeWidth="1.2" fill="none" opacity="0.5" />
     </G>
   );
 }
 
-// Stage 6: マント
-function Cape() {
-  return (
-    <Path
-      d="M18,92 Q8,135 32,158 Q60,166 88,158 Q112,135 102,92 Q82,105 60,108 Q38,105 18,92Z"
-      fill="#7C3AED" opacity="0.72" />
-  );
-}
-
-// Stage 6: 金バッジ（星）
-function GoldBadge() {
+// Stage 5+: 足元の魔法陣
+function MagicCircle() {
   return (
     <G>
-      <Circle cx="60" cy="95" r="9" fill="#F5B84B" />
-      <Polygon
-        points="60,88 61.8,93 67,93 62.8,96.2 64.4,101.2 60,98.2 55.6,101.2 57.2,96.2 53,93 58.2,93"
-        fill="#0E1116" />
+      <Ellipse cx="60" cy="161" rx="46" ry="10" fill="none"
+        stroke="#2DD4BF" strokeWidth="1.2" strokeDasharray="4,3" opacity="0.5" />
+      <Ellipse cx="60" cy="161" rx="34" ry="7" fill="none"
+        stroke="#F5B84B" strokeWidth="1" strokeDasharray="3,4" opacity="0.38" />
     </G>
   );
 }
 
-// Stage 6: 光るオーラ（うっすら放射）
+// Stage 6: ダークティールのマント
+function Cape() {
+  return (
+    <G>
+      <Path
+        d="M18,92 Q6,138 30,160 Q60,169 90,160 Q114,138 102,92 Q82,106 60,110 Q38,106 18,92Z"
+        fill="#082E22" opacity="0.92" />
+      <Path d="M18,92 Q38,104 60,107 Q82,104 102,92"
+        stroke="#2DD4BF" strokeWidth="1.8" fill="none" opacity="0.55" />
+      <Path d="M30,160 Q60,166 90,160"
+        stroke="#2DD4BF" strokeWidth="1.5" fill="none" opacity="0.4" />
+    </G>
+  );
+}
+
+// Stage 6: 金のKバッジ
+function KBadge() {
+  return (
+    <G>
+      <Circle cx="60" cy="100" r="12" fill="#0D3D2C" stroke="#F5B84B" strokeWidth="2.2" />
+      <Circle cx="60" cy="100" r="9" fill="none" stroke="#F5B84B" strokeWidth="0.7" opacity="0.45" />
+      <Line x1="55" y1="93" x2="55" y2="107" stroke="#F5B84B" strokeWidth="2.5" strokeLinecap="round" />
+      <Line x1="55" y1="100" x2="65" y2="93" stroke="#F5B84B" strokeWidth="2.2" strokeLinecap="round" />
+      <Line x1="55" y1="100" x2="65" y2="107" stroke="#F5B84B" strokeWidth="2.2" strokeLinecap="round" />
+    </G>
+  );
+}
+
+// Stage 6: スパークル（星形）
+function Sparkles() {
+  return (
+    <G>
+      <Path d="M11,46 L13,40 L15,46 L21,48 L15,50 L13,56 L11,50 L5,48Z"
+        fill="#F5B84B" opacity="0.78" />
+      <Path d="M104,28 L105.5,23 L107,28 L112,29.5 L107,31 L105.5,36 L104,31 L99,29.5Z"
+        fill="#F5B84B" opacity="0.65" />
+      <Path d="M5,112 L6.5,107 L8,112 L13,113.5 L8,115 L6.5,120 L5,115 L0,113.5Z"
+        fill="#2DD4BF" opacity="0.65" />
+      <Circle cx="111" cy="56" r="3" fill="#F5B84B" opacity="0.72" />
+      <Circle cx="109" cy="76" r="2" fill="#2DD4BF" opacity="0.65" />
+      <Circle cx="9" cy="72" r="2.5" fill="#F5B84B" opacity="0.58" />
+      <Circle cx="12" cy="90" r="2" fill="#2DD4BF" opacity="0.52" />
+    </G>
+  );
+}
+
+// Stage 6: ライブラリオーラ
 function LibraryAura() {
   return (
-    <G opacity="0.4">
-      <Ellipse cx="60" cy="90" rx="52" ry="52" fill="none" stroke="#F5B84B" strokeWidth="1.5" />
-      <Ellipse cx="60" cy="90" rx="42" ry="42" fill="none" stroke="#F5B84B" strokeWidth="1" opacity="0.5" />
+    <G>
+      <Ellipse cx="60" cy="90" rx="56" ry="56" fill="none"
+        stroke="#F5B84B" strokeWidth="1.2" opacity="0.3" />
+      <Ellipse cx="60" cy="90" rx="45" ry="45" fill="none"
+        stroke="#2DD4BF" strokeWidth="0.8" opacity="0.25" />
     </G>
   );
 }
@@ -204,20 +256,22 @@ function KotoMediumSvg({ pose = 1, stage = 1 }: { pose: Pose; stage: number }) {
   return (
     <G>
       {/* マント（背面）は最初に描画 */}
+      {/* 背面要素 */}
       {stage >= 6 && <><LibraryAura /><Cape /></>}
-      {/* 開いた翼（Stage 5）*/}
-      {stage >= 5 && stage < 6 && <SpreadWings />}
+      {stage >= 5 && <SpreadWings />}
+      {stage >= 5 && <MagicCircle />}
       <Core />
       {Card(pose)}
       {Wings(pose)}
       <Feet />
       <Clip />
-      {/* アクセサリー（前面に重ねる） */}
+      {/* 前面アクセサリー */}
       {stage >= 2 && <Scarf />}
-      {stage === 3 && <RoundGlasses />}
-      {stage >= 4 && <BigGlasses />}
+      {stage >= 3 && <RoundGlasses />}
+      {stage >= 4 && <Satchel />}
       {stage >= 5 && <GradCap />}
-      {stage >= 6 && <GoldBadge />}
+      {stage >= 6 && <KBadge />}
+      {stage >= 6 && <Sparkles />}
     </G>
   );
 }
