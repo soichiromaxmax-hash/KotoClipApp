@@ -114,14 +114,11 @@ patch(
 
 # ── expo-notifications ────────────────────────────────────────────────────────
 
-# CategoriesModule: actor → @MainActor final class（同期コンテキストから呼び出し可能に）
+# CategoriesModule: @unchecked Sendable のみ（actor isolation は Podfile の Swift 5.0 + minimal で抑制）
+# actor CategoryManager の変換は Swift 5.0 モードで @MainActor が unknown になるため行わない
 patch(
     'expo-notifications/ios/ExpoNotifications/Notifications/Categories/CategoriesModule.swift',
     [
-        (
-            'actor CategoryManager {',
-            '@MainActor final class CategoryManager {'
-        ),
         (
             'open class CategoriesModule: Module {',
             'open class CategoriesModule: Module, @unchecked Sendable {'
