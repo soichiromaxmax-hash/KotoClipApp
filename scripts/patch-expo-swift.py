@@ -193,6 +193,31 @@ patch(
     ]
 )
 
+# ── expo-image iOS 26 SF Symbol (drawOn/drawOff) patch ───────────────────────
+# drawOn / drawOff は iOS 26 専用の SFSymbolEffect。
+# @available(iOS 26.0, *) はランタイムガードだがコンパイル時は型チェックされるため
+# Xcode 16.3 (iOS 18 SDK) でビルドエラーになる。
+# applySymbolEffectiOS26 の case 本体を break に置換して除去する。
+
+_img_view = nm / 'expo-image/ios/ImageView.swift'
+if _img_view.exists():
+    _t = _o = _img_view.read_text()
+    # drawOn / drawOff 呼び出しをすべて break に置換
+    _t = _t.replace('sdImageView.addSymbolEffect(.drawOn.byLayer, options: options)', 'break')
+    _t = _t.replace('sdImageView.addSymbolEffect(.drawOn.wholeSymbol, options: options)', 'break')
+    _t = _t.replace('sdImageView.addSymbolEffect(.drawOn, options: options)', 'break')
+    _t = _t.replace('sdImageView.addSymbolEffect(.drawOff.byLayer, options: options)', 'break')
+    _t = _t.replace('sdImageView.addSymbolEffect(.drawOff.wholeSymbol, options: options)', 'break')
+    _t = _t.replace('sdImageView.addSymbolEffect(.drawOff, options: options)', 'break')
+    if _t != _o:
+        _img_view.write_text(_t)
+        print('  patched: expo-image/ios/ImageView.swift (drawOn/drawOff → break)')
+        total += 1
+    else:
+        print('  WARN: ImageView.swift - drawOn/drawOff not found (already patched?)')
+else:
+    print('  WARN: expo-image/ios/ImageView.swift not found')
+
 # ── expo-router Toolbar iOS 26 API patches ───────────────────────────────────
 # Xcode 16.3 (iOS 18 SDK) は iOS 26 API を知らない。
 # if #available(iOS 26.0, *) はランタイムガードであり、コンパイル時には型チェックが走る。
