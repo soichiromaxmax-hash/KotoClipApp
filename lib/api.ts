@@ -166,6 +166,7 @@ export const api = {
       reliable_count:  raw.reliable_count   ?? 0,
       today_count:     raw.today_count      ?? 0,
       wild_known_count: raw.wild_known_count ?? 0,
+      xp:              raw.xp              ?? 0,
     };
   },
   getDue:            (limit = 20)         => _fetch(`/study/due?limit=${limit}`),
