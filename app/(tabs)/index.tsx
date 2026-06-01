@@ -12,8 +12,19 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { api } from '@/lib/api';
 import { KotoBird } from '@/components/KotoBird';
+import { HeroBackground } from '@/components/HeroBackground';
 import { getCachedStats, getCachedWild, setCachedStats, setCachedWild, resetHomeCache } from '@/lib/homeCache';
 import { computeLevel, xpProgressPct, xpToNextLevel, heroColors, kotoStage, KOTO_STAGE_LABELS } from '@/lib/gamification';
+
+// ステージ別：背景SVGの上に乗せる半透明オーバーレイ色
+const HERO_OVERLAY: Record<number, [string, string]> = {
+  1: ['rgba(26,21,8,0.42)',  'rgba(18,14,5,0.65)'],
+  2: ['rgba(7,14,28,0.42)',  'rgba(5,10,20,0.65)'],
+  3: ['rgba(7,16,8,0.42)',   'rgba(5,12,6,0.65)'],
+  4: ['rgba(10,4,24,0.42)',  'rgba(7,3,18,0.65)'],
+  5: ['rgba(2,4,15,0.42)',   'rgba(1,2,10,0.65)'],
+  6: ['rgba(19,10,0,0.42)',  'rgba(14,7,0,0.65)'],
+};
 
 interface Stats {
   due: number;
@@ -203,30 +214,34 @@ export default function HomeScreen() {
         ) : (
           <>
             {/* ── ヒーローセクション ── */}
-            <LinearGradient
-              colors={heroColors(computeLevel(stats?.xp ?? 0))}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 0, y: 1 }}
-              style={s.hero}
-            >
-              {/* 天井グロー */}
+            {(() => {
+              const lv    = computeLevel(stats?.xp ?? 0);
+              const stage = kotoStage(lv);
+              const overlay = HERO_OVERLAY[stage] ?? HERO_OVERLAY[1];
+              return (
+            <View style={s.hero}>
+              {/* 背景SVG */}
+              <View style={StyleSheet.absoluteFill} pointerEvents="none">
+                <HeroBackground stage={stage} />
+              </View>
+              {/* 半透明オーバーレイ（ステージカラー＋可読性確保） */}
               <LinearGradient
-                colors={['rgba(180,120,40,0.22)', 'transparent']}
-                style={s.ceilingGlow}
-                start={{ x: 0.5, y: 0 }}
-                end={{ x: 0.5, y: 1 }}
+                colors={overlay}
+                style={StyleSheet.absoluteFill}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 0, y: 1 }}
                 pointerEvents="none"
               />
 
               {/* 浮かぶ単語チップ（背景装飾） */}
               <View style={StyleSheet.absoluteFill} pointerEvents="none">
                 {([
-                  { word: 'achieve', top:  10, left:   6, rotate: '-8deg' },
-                  { word: 'curious', top:  48, left:   4, rotate: '-4deg' },
-                  { word: 'focus',   top:   8, right:  8, rotate:  '6deg' },
-                  { word: 'insight', top:  42, right: 10, rotate:  '3deg' },
-                  { word: 'growth',  top:  76, right:  6, rotate: '-5deg' },
-                ] as const).map(({ word, top, left, right, rotate }) => (
+                  { word: 'achieve', top:  10, left:   6 as number | undefined, right: undefined as number | undefined, rotate: '-8deg' },
+                  { word: 'curious', top:  48, left:   4,  right: undefined, rotate: '-4deg' },
+                  { word: 'focus',   top:   8, left: undefined, right:  8,  rotate:  '6deg' },
+                  { word: 'insight', top:  42, left: undefined, right: 10,  rotate:  '3deg' },
+                  { word: 'growth',  top:  76, left: undefined, right:  6,  rotate: '-5deg' },
+                ]).map(({ word, top, left, right, rotate }) => (
                   <View key={word} style={[s.floatingChip, { top, left, right, transform: [{ rotate }] }]}>
                     <Text style={s.floatingChipText}>{word}</Text>
                   </View>
@@ -246,7 +261,7 @@ export default function HomeScreen() {
               {/* コト + 統計パネル */}
               <View style={s.heroTop}>
                 <View style={s.mascotBlock}>
-                  <KotoBird size={130} stage={kotoStage(computeLevel(stats?.xp ?? 0))} />
+                  <KotoBird size={130} stage={stage} />
                 </View>
                 <View style={s.statPanel}>
                   <StatItem icon="🔖" label="確実に習得" value={stats?.mastered ?? 0} />
@@ -286,7 +301,9 @@ export default function HomeScreen() {
                   </View>
                 );
               })()}
-            </LinearGradient>
+            </View>
+              );
+            })()}
 
             {/* ── コンテンツ ── */}
             <View style={s.content}>
