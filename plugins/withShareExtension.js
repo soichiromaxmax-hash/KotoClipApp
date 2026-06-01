@@ -92,7 +92,7 @@ function addXcodeTarget(config) {
       if (name !== EXT_NAME && name !== `"${EXT_NAME}"`) return;
       Object.assign(cfg.buildSettings, {
         SWIFT_VERSION: '6.0',
-        IPHONEOS_DEPLOYMENT_TARGET: '16.0',
+        IPHONEOS_DEPLOYMENT_TARGET: '15.1',
         TARGETED_DEVICE_FAMILY: '"1,2"',
         PRODUCT_BUNDLE_IDENTIFIER: `${bundleId}.share`,
         INFOPLIST_FILE: `"${EXT_NAME}/Info.plist"`,

@@ -32,6 +32,7 @@ yarn-error.*
 
 # local env files
 .env*.local
+credentials.json
 
 # typescript
 *.tsbuildinfo
@@ -39,5 +40,4 @@ yarn-error.*
 app-example
 
 # generated native folders
-# /ios is committed so Xcode Cloud can detect the workspace
 /android
