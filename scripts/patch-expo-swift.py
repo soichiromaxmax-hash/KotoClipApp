@@ -193,4 +193,92 @@ patch(
     ]
 )
 
+# ── expo-router Toolbar iOS 26 API patches ───────────────────────────────────
+# Xcode 16.3 (iOS 18 SDK) は iOS 26 API を知らない。
+# if #available(iOS 26.0, *) はランタイムガードであり、コンパイル時には型チェックが走る。
+# → iOS 26 API 呼び出しを stub に置換してコンパイルエラーを除去する。
+
+# RouterToolbarModule.swift: UIBarButtonItem.Style.prominent は iOS 26 専用
+_router_module = nm / 'expo-router/ios/Toolbar/RouterToolbarModule.swift'
+if _router_module.exists():
+    _t = _o = _router_module.read_text()
+    _t = _t.replace('return .prominent', 'return .done')
+    if _t != _o:
+        _router_module.write_text(_t)
+        print('  patched: RouterToolbarModule.swift (.prominent → .done)')
+        total += 1
+    else:
+        print('  WARN: RouterToolbarModule.swift - pattern not found (already patched?)')
+else:
+    print('  WARN: RouterToolbarModule.swift not found')
+
+# RouterToolbarHostView.swift: hidesSharedBackground / sharesBackground は iOS 26 専用
+_router_host = nm / 'expo-router/ios/Toolbar/RouterToolbarHostView.swift'
+if _router_host.exists():
+    _t = _o = _router_host.read_text()
+    _t = _t.replace('item.hidesSharedBackground = hidesSharedBackground', '_ = hidesSharedBackground')
+    _t = _t.replace('item.sharesBackground = sharesBackground', '_ = sharesBackground')
+    if _t != _o:
+        _router_host.write_text(_t)
+        print('  patched: RouterToolbarHostView.swift (iOS 26 properties stubbed)')
+        total += 1
+    else:
+        print('  WARN: RouterToolbarHostView.swift - patterns not found (already patched?)')
+else:
+    print('  WARN: RouterToolbarHostView.swift not found')
+
+# RouterToolbarItemView.swift: 複数の iOS 26 API
+_router_item = nm / 'expo-router/ios/Toolbar/RouterToolbarItemView.swift'
+if _router_item.exists():
+    _t = _o = _router_item.read_text()
+
+    # Fix 1: searchBarPlacementBarButtonItem (UINavigationItem, iOS 26 専用)
+    _t = _t.replace(
+        'item = controller.navigationItem.searchBarPlacementBarButtonItem',
+        'currentBarButtonItem = nil\n      return'
+    )
+
+    # Fix 2: hidesSharedBackground / sharesBackground (UIBarButtonItem, iOS 26 専用)
+    _t = _t.replace('item.hidesSharedBackground = hidesSharedBackground', '_ = hidesSharedBackground')
+    _t = _t.replace('item.sharesBackground = sharesBackground', '_ = sharesBackground')
+
+    # Fix 3: UIBarButtonItem.Badge ブロック (iOS 26 専用) - ブレース数を数えて削除
+    if 'UIBarButtonItem.Badge' in _t:
+        import re as _re
+        _badge_pos = _t.find('UIBarButtonItem.Badge')
+        _avail_search = 'if #available(iOS 26.0, *)'
+        _blk_start = _t.rfind(_avail_search, 0, _badge_pos)
+        if _blk_start != -1:
+            # ブロック開始行の先頭まで戻る
+            _line_start = _t.rfind('\n', 0, _blk_start)
+            if _line_start == -1:
+                _line_start = 0
+            # ブレースを数えてブロック末尾を見つける
+            _depth = 0
+            _end = _blk_start
+            while _end < len(_t):
+                if _t[_end] == '{':
+                    _depth += 1
+                elif _t[_end] == '}':
+                    _depth -= 1
+                    if _depth == 0:
+                        _end += 1
+                        break
+                _end += 1
+            _t = _t[:_line_start] + _t[_end:]
+            print('  patched: RouterToolbarItemView.swift (iOS 26 Badge block removed)')
+        else:
+            print('  WARN: RouterToolbarItemView.swift - Badge block start not found')
+    else:
+        print('  INFO: RouterToolbarItemView.swift - UIBarButtonItem.Badge not found (already patched?)')
+
+    if _t != _o:
+        _router_item.write_text(_t)
+        print('  patched: RouterToolbarItemView.swift (iOS 26 APIs stubbed)')
+        total += 1
+    else:
+        print('  WARN: RouterToolbarItemView.swift - NO changes made')
+else:
+    print('  WARN: RouterToolbarItemView.swift not found')
+
 print(f'\n✅ patch-expo-swift.py 完了: {total} ファイルを修正')
