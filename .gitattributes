@@ -5,6 +5,8 @@
 *.rb text eol=lf
 *.py text eol=lf
 *.env text eol=lf
+.xcode.env text eol=lf
+.xcode.env.* text eol=lf
 *.plist text eol=lf
 *.entitlements text eol=lf
 *.pbxproj text eol=lf

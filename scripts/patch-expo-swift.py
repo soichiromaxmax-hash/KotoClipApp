@@ -306,4 +306,28 @@ if _router_item.exists():
 else:
     print('  WARN: RouterToolbarItemView.swift not found')
 
+# ── ios/.xcode.env.local の自動生成 ─────────────────────────────────────────
+# "Bundle React Native code and images" スクリプトフェーズは NODE_BINARY を必要とする。
+# pod install 時に expo-modules-autolinking が .xcode.env.local を生成するが、
+# 念のため npm postinstall でも生成しておく（既存の場合は上書きしない）。
+
+import subprocess as _subprocess
+_xcode_env_local = root / 'ios/.xcode.env.local'
+if not _xcode_env_local.exists():
+    try:
+        _result = _subprocess.run(
+            ['node', '--print', 'process.argv[0]'],
+            capture_output=True, text=True, timeout=10
+        )
+        _node_path = _result.stdout.strip()
+        if _node_path and _result.returncode == 0:
+            _xcode_env_local.write_text(f'export NODE_BINARY="{_node_path}"\n')
+            print(f'  created: ios/.xcode.env.local (NODE_BINARY={_node_path})')
+        else:
+            print('  WARN: ios/.xcode.env.local not created - node path not found')
+    except Exception as _e:
+        print(f'  WARN: ios/.xcode.env.local not created - {_e}')
+else:
+    print(f'  skip: ios/.xcode.env.local already exists')
+
 print(f'\n✅ patch-expo-swift.py 完了: {total} ファイルを修正')
