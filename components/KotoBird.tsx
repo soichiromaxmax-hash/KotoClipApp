@@ -502,15 +502,7 @@ export function KotoBird({ size = 120, pose, stage = 1 }: KotoBirdProps) {
           </G>
         );
       default:
-        return (
-          <G>
-            <BirdBody />
-            <FlashCard pose={selectedPose} />
-            <BirdWings pose={selectedPose} />
-            <BirdFeet />
-            <BirdClip />
-          </G>
-        );
+        return null;
     }
   }
 

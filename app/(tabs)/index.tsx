@@ -14,7 +14,7 @@ import { api } from '@/lib/api';
 import { KotoBird } from '@/components/KotoBird';
 import { HeroBackground } from '@/components/HeroBackground';
 import { getCachedStats, getCachedWild, setCachedStats, setCachedWild, resetHomeCache } from '@/lib/homeCache';
-import { computeLevel, xpProgressPct, xpToNextLevel, heroColors, kotoStage, KOTO_STAGE_LABELS } from '@/lib/gamification';
+import { computeLevel, xpProgressPct, xpToNextLevel, kotoStage, LEVEL_MESSAGES } from '@/lib/gamification';
 
 // ステージ別：背景SVGの上に乗せる半透明オーバーレイ色
 const HERO_OVERLAY: Record<number, [string, string]> = {
@@ -284,7 +284,7 @@ export default function HomeScreen() {
                         <Text style={s.xpLvText}>Lv</Text>
                         <Text style={s.xpLvNum}>{lv}</Text>
                       </View>
-                      <Text style={s.xpStageName}>{KOTO_STAGE_LABELS[stage]}</Text>
+                      <Text style={s.xpStageName}>{LEVEL_MESSAGES[lv]}</Text>
                       <Text style={s.xpTotal}>{xp.toLocaleString()} XP</Text>
                     </View>
                     <View style={s.xpTrack}>
@@ -365,6 +365,20 @@ export default function HomeScreen() {
                     <Text style={s.secondarySub}>4択で実力チェック</Text>
                   </TouchableOpacity>
                 </View>
+
+                {/* 苦手語クイズ */}
+                <TouchableOpacity
+                  style={s.weakCard}
+                  onPress={() => router.push({ pathname: '/(tabs)/study', params: { mode: 'weak', t: String(Date.now()) } } as any)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={s.weakCardIcon}>🎯</Text>
+                  <View style={s.weakCardBody}>
+                    <Text style={s.weakCardTitle}>苦手語クイズ</Text>
+                    <Text style={s.weakCardSub}>間違えやすい単語を集中練習</Text>
+                  </View>
+                  <Text style={s.weakCardArrow}>›</Text>
+                </TouchableOpacity>
 
                 {/* 手動追加カード */}
                 <TouchableOpacity
@@ -752,6 +766,24 @@ const s = StyleSheet.create({
   },
   secondaryTitleAlt: { color: '#c4b5fd' },
   secondarySub: { fontSize: 12, color: '#8F99A8', lineHeight: 17 },
+
+  // 苦手語クイズカード
+  weakCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(239,68,68,0.07)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(239,68,68,0.20)',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    gap: 12,
+  },
+  weakCardIcon: { fontSize: 22 },
+  weakCardBody: { flex: 1 },
+  weakCardTitle: { fontSize: 15, fontWeight: '700', color: '#FF6B6B' },
+  weakCardSub: { fontSize: 12, color: '#8F99A8', marginTop: 2 },
+  weakCardArrow: { fontSize: 20, color: '#EF4444' },
 
   // 手動追加カード
   addCard: {

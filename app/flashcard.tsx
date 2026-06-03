@@ -6,6 +6,7 @@ import {
   StyleSheet,
   SafeAreaView,
   ScrollView,
+  Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -28,10 +29,12 @@ type Rating = 'good' | 'hard' | 'again';
 function FlipCard({
   word,
   onRate,
+  onDelete,
   reversed,
 }: {
   word: Word;
   onRate: (r: Rating) => void;
+  onDelete: () => void;
   reversed: boolean;
 }) {
   const [flipped, setFlipped] = useState(false);
@@ -108,17 +111,22 @@ function FlipCard({
           <Text style={s.primaryBtnText}>答えを見る</Text>
         </TouchableOpacity>
       ) : (
-        <View style={s.ratingWrap}>
-          <TouchableOpacity style={s.ratingAgain} onPress={() => onRate('again')} activeOpacity={0.8}>
-            <Text style={s.ratingBtnText}>もう一度</Text>
+        <>
+          <View style={s.ratingWrap}>
+            <TouchableOpacity style={s.ratingAgain} onPress={() => onRate('again')} activeOpacity={0.8}>
+              <Text style={s.ratingBtnText}>もう一度</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={s.ratingHard} onPress={() => onRate('hard')} activeOpacity={0.8}>
+              <Text style={s.ratingBtnText}>あいまい</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={s.ratingGood} onPress={() => onRate('good')} activeOpacity={0.8}>
+              <Text style={s.ratingBtnText}>覚えていた</Text>
+            </TouchableOpacity>
+          </View>
+          <TouchableOpacity style={s.deleteWordBtn} onPress={onDelete} activeOpacity={0.7}>
+            <Text style={s.deleteWordBtnText}>この単語を削除</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={s.ratingHard} onPress={() => onRate('hard')} activeOpacity={0.8}>
-            <Text style={s.ratingBtnText}>あいまい</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={s.ratingGood} onPress={() => onRate('good')} activeOpacity={0.8}>
-            <Text style={s.ratingBtnText}>覚えていた</Text>
-          </TouchableOpacity>
-        </View>
+        </>
       )}
     </View>
   );
@@ -220,6 +228,33 @@ export default function FlashcardScreen() {
     if (d === direction) return;
     setDirection(d);
     beginSession(sessionWords.current);
+  }
+
+  function handleDeleteWord() {
+    const word = queue[idx];
+    if (!word) return;
+    Alert.alert(
+      'この単語を削除',
+      `「${word.word}」を削除しますか？\n削除すると復元できません。`,
+      [
+        { text: 'キャンセル', style: 'cancel' },
+        {
+          text: '削除',
+          style: 'destructive',
+          onPress: () => {
+            api.deleteWord(word.id).catch(() => {});
+            const newQueue = queue.filter((_, i) => i !== idx);
+            sessionWords.current = sessionWords.current.filter((w) => w.id !== word.id);
+            if (newQueue.length === 0 || idx >= newQueue.length) {
+              setQueue(newQueue);
+              setDone(true);
+              return;
+            }
+            setQueue(newQueue);
+          },
+        },
+      ]
+    );
   }
 
   const pct = queue.length > 0 ? (idx / queue.length) * 100 : 0;
@@ -361,6 +396,7 @@ export default function FlashcardScreen() {
             key={`${word.id}-${direction}`}
             word={word}
             onRate={onRate}
+            onDelete={handleDeleteWord}
             reversed={direction === 'ja_en'}
           />
         )}
@@ -470,6 +506,16 @@ const s = StyleSheet.create({
     width: '100%',
   },
   secondaryBtnText: { color: '#2DD4BF', fontWeight: '700', fontSize: 16 },
+
+  deleteWordBtn: {
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  deleteWordBtnText: {
+    color: '#6B7280',
+    fontSize: 13,
+    textDecorationLine: 'underline',
+  },
 
   ratingWrap: { gap: 10 },
   ratingAgain: {

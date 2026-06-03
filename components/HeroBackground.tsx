@@ -20,7 +20,7 @@ export function HeroBackground({ stage }: Props) {
     case 4: return <Stage4 />;
     case 5: return <Stage5 />;
     case 6: return <Stage6 />;
-    default: return <Stage1 />;
+    default: return null;
   }
 }
 

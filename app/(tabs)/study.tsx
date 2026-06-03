@@ -7,9 +7,10 @@ import {
   StyleSheet,
   SafeAreaView,
   ScrollView,
+  Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { api } from '@/lib/api';
 import { KotoBird } from '@/components/KotoBird';
 import { resetHomeCache } from '@/lib/homeCache';
@@ -149,7 +150,7 @@ function QuizQuestion({
     if (selected !== null) return;
     setSelected(choice);
     const correct = choice === question.answer;
-    setTimeout(() => onAnswer(correct ? 'good' : 'again', correct), 600);
+    setTimeout(() => onAnswer(correct ? 'good' : 'again', correct), 300);
   };
 
   const getBtnStyle = (choice: string) => {
@@ -235,6 +236,8 @@ function ResultScreen({
 // ─── メイン画面 ─────────────────────────────────────────────────────────────
 
 export default function StudyScreen() {
+  const { mode: modeParam, t: tParam } = useLocalSearchParams<{ mode?: string; t?: string }>();
+  const lastTRef = useRef<string | undefined>(undefined);
   const [mode, setMode] = useState<Mode>('scheduled');
   const [phase, setPhase] = useState<Phase>('loading');
   const [queue, setQueue] = useState<Word[]>([]);
@@ -351,6 +354,21 @@ export default function StudyScreen() {
     }
   }, []);
 
+  // ホーム画面から t パラメータ付きで遷移してきたとき（同一モードの再タップ含む）に確実にリロード
+  useEffect(() => {
+    if (!tParam || tParam === lastTRef.current) return;
+    lastTRef.current = tParam;
+    const target = (modeParam === 'weak' || modeParam === 'free' || modeParam === 'scheduled')
+      ? modeParam as Mode
+      : mode;
+    if (target === mode) {
+      loadQueue(target);
+    } else {
+      setMode(target); // mode が変われば下の useEffect が loadQueue を呼ぶ
+    }
+  }, [tParam, modeParam]);
+
+  // modeBar から直接切り替えたときのロード
   useEffect(() => {
     loadQueue(mode);
   }, [mode, loadQueue]);
@@ -401,26 +419,33 @@ export default function StudyScreen() {
       masteredWordRef.current = word;
     }
 
-    try {
-      const res = await api.postReview(word.id, rating, elapsed);
-      const xpGain: number = res?.xp_gain ?? 0;
-      if (isCorrect) {
-        correctRef.current += 1;
-        setCorrect((c) => c + 1);
-        const xpMsg = xpGain > 0 ? ` +${xpGain} XP` : '';
-        setFeedback({ correct: true, msg: `正解！${xpMsg} 次回はもっと後に出てきます。` });
-      } else {
-        wrongRef.current += 1;
-        setWrong((w) => w + 1);
-        const xpMsg = xpGain < 0 ? ` ${xpGain} XP` : '';
-        setFeedback({ correct: false, msg: `不正解…${xpMsg} 正解: ${correctAnswer}。もう一度出てきます。` });
-      }
-      setPhase('feedback');
-    } catch (e) {
-      console.warn('[study] postReview failed:', e);
-      setSaveError({ wordId: word.id, rating, elapsed, isCorrect, correctAnswer });
-      setPhase('feedback');
+    // 即時フィードバック（APIレスポンスを待たない）
+    if (isCorrect) {
+      correctRef.current += 1;
+      setCorrect((c) => c + 1);
+      setFeedback({ correct: true, msg: '正解！ 次回はもっと後に出てきます。' });
+    } else {
+      wrongRef.current += 1;
+      setWrong((w) => w + 1);
+      setFeedback({ correct: false, msg: `不正解… 正解: ${correctAnswer}。もう一度出てきます。` });
     }
+    setPhase('feedback');
+
+    // API はバックグラウンドで送信し、XP が返ったら表示を更新
+    api.postReview(word.id, rating, elapsed)
+      .then((res) => {
+        const xpGain: number = res?.xp_gain ?? 0;
+        if (xpGain !== 0) {
+          if (isCorrect) {
+            setFeedback({ correct: true, msg: `正解！ +${xpGain} XP 次回はもっと後に出てきます。` });
+          } else {
+            setFeedback({ correct: false, msg: `不正解… ${xpGain} XP 正解: ${correctAnswer}。もう一度出てきます。` });
+          }
+        }
+      })
+      .catch(() => {
+        setSaveError({ wordId: word.id, rating, elapsed, isCorrect, correctAnswer });
+      });
   }
 
   async function retryReview() {
@@ -441,6 +466,39 @@ export default function StudyScreen() {
     const { isCorrect, correctAnswer } = saveError;
     setSaveError(null);
     applyResult(isCorrect, correctAnswer);
+  }
+
+  function confirmDeleteWord() {
+    const word = queue[idx];
+    if (!word) return;
+    Alert.alert(
+      'この単語を削除',
+      `「${word.word}」を削除しますか？\n削除すると復元できません。`,
+      [
+        { text: 'キャンセル', style: 'cancel' },
+        { text: '削除', style: 'destructive', onPress: () => deleteCurrentWord(word.id) },
+      ]
+    );
+  }
+
+  function deleteCurrentWord(wordId: number) {
+    api.deleteWord(wordId).catch(() => {});
+    resetHomeCache();
+    const newQueue = queue.filter((w) => w.id !== wordId);
+    const newPool = poolRef.current.filter((w) => w.id !== wordId);
+    poolRef.current = newPool;
+
+    if (newQueue.length === 0 || idx >= newQueue.length) {
+      setQueue(newQueue);
+      setPhase('result');
+      return;
+    }
+    const nextWord = newQueue[idx];
+    setQueue(newQueue);
+    setFeedback(null);
+    setSaveError(null);
+    setQuestion(buildQuestion(nextWord, nextWord._q_type ?? 'choice', newPool));
+    setPhase('question');
   }
 
   async function checkShareTriggers() {
@@ -648,6 +706,9 @@ export default function StudyScreen() {
                       {idx + 1 >= queue.length ? '結果を見る' : '次へ'}
                     </Text>
                   </TouchableOpacity>
+                  <TouchableOpacity style={styles.deleteWordBtn} onPress={confirmDeleteWord} activeOpacity={0.7}>
+                    <Text style={styles.deleteWordBtnText}>この単語を削除</Text>
+                  </TouchableOpacity>
                 </>
               )
             )}
@@ -773,6 +834,16 @@ const styles = StyleSheet.create({
   primaryBtnText: { color: '#0E1116', fontWeight: '700', fontSize: 16 },
   ghostBtn: { paddingVertical: 14, alignItems: 'center', width: '100%' },
   ghostBtnText: { color: '#6B7280', fontSize: 15 },
+
+  deleteWordBtn: {
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  deleteWordBtnText: {
+    color: '#6B7280',
+    fontSize: 13,
+    textDecorationLine: 'underline',
+  },
 
   saveErrorBox: {
     borderRadius: 14,

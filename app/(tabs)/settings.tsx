@@ -41,10 +41,26 @@ const NATIVE_LANGS = [
 ];
 
 const NOTIF_ROWS = [
-  { key: 'notification_daily_enabled',     label: '毎日の学習リマインダー', sub: '設定時刻に1日1回' },
-  { key: 'notification_streak_enabled',    label: 'ストリーク通知',         sub: '連続学習を継続中のとき' },
-  { key: 'notification_milestone_enabled', label: 'マイルストーン通知',     sub: '定着語数が節目に達したとき' },
-  { key: 'notification_weekly_enabled',    label: '週次サマリー',           sub: '毎週月曜 9:00' },
+  {
+    key: 'notification_daily_enabled',
+    label: '毎日の学習リマインダー',
+    sub: '下の「リマインダー時刻」に毎日通知が届きます',
+  },
+  {
+    key: 'notification_streak_enabled',
+    label: 'ストリーク通知',
+    sub: '7日・14日・30日など連続学習が節目に達したとき',
+  },
+  {
+    key: 'notification_milestone_enabled',
+    label: 'マイルストーン通知',
+    sub: '定着語数が 10・25・50・100語の節目に達したとき',
+  },
+  {
+    key: 'notification_weekly_enabled',
+    label: '週次サマリー',
+    sub: '毎週月曜 9:00 に先週の学習まとめが届きます',
+  },
 ];
 
 const TIME_OPTIONS: string[] = [];
@@ -236,7 +252,7 @@ export default function SettingsScreen() {
           >
             <View style={s.notifText}>
               <Text style={s.notifLabel}>学習言語</Text>
-              <Text style={s.notifSub}>保存・復習する単語の言語</Text>
+              <Text style={s.notifSub}>保存・復習する単語の言語（例: 英語なら英単語を学ぶ）</Text>
             </View>
             <View style={s.langValueWrap}>
               <Text style={s.langValue}>
@@ -254,7 +270,7 @@ export default function SettingsScreen() {
           >
             <View style={s.notifText}>
               <Text style={s.notifLabel}>説明言語</Text>
-              <Text style={s.notifSub}>意味・例文を表示する言語</Text>
+              <Text style={s.notifSub}>意味・例文をどの言語で表示するか（通常は母国語）</Text>
             </View>
             <View style={s.langValueWrap}>
               <Text style={s.langValue}>
@@ -267,6 +283,7 @@ export default function SettingsScreen() {
 
         {/* 通知設定 */}
         <Text style={s.sectionHeader}>通知設定</Text>
+        <Text style={s.sectionNote}>通知を許可した上で、使いたい種類をONにしてください。未許可の場合は下のバナーから許可できます。</Text>
 
         {/* 通知許可バナー */}
         {notifPerm !== 'granted' && (
@@ -302,6 +319,7 @@ export default function SettingsScreen() {
         {/* リマインダー時刻 */}
         <View style={[s.card, { marginTop: 12 }]}>
           <Text style={s.sectionTitle}>リマインダー時刻</Text>
+          <Text style={s.reminderNote}>「毎日の学習リマインダー」をONにした場合の通知時刻</Text>
           <TouchableOpacity
             style={s.timeRow}
             onPress={() => setShowTimePicker(true)}
@@ -506,7 +524,20 @@ const s = StyleSheet.create({
     color: '#F9FAFB',
     marginHorizontal: 16,
     marginTop: 20,
+    marginBottom: 4,
+  },
+  sectionNote: {
+    fontSize: 12,
+    color: '#8F99A8',
+    marginHorizontal: 16,
     marginBottom: 8,
+    lineHeight: 17,
+  },
+  reminderNote: {
+    fontSize: 12,
+    color: '#8F99A8',
+    marginBottom: 8,
+    lineHeight: 17,
   },
 
   // 通知許可バナー
@@ -541,7 +572,7 @@ const s = StyleSheet.create({
   },
   notifText: { flex: 1 },
   notifLabel: { fontSize: 14, fontWeight: '600', color: '#E9EDF2' },
-  notifSub: { fontSize: 12, color: '#6B7280', marginTop: 2 },
+  notifSub: { fontSize: 12, color: '#8F99A8', marginTop: 2 },
 
   // トグル
   toggleTrack: {
@@ -578,7 +609,7 @@ const s = StyleSheet.create({
     paddingVertical: 12,
   },
   timeValue: { fontSize: 16, color: '#E9EDF2' },
-  timeChevron: { fontSize: 20, color: '#6B7280' },
+  timeChevron: { fontSize: 20, color: '#8F99A8' },
 
   planCard: {
     marginHorizontal: 16,
