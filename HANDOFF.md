@@ -1,6 +1,6 @@
 # KotoClip — 引き継ぎメモ（完全版）
 
-**最終更新: 2026-06-03**
+**最終更新: 2026-06-09**
 
 ---
 
@@ -11,64 +11,134 @@
 
 ---
 
-## 0. 最新状況（2026-06-03）★ここから読む
+## 0. 最新状況（2026-06-09）★ここから読む
 
 ### 現在のビルド・OTA状態
 
 | 項目 | 値 |
 |---|---|
-| TestFlight インストール済みビルド | **Build #54**（Xcode 16.3 / iOS 18.4 SDK でビルド） |
-| 次回 EAS Build 時のビルド番号 | **#55**（autoIncrement） |
-| コード（GitHub master） | 全変更 push 済み（commit `02edc26`） |
-| OTA 配信済みアップデート | Update Group `4ba1be75`（production ブランチ） |
-| OTA 反映確認 | **未確認**（下記の問題があるため） |
+| TestFlight インストール済みビルド | **Build #40**（iOS ビルド番号。EAS 内部カウントと別） |
+| 次回 EAS Build 時のビルド番号 | **#41**（App Store Connect からの autoIncrement） |
+| コード（GitHub master） | 全変更 push 済み（commit `132bd42`） |
+| OTA production チャンネル | ✅ 作成済み・production ブランチに接続済み |
+| 最新 OTA | Update Group `cea87239`（2026-06-09 配信済み） |
 
-### OTA が反映されていない問題（★重要）
+### OTA の仕組み（修正済み・正常動作中）
 
-**原因:** Build #54 が作られた後に `ios/` 以下の Swift パッチが追加されたため、  
-EAS Update のフィンガープリントが Build #54 と一致せず、アップデートがダウンロードされなかった。
+2026-06-09 に判明した問題：**production チャンネルが存在しなかった**ため、過去の全 OTA がデバイスに届いていなかった。
 
-**対処:** `EAS_SKIP_AUTO_FINGERPRINT=1` を付けて再配信済み（2026-06-03 完了）。
+**修正済み内容：**
+- `eas channel:create production` でチャンネルを作成し、production ブランチに接続
+- `eas.json` に `"channel": "production"` を明示的に追加（Build #41 以降で確実に反映）
+- OTA コマンドに `EAS_SKIP_AUTO_FINGERPRINT=1` を組み込んだ npm スクリプトを追加
 
-**次回以降のOTA:** Build #55 をビルドすれば、フィンガープリントが現在のコードと一致するため  
-以降は通常の `eas update` で問題なく反映される。
-
-**反映確認手順（必ず2回再起動）:**
+**OTA 確認手順（必ず2回再起動）:**
 1. アプリを完全終了（ホームでアプリを上スワイプ）
 2. アプリを開く（バックグラウンドでダウンロード）
 3. もう一度完全終了
 4. アプリを開く → 更新が適用される
 
-### 2026-06-03 に修正したバグ
+**⚠️ Build #40 インストール端末への OTA :** チャンネルが当時なかったため、Build #40 端末への過去 OTA は届いていない可能性が高い。**Build #41 を入れれば以降は正常に動く。**
+
+---
+
+### 2026-06-09 に実施した変更（全 OTA 配信済み）
+
+#### UI・UX 改善
+
+| 内容 | ファイル |
+|---|---|
+| フラッシュカード・苦手語カードをクイズ練習と同じティール色に統一 | `app/(tabs)/index.tsx` |
+| 使い方画面を「📱 スマホ」「💻 PCブラウザ」の2タブ構成に変更 | `app/how-to.tsx` |
+| 設定画面の通知行サブテキスト・sectionNote を削除してシンプル化 | `app/(tabs)/settings.tsx` |
+
+#### バグ修正
 
 | バグ | 修正内容 | ファイル |
 |---|---|---|
-| クイズ後の移行が遅い | `onAnswer()` の API 待機を廃止。即時フィードバック表示に変更。XP は後から上書き | `app/(tabs)/study.tsx` |
-| 苦手語クイズが再タップで起動しない | ホームから `t=Date.now()` を付与して同一モードの再ナビゲーションを検知 | `app/(tabs)/index.tsx` / `study.tsx` |
-| 設定のサブテキストが読みにくい | `#6B7280`（禁止色）→ `#8F99A8` に修正。通知の説明文を書き直し | `app/(tabs)/settings.tsx` |
-| `eas update` が反映されない | `--branch production` なしで実行していた。フィンガープリント問題も解消 | — |
+| 苦手語クイズがエラーになる | API エラーを empty 扱いに。苦手語をクライアント側フィルタ（未学習・stability<2.5・期限超過）に変更 | `app/(tabs)/study.tsx` |
+| 久々起動時の読み込みが長い | キャッシュなし初回のタイムアウトを 8 秒に短縮。失敗時はログイン画面へ即遷移 | `app/(tabs)/index.tsx` |
+| フラッシュカードの遷移が遅い | `onRate` を非同期ブロックなし即時遷移に変更。ロックを 500→250ms に短縮 | `app/flashcard.tsx` |
+| 通知トグルを ON にして権限拒否しても ON のまま | 権限 denied 時にトグルを即 OFF に戻すよう修正 | `app/(tabs)/settings.tsx` |
+| word_limit がハードコード100 | サーバーの `word_limit` / `is_premium` を取得して動的制限。premium 時は無制限表示 | `app/(tabs)/add.tsx` |
 
-### 次にやること（優先順）
+---
 
-1. **OTA 反映を確認する** — 2回再起動して今回の修正が動くか確認
-2. **iOS 通知バグを修正する** — `lib/notifications.ts` と `settings.tsx` の権限フロー
-3. **Build #55 を作って App Store 審査に出す:**
-   ```bash
-   cd "C:\Users\SoichiroKamibeppu(MC\KotoClipApp"
-   eas build --platform ios --profile production --auto-submit
-   ```
-   ※ iOS 26 SDK 対応済み・エラーは出ない（セクション7参照）
+### Build #41 の前にやること（★必須）
+
+**Build #41 は RevenueCat の設定が完了してから実行すること。**
+
+#### STEP 1 — App Store Connect で IAP 商品を作成（未完了）
+
+1. [App Store Connect](https://appstoreconnect.apple.com) → KotoClip → 「App 内課金」
+2. 「＋」→ **自動更新サブスクリプション** を選択
+3. サブスクリプショングループ名: `KotoClip Premium`
+4. 以下 2 商品を作成:
+
+| Product ID | 表示名 | 価格 |
+|---|---|---|
+| `jp.kotoclip.premium.monthly` | KotoClip Premium 月額 | ¥480（Tier 3） |
+| `jp.kotoclip.premium.yearly` | KotoClip Premium 年額 | ¥2,400（Tier 7） |
+
+#### STEP 2 — RevenueCat アカウント作成・設定（未完了）
+
+1. [app.revenuecat.com](https://app.revenuecat.com) でアカウント作成
+2. 新しいプロジェクト → iOS App 追加 → Bundle ID: `jp.kotoclip.app`
+3. App Store Connect API キー（`.p8` ファイル = `AuthKey_HK23GAU47L.p8`）を RevenueCat に登録
+4. **Entitlements** → ID: `premium` を作成
+5. **Offerings** → `default` を作成し、上記 2 商品を追加
+6. **iOS Public API Key** をコピー（`appl_xxxxx` 形式）
+
+#### STEP 3 — コードに API キーを設定（1分）
+
+`lib/purchases.ts` の1行を差し替える:
+
+```typescript
+// 変更前（プレースホルダー）
+export const RC_API_KEY_IOS = 'REVENUECAT_IOS_PUBLIC_KEY';
+
+// 変更後（RevenueCat ダッシュボードの値）
+export const RC_API_KEY_IOS = 'appl_xxxxxxxxxxxxxxxx';
+```
+
+#### STEP 4 — Build #41 を実行
+
+STEP 1〜3 完了後:
+
+```powershell
+cd "C:\Users\SoichiroKamibeppu(MC\KotoClipApp"
+npm run release:ios:build
+```
+
+---
+
+### v1.0 リリース前 残タスク一覧
+
+| # | 内容 | 状態 |
+|---|---|---|
+| 1 | Build #41 作成 → App Store 審査提出 | ⏳ STEP 1〜3 完了後 |
+| 2 | iOS 通知バグ修正 | ✅ 2026-06-09 修正済み |
+| 3 | RevenueCat 課金基盤 | ✅ コード完成・STEP 1〜3 待ち |
+| 4 | 単語数制限 UI | ✅ 2026-06-09 動的対応済み |
+| 5 | AI 検索回数制限 UI | ❌ サーバー実装確認が必要 |
+| 6 | Google/Apple ログイン | ❌ Supabase OAuth 設定が必要 |
+| 7 | 言語別単語帳（スペイン語等を英語と別管理） | ❌ サーバー実装確認が必要 |
+| 8 | App Store メタデータ（スクショ・説明文） | ❌ Build #41 後に実施 |
+| 9 | 拡張機能のスペイン語対応（language params） | ❌ Build #41 と同時に対応 |
+
+---
 
 ### どこに何が書いてあるか
 
 | 知りたいこと | 参照先 |
 |---|---|
-| コマンド（毎日の作業） | **セクション 8**（このファイル） |
+| 日常の OTA コマンド | **セクション 8**（このファイル） |
+| RevenueCat 実装の詳細 | `lib/purchases.ts`（コメント付き） |
+| ペイウォール UI | `app/paywall.tsx` |
 | ビルドの仕組み・パッチの理由 | **セクション 10**（このファイル） |
 | iOS 26 SDK 対応の経緯 | **セクション 7**（このファイル） |
 | アカウント・証明書の場所 | **セクション 4**（このファイル） |
 | 設計・API・デザイン詳細 | `HANDOVER.md`（同フォルダ） |
-| 画面構成・API詳細 | `.claude/skills/` 以下（screens.md / api.md 等） |
 
 ---
 
@@ -166,20 +236,22 @@ C:\Users\SoichiroKamibeppu(MC\KotoClipApp\
 ├── app/                      ← 画面ファイル（ここをよく触る）
 │   ├── _layout.tsx           ← ルート（認証・フォント・Renderウォームアップ）
 │   ├── flashcard.tsx
-│   ├── how-to.tsx
+│   ├── how-to.tsx            ← スマホ / PC タブ構成
+│   ├── paywall.tsx           ← ★RevenueCat ペイウォール（月額+年額）
 │   ├── auth/login.tsx
 │   ├── word/[id].tsx
 │   └── (tabs)/
 │       ├── index.tsx         ← ホーム（XPバー・統計・CTAカード）
-│       ├── study.tsx         ← クイズ練習（4択のみ）
-│       ├── add.tsx
+│       ├── study.tsx         ← クイズ練習（4択のみ）・苦手語クライアントフィルタ
+│       ├── add.tsx           ← word_limit 動的対応・上限モーダルでペイウォールへ誘導
 │       ├── words.tsx
-│       └── settings.tsx
+│       └── settings.tsx      ← アップグレードボタンがペイウォールへ接続済み
 │
 ├── lib/
 │   ├── api.ts                ← API呼び出しはすべてここ経由
 │   ├── gamification.ts       ← XP・レベル・Kotoステージ計算
-│   └── notifications.ts
+│   ├── notifications.ts
+│   └── purchases.ts          ← ★RevenueCat 課金ロジック（RC_API_KEY_IOS を差し替えること）
 │
 ├── context/auth.tsx          ← ログイン状態（useAuth フック）
 │
@@ -203,19 +275,21 @@ C:\Users\SoichiroKamibeppu(MC\KotoClipApp\
 
 ---
 
-## 6. 現在の状態（2026-06-03 更新）
+## 6. 現在の状態（2026-06-09 更新）
 
 | 項目 | 値 |
 |---|---|
-| 次回ビルド番号 | **#55**（EAS自動インクリメント・次回ビルド時） |
-| TestFlight インストール済み | Build #54（Xcode 16.3 / iOS 18.4 SDK） |
-| OTA 配信済み | Update Group `4ba1be75`（`EAS_SKIP_AUTO_FINGERPRINT=1` で配信） |
-| OTA 反映確認 | **未確認** |
-| コード状態 | 全変更 push 済み（commit `02edc26`） |
+| 次回ビルド番号 | **#41**（App Store Connect autoIncrement） |
+| TestFlight インストール済み | Build #40 |
+| OTA 最新 | Update Group `cea87239`（2026-06-09 配信済み） |
+| OTA チャンネル | production チャンネル ✅ 作成・接続済み |
+| コード状態 | 全変更 push 済み（commit `132bd42`） |
 | Expo SDK | ~55.0.26 |
 | React Native | 0.83.6 |
 | Xcode（EAS image） | `"latest"`（Xcode 26対応・2026-06-01に変更） |
 | iOS deployment target | 15.1（iOS 26 専用ではない・15.1以上で動く） |
+| RevenueCat SDK | `react-native-purchases@10.2.2` インストール済み |
+| RevenueCat API Key | `lib/purchases.ts` の `RC_API_KEY_IOS` を差し替え待ち |
 
 ---
 
@@ -260,17 +334,19 @@ cd "C:\Users\SoichiroKamibeppu(MC\KotoClipApp"
 
 ### パターン①：画面修正・バグ修正・機能追加（毎日の作業）
 
-```bash
+```powershell
 cd "C:\Users\SoichiroKamibeppu(MC\KotoClipApp"
-eas update --branch production --environment production --message "変更内容のメモ"
+npm run release:ota -- --message "変更内容のメモ"
 ```
 iPhoneのアプリを完全に閉じて再起動すると1〜2分で反映。**ビルド不要・無料。**
 
-### パターン②：TestFlight に新しいビルドを送る（月1〜2回）
+⚠️ `eas update` コマンドを直接使わないこと。`npm run release:ota` には `EAS_SKIP_AUTO_FINGERPRINT=1` が自動で付く。
 
-```bash
+### パターン②：TestFlight に新しいビルドを送る
+
+```powershell
 cd "C:\Users\SoichiroKamibeppu(MC\KotoClipApp"
-eas build --platform ios --profile production --auto-submit
+npm run release:ios:build
 ```
 30〜40分でTestFlightに自動送信される。**EAS無料枠: 30回/月（毎月1日リセット）**
 
