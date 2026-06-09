@@ -276,8 +276,12 @@ export default function AddWordScreen() {
               無料プランでは{effectiveLimit ?? FREE_LIMIT}語まで保存できます。{'\n'}
               プレミアムプランにアップグレードすると、単語数が無制限になります。
             </Text>
-            <TouchableOpacity style={s.modalPremiumBtn} activeOpacity={0.85} disabled>
-              <Text style={s.modalPremiumText}>アップグレード（近日公開）</Text>
+            <TouchableOpacity
+              style={s.modalPremiumBtn}
+              activeOpacity={0.85}
+              onPress={() => { setShowLimitModal(false); router.push('/paywall' as any); }}
+            >
+              <Text style={s.modalPremiumText}>プレミアムにアップグレード</Text>
             </TouchableOpacity>
             <TouchableOpacity style={s.modalCancelBtn} onPress={() => setShowLimitModal(false)} activeOpacity={0.7}>
               <Text style={s.modalCancelText}>閉じる</Text>
@@ -435,7 +439,6 @@ const s = StyleSheet.create({
     paddingVertical: 14,
     alignItems: 'center',
     marginTop: 4,
-    opacity: 0.5,
   },
   modalPremiumText: { color: '#0E1116', fontWeight: '700', fontSize: 15 },
   modalCancelBtn: { paddingVertical: 8 },

@@ -8,6 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AuthProvider, useAuth } from '@/context/auth';
 import { Onboarding, hasSeenOnboarding } from '@/components/Onboarding';
 import { SplashAnimation } from '@/components/SplashAnimation';
+import { initPurchases } from '@/lib/purchases';
 
 const SPLASH_KEY = 'koto_splash_seen_v1';
 
@@ -58,6 +59,7 @@ function RootLayoutNav() {
         <Stack.Screen name="word" />
         <Stack.Screen name="flashcard" />
         <Stack.Screen name="how-to" />
+        <Stack.Screen name="paywall" options={{ presentation: 'modal' }} />
       </Stack>
       <StatusBar style="light" />
       <Onboarding
@@ -82,6 +84,10 @@ export default function RootLayout() {
     LobsterTwo_700Bold,
     SpaceGrotesk_700Bold,
   });
+
+  useEffect(() => {
+    initPurchases().catch(() => {});
+  }, []);
 
   const appReady = fontsLoaded || !!fontError;
   if (!appReady) return null;

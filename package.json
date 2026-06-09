@@ -10,7 +10,8 @@
     "web": "expo start --web",
     "lint": "eslint . --no-cache",
     "release:ios:check": "expo config --type introspect && eslint . --no-cache",
-    "release:ios:build": "eas build --platform ios --profile production",
+    "release:ios:build": "eas build --platform ios --profile production --auto-submit",
+    "release:ota": "cross-env EAS_SKIP_AUTO_FINGERPRINT=1 eas update --branch production --environment production",
     "postinstall": "python3 scripts/patch-expo-swift.py || true"
   },
   "dependencies": {
@@ -38,6 +39,7 @@
     "react-dom": "19.2.0",
     "react-native": "0.83.6",
     "react-native-gesture-handler": "~2.30.0",
+    "react-native-purchases": "^10.2.2",
     "react-native-reanimated": "4.2.1",
     "react-native-safe-area-context": "~5.6.2",
     "react-native-screens": "~4.23.0",
@@ -49,6 +51,7 @@
   },
   "devDependencies": {
     "@types/react": "~19.2.10",
+    "cross-env": "^10.1.0",
     "eslint": "^9.25.0",
     "eslint-config-expo": "^55.0.1",
     "typescript": "~5.9.2"

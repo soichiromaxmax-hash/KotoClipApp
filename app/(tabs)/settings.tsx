@@ -220,9 +220,21 @@ export default function SettingsScreen() {
                 },
               ]} />
             </View>
-            {!settings.is_premium && (
-              <TouchableOpacity style={s.planUpgradeBtn} activeOpacity={0.8} disabled>
-                <Text style={s.planUpgradeText}>プレミアムにアップグレード（近日公開）</Text>
+            {settings.is_premium ? (
+              <TouchableOpacity
+                style={[s.planUpgradeBtn, { opacity: 1 }]}
+                activeOpacity={0.8}
+                onPress={() => router.push('/paywall' as any)}
+              >
+                <Text style={s.planUpgradeText}>サブスクリプションを管理</Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                style={[s.planUpgradeBtn, { opacity: 1 }]}
+                activeOpacity={0.8}
+                onPress={() => router.push('/paywall' as any)}
+              >
+                <Text style={s.planUpgradeText}>プレミアムにアップグレード</Text>
               </TouchableOpacity>
             )}
           </View>

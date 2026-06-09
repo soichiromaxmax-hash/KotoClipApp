@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { api, setAuthExpiredHandler } from '@/lib/api';
 import { resetHomeCache } from '@/lib/homeCache';
+import { loginRevenueCat, logoutRevenueCat } from '@/lib/purchases';
 
 type AuthState = 'loading' | 'authenticated' | 'unauthenticated';
 
@@ -29,6 +30,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function login(email: string, password: string) {
     await api.login(email, password);
+    loginRevenueCat(email).catch(() => {});
     setState('authenticated');
   }
 
@@ -43,6 +45,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function logout() {
     await api.logout();
+    logoutRevenueCat().catch(() => {});
     resetHomeCache();
     setState('unauthenticated');
   }

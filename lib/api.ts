@@ -132,6 +132,7 @@ export const api = {
     const data = ct.includes('application/json') ? await res.json().catch(() => null) : null;
     if (!res.ok) throw new Error(data?.detail ?? 'ログインに失敗しました');
     await saveTokens(data.access_token, data.refresh_token ?? '');
+    await AsyncStorage.setItem('user_email', email).catch(() => {});
     return data as { user_id: string; access_token: string; refresh_token: string };
   },
 
