@@ -270,11 +270,14 @@ export default function StudyScreen() {
     correctRef.current = 0;
     wrongRef.current = 0;
     try {
-      const words: Word[] = m === 'free'
-        ? await api.getAllWords()
-        : m === 'weak'
-        ? await api.getWeakWords(10)
-        : await api.getDue(20);
+      let words: Word[];
+      if (m === 'weak') {
+        try { words = await api.getWeakWords(10); } catch { words = []; }
+      } else if (m === 'free') {
+        words = await api.getAllWords();
+      } else {
+        words = await api.getDue(20);
+      }
       if (!Array.isArray(words) || words.length === 0) {
         resetHomeCache();
         setQueue([]);
@@ -667,8 +670,14 @@ export default function StudyScreen() {
         {phase === 'empty' && (
           <View style={styles.centered}>
             <KotoBird size={82} />
-            <Text style={styles.emptyTitle}>今日の復習は完了です</Text>
-            <Text style={styles.emptySubtitle}>クイズ練習で腕試しをしましょう。</Text>
+            <Text style={styles.emptyTitle}>
+              {mode === 'weak' ? '苦手語がまだありません' : '今日の復習は完了です'}
+            </Text>
+            <Text style={styles.emptySubtitle}>
+              {mode === 'weak'
+                ? 'クイズ練習で間違えた単語が苦手語として記録されます。'
+                : 'クイズ練習で腕試しをしましょう。'}
+            </Text>
             <TouchableOpacity style={styles.primaryBtn} onPress={() => setMode('free')}>
               <Text style={styles.primaryBtnText}>クイズ練習へ</Text>
             </TouchableOpacity>

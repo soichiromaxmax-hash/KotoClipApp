@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -288,6 +288,7 @@ function GuideBlock({ badge, title, copy, children, steps, note }: { badge: stri
 
 export default function HowToScreen() {
   const router = useRouter();
+  const [tab, setTab] = useState<'phone' | 'browser'>('phone');
 
   return (
     <SafeAreaView style={s.root}>
@@ -296,67 +297,86 @@ export default function HowToScreen() {
           <Ionicons name="chevron-back" size={22} color={STRONG} />
           <Text style={s.backText}>戻る</Text>
         </TouchableOpacity>
+        <Text style={s.navTitle}>KotoClipの使い方</Text>
+      </View>
+
+      {/* タブバー */}
+      <View style={s.tabBar}>
+        <TouchableOpacity
+          style={[s.tabBtn, tab === 'phone' && s.tabBtnActive]}
+          onPress={() => setTab('phone')}
+          activeOpacity={0.8}
+        >
+          <Text style={[s.tabBtnText, tab === 'phone' && s.tabBtnTextActive]}>📱 スマホ</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[s.tabBtn, tab === 'browser' && s.tabBtnActive]}
+          onPress={() => setTab('browser')}
+          activeOpacity={0.8}
+        >
+          <Text style={[s.tabBtnText, tab === 'browser' && s.tabBtnTextActive]}>💻 PCブラウザ</Text>
+        </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
-        <View style={s.heroWrap}>
-          <KotoBird size={78} />
-          <Text style={s.heroTitle}>KotoClipの使い方</Text>
-          <Text style={s.heroSub}>読んでいるページから単語を保存し、あとで復習する流れを説明します。</Text>
-        </View>
+        {tab === 'phone' ? (
+          <>
+            <GuideBlock
+              badge="初回設定"
+              title="共有シートにKotoClipを表示します。"
+              copy="「その他」は、単語選択後に出る共有シートのアプリ一覧を横にスクロールした一番右にあります。"
+              steps={[
+                'SafariやChromeなどで単語を選び、「共有」を押します。',
+                '共有シートの上段にあるアプリ一覧を、右方向へ横スクロールします。',
+                '一番右にある「その他」を開き、一覧の中からKotoClipをオンにします。',
+              ]}
+            >
+              <PhoneInitialMock />
+            </GuideBlock>
 
-        <GuideBlock
-          badge="初回"
-          title="共有シートにKotoClipを表示します。"
-          copy="「その他」は、単語選択後に出る共有シートのアプリ一覧を横にスクロールした一番右にあります。"
-          steps={[
-            'SafariやChromeなどで単語を選び、「共有」を押します。',
-            '共有シートの上段にあるアプリ一覧を、右方向へ横スクロールします。',
-            '一番右にある「その他」を開き、一覧の中からKotoClipをオンにします。',
-          ]}
-        >
-          <PhoneInitialMock />
-        </GuideBlock>
+            <GuideBlock
+              badge="保存方法"
+              title="読んでいるページから、そのまま保存します。"
+              copy="一度KotoClipを表示しておけば、次回からは共有シートでKotoClipを選ぶだけです。"
+              steps={[
+                '保存したい単語を長押しして選択します。',
+                '表示されたメニューから「共有」を押します。見えない場合はメニュー内を横に送ります。',
+                '共有シートでKotoClipを選びます。保存後は単語帳と復習に入ります。',
+              ]}
+            >
+              <PhoneSaveMock />
+            </GuideBlock>
+          </>
+        ) : (
+          <>
+            <GuideBlock
+              badge="初回設定"
+              title="拡張機能を入れて、ログインします。"
+              copy="まずストアでKotoClipを追加し、同じアカウントでログインします。固定は必須ではありません。"
+              steps={[
+                'ChromeならChrome Web Store、EdgeならEdge Add-onsを開き、KotoClip拡張機能のページへ進みます。',
+                '「Chromeに追加」または「取得」を押して、確認画面で拡張機能の追加を許可します。',
+                'KotoClipを開き、スマホアプリと同じアカウントでログインします。',
+              ]}
+            >
+              <BrowserInitialMock />
+            </GuideBlock>
 
-        <GuideBlock
-          badge="保存"
-          title="読んでいるページから、そのまま保存します。"
-          copy="一度KotoClipを表示しておけば、次回からは共有シートでKotoClipを選ぶだけです。"
-          steps={[
-            '保存したい単語を長押しして選択します。',
-            '表示されたメニューから「共有」を押します。見えない場合はメニュー内を横に送ります。',
-            '共有シートでKotoClipを選びます。保存後は単語帳と復習に入ります。',
-          ]}
-        >
-          <PhoneSaveMock />
-        </GuideBlock>
-
-        <GuideBlock
-          badge="初回"
-          title="拡張機能を入れて、ログインします。"
-          copy="まずストアでKotoClipを追加し、同じアカウントでログインします。固定は必須ではありません。"
-          steps={[
-            'ChromeならChrome Web Store、EdgeならEdge Add-onsを開き、KotoClip拡張機能のページへ進みます。',
-            '「Chromeに追加」または「取得」を押して、確認画面で拡張機能の追加を許可します。',
-            'KotoClipを開き、スマホアプリと同じアカウントでログインします。',
-          ]}
-        >
-          <BrowserInitialMock />
-        </GuideBlock>
-
-        <GuideBlock
-          badge="保存"
-          title="PCで読んだ単語を、スマホの単語帳へ送ります。"
-          copy="単語を選択すると、ページ上にKotoClipボタンが表示されます。そのボタンから保存します。"
-          steps={[
-            '英語ページで保存したい単語をドラッグして選択します。',
-            '選択した単語の近くに出るKotoClipボタンを押します。',
-            '訳・例文・保存元URLを確認して「保存する」を押します。',
-            '同じアカウントのスマホアプリに同期され、あとで復習できます。',
-          ]}
-        >
-          <BrowserSaveMock />
-        </GuideBlock>
+            <GuideBlock
+              badge="保存方法"
+              title="PCで読んだ単語を、スマホの単語帳へ送ります。"
+              copy="単語を選択すると、ページ上にKotoClipボタンが表示されます。そのボタンから保存します。"
+              steps={[
+                '英語ページで保存したい単語をドラッグして選択します。',
+                '選択した単語の近くに出るKotoClipボタンを押します。',
+                '訳・例文・保存元URLを確認して「保存する」を押します。',
+                '同じアカウントのスマホアプリに同期され、あとで復習できます。',
+              ]}
+            >
+              <BrowserSaveMock />
+            </GuideBlock>
+          </>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -364,7 +384,7 @@ export default function HowToScreen() {
 
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: BG },
-  scroll: { paddingBottom: 52 },
+  scroll: { paddingBottom: 52, paddingTop: 8 },
   navBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -373,8 +393,34 @@ const s = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255,255,255,0.06)',
   },
+  navTitle: {
+    flex: 1,
+    textAlign: 'center',
+    color: STRONG,
+    fontSize: 16,
+    fontWeight: '700',
+    marginRight: 40,
+  },
   backBtn: { flexDirection: 'row', alignItems: 'center', gap: 2, paddingVertical: 4, paddingHorizontal: 4 },
   backText: { color: STRONG, fontSize: 16 },
+
+  // タブバー
+  tabBar: {
+    flexDirection: 'row',
+    margin: 16,
+    marginBottom: 4,
+    backgroundColor: '#1D2430',
+    borderRadius: 10,
+    padding: 4,
+    gap: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+  },
+  tabBtn: { flex: 1, paddingVertical: 9, borderRadius: 8, alignItems: 'center' },
+  tabBtnActive: { backgroundColor: '#263041' },
+  tabBtnText: { color: '#6B7280', fontWeight: '600', fontSize: 14 },
+  tabBtnTextActive: { color: '#2DD4BF' },
+
   heroWrap: { alignItems: 'center', paddingTop: 28, paddingBottom: 22, paddingHorizontal: 24, gap: 10 },
   heroTitle: { fontSize: 24, fontWeight: '700', color: STRONG, textAlign: 'center', letterSpacing: -0.4 },
   heroSub: { fontSize: 14, color: MUTED, textAlign: 'center', lineHeight: 22 },

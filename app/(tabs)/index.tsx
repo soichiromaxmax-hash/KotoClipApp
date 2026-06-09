@@ -754,8 +754,8 @@ const s = StyleSheet.create({
     alignItems: 'flex-start',
   },
   secondaryCardAlt: {
-    backgroundColor: '#1f1a2e',
-    borderColor: 'rgba(167,139,250,0.25)',
+    backgroundColor: '#192231',
+    borderColor: 'rgba(45,212,191,0.22)',
   },
   secondaryIcon: { fontSize: 26, marginBottom: 2 },
   secondaryTitle: {
@@ -764,26 +764,26 @@ const s = StyleSheet.create({
     color: '#7CF7DF',
     letterSpacing: -0.5,
   },
-  secondaryTitleAlt: { color: '#c4b5fd' },
+  secondaryTitleAlt: { color: '#7CF7DF' },
   secondarySub: { fontSize: 12, color: '#8F99A8', lineHeight: 17 },
 
   // 苦手語クイズカード
   weakCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(239,68,68,0.07)',
+    backgroundColor: '#192231',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(239,68,68,0.20)',
+    borderColor: 'rgba(45,212,191,0.22)',
     paddingVertical: 14,
     paddingHorizontal: 16,
     gap: 12,
   },
   weakCardIcon: { fontSize: 22 },
   weakCardBody: { flex: 1 },
-  weakCardTitle: { fontSize: 15, fontWeight: '700', color: '#FF6B6B' },
+  weakCardTitle: { fontSize: 15, fontWeight: '700', color: '#7CF7DF' },
   weakCardSub: { fontSize: 12, color: '#8F99A8', marginTop: 2 },
-  weakCardArrow: { fontSize: 20, color: '#EF4444' },
+  weakCardArrow: { fontSize: 20, color: '#2DD4BF' },
 
   // 手動追加カード
   addCard: {
