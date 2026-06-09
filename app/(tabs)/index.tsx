@@ -120,11 +120,15 @@ export default function HomeScreen() {
     if (refreshing.current) return;
     refreshing.current = true;
 
-    if (getCachedStats() === null) setLoading(true);
+    const hasCache = getCachedStats() !== null;
+    if (!hasCache) setLoading(true);
+
+    // キャッシュなし時は8秒、あり時は35秒
+    const ms = hasCache ? 35000 : 8000;
 
     Promise.all([
-      withTimeout<Stats | null>(api.getStats(), null),
-      withTimeout<Encounter[]>(api.getTodayEncounters(), []),
+      withTimeout<Stats | null>(api.getStats(), null, ms),
+      withTimeout<Encounter[]>(api.getTodayEncounters(), [], ms),
     ])
       .then(([nextStats, nextWild]) => {
         if (nextStats !== null) {
@@ -156,6 +160,13 @@ export default function HomeScreen() {
     refreshing.current = false;
     doFetch();
   }
+
+  // キャッシュなしでサーバー到達不可 → ログイン画面へ
+  useEffect(() => {
+    if (netError && getCachedStats() === null) {
+      router.replace('/auth/login' as any);
+    }
+  }, [netError, router]);
 
   useFocusEffect(useCallback(() => {
     doFetch();

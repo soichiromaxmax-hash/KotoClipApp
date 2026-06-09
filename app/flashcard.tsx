@@ -43,7 +43,7 @@ function FlipCard({
   useEffect(() => {
     setFlipped(false);
     setLocked(true);
-    const t = setTimeout(() => setLocked(false), 500);
+    const t = setTimeout(() => setLocked(false), 250);
     return () => clearTimeout(t);
   }, [word.id, reversed]);
 
@@ -142,7 +142,6 @@ export default function FlashcardScreen() {
   const [ratings, setRatings] = useState({ good: 0, hard: 0, again: 0 });
   const [done, setDone] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [saveError, setSaveError] = useState<{ wordId: number; rating: Rating; elapsed: number } | null>(null);
   const [direction, setDirection] = useState<Direction>('en_ja');
   const startTime = useRef(Date.now());
   const sessionWords = useRef<Word[]>([]);
@@ -172,7 +171,6 @@ export default function FlashcardScreen() {
     setIdx(0);
     setRatings({ good: 0, hard: 0, again: 0 });
     setDone(false);
-    setSaveError(null);
     startTime.current = Date.now();
   }
 
@@ -193,35 +191,13 @@ export default function FlashcardScreen() {
     load();
   }
 
-  async function onRate(rating: Rating) {
+  function onRate(rating: Rating) {
     const word = queue[idx];
     const elapsed = Math.max(1, Math.round(((Date.now() - startTime.current) / 1000 / 86400) * 10) / 10);
-    try {
-      await api.postReview(word.id, rating, elapsed);
-    } catch {
-      setSaveError({ wordId: word.id, rating, elapsed });
-      return;
-    }
-    advanceQueue(rating);
-  }
-
-  async function retrySave() {
-    if (!saveError) return;
-    try {
-      await api.postReview(saveError.wordId, saveError.rating, saveError.elapsed);
-      const { rating } = saveError;
-      setSaveError(null);
-      advanceQueue(rating);
-    } catch {
-      // keep error shown
-    }
-  }
-
-  function skipSave() {
-    if (!saveError) return;
-    const { rating } = saveError;
-    setSaveError(null);
-    advanceQueue(rating);
+    advanceQueue(rating); // 即座に次のカードへ
+    api.postReview(word.id, rating, elapsed).catch(() => {
+      // バックグラウンド保存失敗は無視（フラッシュカードは任意学習）
+    });
   }
 
   function handleDirection(d: Direction) {
@@ -380,26 +356,13 @@ export default function FlashcardScreen() {
         </View>
         <Text style={s.batchInfoSmall}>10枚で終了</Text>
 
-        {saveError ? (
-          <View style={s.saveErrorBox}>
-            <Text style={s.saveErrorTitle}>保存に失敗しました</Text>
-            <Text style={s.saveErrorSub}>ネットワーク接続を確認して、もう一度お試しください。</Text>
-            <TouchableOpacity style={s.primaryBtn} onPress={retrySave}>
-              <Text style={s.primaryBtnText}>保存し直す</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={s.ghostBtn} onPress={skipSave}>
-              <Text style={s.ghostBtnText}>スキップして次へ</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <FlipCard
-            key={`${word.id}-${direction}`}
-            word={word}
-            onRate={onRate}
-            onDelete={handleDeleteWord}
-            reversed={direction === 'ja_en'}
-          />
-        )}
+        <FlipCard
+          key={`${word.id}-${direction}`}
+          word={word}
+          onRate={onRate}
+          onDelete={handleDeleteWord}
+          reversed={direction === 'ja_en'}
+        />
       </ScrollView>
     </SafeAreaView>
   );
@@ -537,18 +500,6 @@ const s = StyleSheet.create({
     alignItems: 'center',
   },
   ratingBtnText: { color: '#fff', fontWeight: '700', fontSize: 16 },
-
-  // 保存エラー
-  saveErrorBox: {
-    backgroundColor: 'rgba(239,68,68,0.08)',
-    borderWidth: 1,
-    borderColor: 'rgba(239,68,68,0.28)',
-    borderRadius: 14,
-    padding: 20,
-    gap: 12,
-  },
-  saveErrorTitle: { color: '#EF4444', fontSize: 15, fontWeight: '700' },
-  saveErrorSub: { color: '#9CA3AF', fontSize: 13, lineHeight: 20 },
 
   // ステータス画面
   loadingText: { color: '#9CA3AF', fontSize: 14 },

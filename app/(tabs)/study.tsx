@@ -272,7 +272,17 @@ export default function StudyScreen() {
     try {
       let words: Word[];
       if (m === 'weak') {
-        try { words = await api.getWeakWords(10); } catch { words = []; }
+        // 未学習 / stability が低い（間違えやすい）単語をクライアント側で選出
+        const today = new Date().toISOString().slice(0, 10);
+        try {
+          const all: Word[] = await api.getAllWords();
+          const weak = all.filter((w) =>
+            (w.reps ?? 0) === 0 ||                                   // 未学習
+            ((w.stability ?? 0) < 2.5 && (w.reps ?? 0) > 0) ||     // 定着率低い（間違え多い）
+            ((w.next_review ?? today) < today && (w.reps ?? 0) > 0) // 期限超過
+          );
+          words = (weak.length > 0 ? weak : all).slice(0, 10);
+        } catch { words = []; }
       } else if (m === 'free') {
         words = await api.getAllWords();
       } else {
