@@ -16,7 +16,7 @@ import { useRouter } from 'expo-router';
 import { api } from '@/lib/api';
 import { KotoBird } from '@/components/KotoBird';
 
-const FREE_LIMIT = 100;
+const FREE_LIMIT = 100; // fallback（サーバーから取得できない場合）
 
 const LANG_LABELS: Record<string, string> = {
   en: '英語', es: 'スペイン語', zh: '中国語', ja: '日本語',
@@ -33,16 +33,20 @@ export default function AddWordScreen() {
   const [savedWord, setSavedWord] = useState<{ word: string; meaning: string } | null>(null);
 
   const [wordCount, setWordCount] = useState<number | null>(null);
+  const [wordLimit, setWordLimit] = useState<number | null>(null); // null = 無制限（premium）
+  const [isPremium, setIsPremium] = useState(false);
   const [learningLang, setLearningLang] = useState('en');
   const [nativeLang, setNativeLang] = useState('ja');
   const [showLimitModal, setShowLimitModal] = useState(false);
 
   useEffect(() => {
-    api.getSettings().catch(() => null).then((settings) => {
-      if (!settings) return;
-      if (settings.word_count !== undefined) setWordCount(settings.word_count);
-      if (settings.target_lang) setLearningLang(settings.target_lang);
-      if (settings.native_lang) setNativeLang(settings.native_lang);
+    api.getSettings().catch(() => null).then((s) => {
+      if (!s) return;
+      if (s.word_count !== undefined) setWordCount(s.word_count);
+      if (s.word_limit !== undefined) setWordLimit(s.is_premium ? null : (s.word_limit ?? FREE_LIMIT));
+      if (s.is_premium) setIsPremium(true);
+      if (s.target_lang) setLearningLang(s.target_lang);
+      if (s.native_lang) setNativeLang(s.native_lang);
     });
   }, []);
 
@@ -80,7 +84,7 @@ export default function AddWordScreen() {
       return;
     }
     setSavedWord(null);
-    if (wordCount !== null && wordCount >= FREE_LIMIT) {
+    if (!isPremium && wordLimit !== null && wordCount !== null && wordCount >= wordLimit) {
       setShowLimitModal(true);
       return;
     }
@@ -120,8 +124,9 @@ export default function AddWordScreen() {
     }
   }
 
-  const nearLimit = wordCount !== null && wordCount >= FREE_LIMIT - 10;
-  const atLimit   = wordCount !== null && wordCount >= FREE_LIMIT;
+  const effectiveLimit = isPremium ? null : (wordLimit ?? FREE_LIMIT);
+  const nearLimit = !isPremium && effectiveLimit !== null && wordCount !== null && wordCount >= effectiveLimit - 10;
+  const atLimit   = !isPremium && effectiveLimit !== null && wordCount !== null && wordCount >= effectiveLimit;
 
   const statusStyle: Record<string, { bg: string; border: string; text: string }> = {
     success: { bg: 'rgba(34,197,94,0.08)',  border: 'rgba(34,197,94,0.28)',  text: '#22C55E' },
@@ -143,7 +148,7 @@ export default function AddWordScreen() {
             <Text style={s.title}>単語を追加する</Text>
             {wordCount !== null && (
               <Text style={[s.countChip, atLimit && s.countChipRed, nearLimit && !atLimit && s.countChipAmber]}>
-                {wordCount}/{FREE_LIMIT}語
+                {isPremium ? `${wordCount}語（無制限）` : `${wordCount}/${effectiveLimit}語`}
               </Text>
             )}
           </View>
@@ -268,7 +273,7 @@ export default function AddWordScreen() {
             <KotoBird size={76} />
             <Text style={s.modalTitle}>無料プランの上限です</Text>
             <Text style={s.modalBody}>
-              無料プランでは{FREE_LIMIT}語まで保存できます。{'\n'}
+              無料プランでは{effectiveLimit ?? FREE_LIMIT}語まで保存できます。{'\n'}
               プレミアムプランにアップグレードすると、単語数が無制限になります。
             </Text>
             <TouchableOpacity style={s.modalPremiumBtn} activeOpacity={0.85} disabled>

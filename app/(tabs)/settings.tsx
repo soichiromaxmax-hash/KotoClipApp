@@ -113,14 +113,17 @@ export default function SettingsScreen() {
       const perm = await requestPermission();
       setNotifPerm(perm);
       if (perm === 'denied') {
+        // 権限がないのでトグルを元に戻す
+        saveSetting(key, 0);
         Alert.alert(
           '通知の許可が必要です',
-          'iOSの設定でKotoClipの通知が無効になっています。\n\n設定アプリ → KotoClip → 通知 → 「通知を許可」をオンにしてください。',
+          '設定アプリ → KotoClip → 通知 → 「通知を許可」をオンにしてください。',
           [
             { text: 'キャンセル', style: 'cancel' },
             { text: '設定を開く', onPress: () => Linking.openURL('app-settings:') },
           ]
         );
+        return;
       }
     }
 
