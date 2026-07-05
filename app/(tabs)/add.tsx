@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
   View,
   Text,
@@ -12,7 +12,7 @@ import {
   ActivityIndicator,
   Modal,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { api } from '@/lib/api';
 import { KotoBird } from '@/components/KotoBird';
 
@@ -39,16 +39,16 @@ export default function AddWordScreen() {
   const [nativeLang, setNativeLang] = useState('ja');
   const [showLimitModal, setShowLimitModal] = useState(false);
 
-  useEffect(() => {
+  useFocusEffect(useCallback(() => {
     api.getSettings().catch(() => null).then((s) => {
       if (!s) return;
       if (s.word_count !== undefined) setWordCount(s.word_count);
       if (s.word_limit !== undefined) setWordLimit(s.is_premium ? null : (s.word_limit ?? FREE_LIMIT));
-      if (s.is_premium) setIsPremium(true);
+      setIsPremium(!!s.is_premium);
       if (s.target_lang) setLearningLang(s.target_lang);
       if (s.native_lang) setNativeLang(s.native_lang);
     });
-  }, []);
+  }, []));
 
   async function autoTranslate() {
     if (!word.trim()) return;

@@ -49,22 +49,36 @@ function safeSharedStorageRemove(key: string) {
   }
 }
 
+// Supabaseのリフレッシュトークンは使い切り（ローテーション）方式のため、
+// 複数リクエストが同時に401を受けてそれぞれ独立にリフレッシュすると、
+// 2つ目以降が「既に使われたトークン」で失敗し、最悪トークンファミリーごと
+// 失効する。同時実行を1本化して必ず使い回すことで、この競合を防ぐ。
+let refreshPromise: Promise<string | null> | null = null;
+
 async function refreshAccessToken(): Promise<string | null> {
-  const refresh = await getRefreshToken();
-  if (!refresh) return null;
+  if (refreshPromise) return refreshPromise;
+  refreshPromise = (async () => {
+    const refresh = await getRefreshToken();
+    if (!refresh) return null;
+    try {
+      const res = await fetch(`${BASE}/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: refresh }),
+      });
+      if (!res.ok) return null;
+      const data = await res.json();
+      if (!data?.access_token) return null;
+      await saveTokens(data.access_token, data.refresh_token ?? refresh);
+      return data.access_token;
+    } catch {
+      return null;
+    }
+  })();
   try {
-    const res = await fetch(`${BASE}/auth/refresh`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refresh_token: refresh }),
-    });
-    if (!res.ok) return null;
-    const data = await res.json();
-    if (!data?.access_token) return null;
-    await saveTokens(data.access_token, data.refresh_token ?? refresh);
-    return data.access_token;
-  } catch {
-    return null;
+    return await refreshPromise;
+  } finally {
+    refreshPromise = null;
   }
 }
 

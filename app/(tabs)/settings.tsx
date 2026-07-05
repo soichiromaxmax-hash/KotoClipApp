@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
   View,
   Text,
@@ -12,7 +12,7 @@ import {
   Alert,
   Linking,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/context/auth';
 import { api } from '@/lib/api';
@@ -82,14 +82,14 @@ export default function SettingsScreen() {
   const [showNativeLangPicker, setShowNativeLangPicker] = useState(false);
   const [notifPerm, setNotifPerm] = useState<'granted' | 'denied' | 'undetermined' | null>(null);
 
-  useEffect(() => {
+  useFocusEffect(useCallback(() => {
     api.getSettings().then((s) => {
       const data = s && typeof s === 'object' ? s : {};
       setSettings(data);
       syncNotifications(data).catch(() => {});
     }).catch(() => setSettings({}));
     getPermissionStatus().then(setNotifPerm);
-  }, []);
+  }, []));
 
   async function saveSetting(key: string, value: string | number) {
     const prevValue = settings?.[key];

@@ -20,6 +20,23 @@ import {
   isPremiumActive,
   PRODUCT_IDS,
 } from '@/lib/purchases';
+import { api } from '@/lib/api';
+
+// RevenueCat の Webhook がバックエンドに届いて plan が更新されるまでの
+// タイムラグを埋めるため、成功メッセージを出す前に反映を少し待つ
+async function waitForPlanSync(maxMs = 8000, intervalMs = 1500): Promise<boolean> {
+  const deadline = Date.now() + maxMs;
+  while (Date.now() < deadline) {
+    try {
+      const settings = await api.getSettings();
+      if (settings?.is_premium) return true;
+    } catch {
+      // 通信エラーは無視してリトライ
+    }
+    await new Promise((r) => setTimeout(r, intervalMs));
+  }
+  return false;
+}
 
 const FEATURES = [
   { icon: '∞', label: '単語数無制限' },
@@ -80,6 +97,7 @@ export default function PaywallScreen() {
     try {
       const info = await purchasePackage(pkg);
       if (isPremiumActive(info)) {
+        await waitForPlanSync();
         Alert.alert('ありがとうございます！', 'プレミアムが有効になりました。', [
           { text: 'OK', onPress: () => router.back() },
         ]);
@@ -98,6 +116,7 @@ export default function PaywallScreen() {
     try {
       const info = await restorePurchases();
       if (isPremiumActive(info)) {
+        await waitForPlanSync();
         Alert.alert('復元しました', 'プレミアムが有効になりました。', [
           { text: 'OK', onPress: () => router.back() },
         ]);
