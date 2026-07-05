@@ -39,7 +39,9 @@ async function waitForPlanSync(maxMs = 8000, intervalMs = 1500): Promise<boolean
 }
 
 const FEATURES = [
-  { icon: '∞', label: '単語数無制限' },
+  { icon: '∞', label: '単語保存が無制限（無料は50語まで）' },
+  { icon: '🔍', label: 'AI意味検索が月300回（無料は月20回）' },
+  { icon: '🔄', label: 'AI再翻訳が月100回（無料は月5回）' },
   { icon: '🌐', label: '学習言語をいつでも変更' },
   { icon: '⚡', label: '優先サポート' },
 ];
@@ -158,7 +160,7 @@ export default function PaywallScreen() {
         <View style={s.hero}>
           <KotoBird size={90} />
           <Text style={s.title}>KotoClip Premium</Text>
-          <Text style={s.subtitle}>語彙学習に制限なし</Text>
+          <Text style={s.subtitle}>単語もAI検索も、上限を気にせず使い放題</Text>
         </View>
 
         {/* 機能リスト */}
@@ -303,7 +305,7 @@ const s = StyleSheet.create({
     justifyContent: 'center',
   },
   featureIconText: { fontSize: 15 },
-  featureLabel: { color: '#E9EDF2', fontSize: 15, fontWeight: '500' },
+  featureLabel: { flex: 1, color: '#E9EDF2', fontSize: 15, fontWeight: '500' },
 
   loadingWrap: { alignItems: 'center', gap: 12, paddingVertical: 30 },
   loadingText: { color: '#8F99A8', fontSize: 13 },

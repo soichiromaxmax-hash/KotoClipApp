@@ -208,16 +208,20 @@ export default function SettingsScreen() {
                 <Text style={s.planBadgeText}>{settings.is_premium ? 'PREMIUM' : 'FREE'}</Text>
               </View>
               <Text style={s.planWordCount}>
-                {settings.word_count ?? '—'} / {settings.word_limit ?? 100}語
+                {settings.is_premium
+                  ? `${settings.word_count ?? '—'}語（無制限）`
+                  : `${settings.word_count ?? '—'} / ${settings.word_limit ?? 100}語`}
               </Text>
             </View>
             <View style={s.planTrack}>
               <View style={[
                 s.planFill,
-                {
-                  width: `${Math.min(((settings.word_count ?? 0) / (settings.word_limit ?? 100)) * 100, 100)}%` as any,
-                  backgroundColor: (settings.word_count ?? 0) >= (settings.word_limit ?? 100) ? '#EF4444' : (settings.word_count ?? 0) >= 80 ? '#F59E0B' : '#2DD4BF',
-                },
+                settings.is_premium
+                  ? { width: '100%' as any, backgroundColor: '#2DD4BF' }
+                  : {
+                      width: `${Math.min(((settings.word_count ?? 0) / (settings.word_limit ?? 100)) * 100, 100)}%` as any,
+                      backgroundColor: (settings.word_count ?? 0) >= (settings.word_limit ?? 100) ? '#EF4444' : (settings.word_count ?? 0) >= 80 ? '#F59E0B' : '#2DD4BF',
+                    },
               ]} />
             </View>
             {settings.is_premium ? (

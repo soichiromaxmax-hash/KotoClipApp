@@ -13,32 +13,38 @@ const TEAL = '#2DD4BF';
 
 // ── Illustration building blocks ──────────────────────────────────────────────
 
-function KotoIcon() {
-  return (
-    <View style={il.kotoShell}>
-      <View style={il.kotoLeaf} />
-      <View style={il.kotoBody}>
-        <View style={[il.kotoEye, { left: 3 }]} />
-        <View style={[il.kotoEye, { right: 3 }]} />
-      </View>
-    </View>
-  );
-}
-
-function AppIcon({ label, active, koto }: { label: string; active?: boolean; koto?: boolean }) {
+function AppIcon({ label }: { label: string }) {
   return (
     <View style={il.appItem}>
-      <View style={[il.appIcon, active && il.appIconActive]}>
-        {koto ? <KotoIcon /> : <Text style={il.appIconText}>{label[0]}</Text>}
+      <View style={il.appIcon}>
+        <Text style={il.appIconText}>{label[0]}</Text>
       </View>
-      <Text style={[il.appLabel, active && { color: GOLD }]}>{label}</Text>
+      <Text style={il.appLabel}>{label}</Text>
     </View>
   );
 }
 
 // ── Step illustrations ────────────────────────────────────────────────────────
 
-// スマホ初回 Step 1: 単語を選んで「共有」をタップ
+// スマホ Step 1: 単語を長押しで選択
+function IllusLongPress() {
+  return (
+    <View style={il.frame}>
+      <View style={il.articleBox}>
+        <View style={il.textLine} />
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginVertical: 6 }}>
+          <View style={[il.textLine, { flex: 0, width: 32, marginVertical: 0 }]} />
+          <View style={il.selectedWord}><Text style={il.selectedWordText}>subtle</Text></View>
+          <View style={[il.textLine, { flex: 0, width: 24, marginVertical: 0 }]} />
+        </View>
+        <View style={il.textLine} />
+      </View>
+      <Text style={il.hint}>単語を長押しして選択</Text>
+    </View>
+  );
+}
+
+// スマホ Step 2: メニューから「共有」をタップ
 function IllusWordMenu() {
   return (
     <View style={il.frame}>
@@ -63,7 +69,7 @@ function IllusWordMenu() {
   );
 }
 
-// スマホ初回 Step 2: アプリ一覧を右スクロールして「その他」
+// スマホ Step 3: 共有シートを右にスクロールして「その他」から探す
 function IllusAppListScroll() {
   return (
     <View style={il.frame}>
@@ -85,71 +91,12 @@ function IllusAppListScroll() {
           <Text style={il.scrollText}>右にスクロールして「その他」</Text>
         </View>
       </View>
+      <Text style={il.hint}>一覧になければ「その他」から探す</Text>
     </View>
   );
 }
 
-// スマホ初回 Step 3: 「その他」パネルでKotoClipをオン
-function IllusToggleKoto() {
-  return (
-    <View style={il.frame}>
-      <View style={il.panelBox}>
-        <View style={il.panelHead}>
-          <Text style={il.panelHeadText}>その他</Text>
-          <Text style={il.panelEdit}>編集</Text>
-        </View>
-        <View style={il.panelRow}>
-          <KotoIcon />
-          <View style={{ flex: 1, marginLeft: 10 }}>
-            <Text style={il.panelRowTitle}>KotoClip</Text>
-            <Text style={il.panelRowSub}>共有先に表示</Text>
-          </View>
-          <View style={il.toggleOn}>
-            <View style={il.toggleKnob} />
-          </View>
-        </View>
-      </View>
-      <Text style={il.hint}>KotoClipをオンにして完了</Text>
-    </View>
-  );
-}
-
-// スマホ保存 Step 1: 単語を長押しで選択
-function IllusLongPress() {
-  return (
-    <View style={il.frame}>
-      <View style={il.articleBox}>
-        <View style={il.textLine} />
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginVertical: 6 }}>
-          <View style={[il.textLine, { flex: 0, width: 32, marginVertical: 0 }]} />
-          <View style={il.selectedWord}><Text style={il.selectedWordText}>subtle</Text></View>
-          <View style={[il.textLine, { flex: 0, width: 24, marginVertical: 0 }]} />
-        </View>
-        <View style={il.textLine} />
-      </View>
-      <Text style={il.hint}>単語を長押しして選択</Text>
-    </View>
-  );
-}
-
-// スマホ保存 Step 2: 共有シートでKotoClipを選ぶ
-function IllusShareKoto() {
-  return (
-    <View style={il.frame}>
-      <View style={il.sheetBox}>
-        <Text style={il.sheetTitle}>共有</Text>
-        <View style={il.appRow}>
-          <AppIcon label="Message" />
-          <AppIcon label="KotoClip" active koto />
-          <AppIcon label="その他" />
-        </View>
-        <Text style={il.hint}>KotoClipをタップ</Text>
-      </View>
-    </View>
-  );
-}
-
-// スマホ保存 Step 3: 保存完了トースト
+// スマホ Step 4: 保存完了トースト
 function IllusSavedToast() {
   return (
     <View style={il.frame}>
@@ -162,7 +109,7 @@ function IllusSavedToast() {
   );
 }
 
-// PCブラウザ初回 Step 1: ストアで追加
+// PCブラウザ Step 1: ストアで拡張機能を追加
 function IllusStoreInstall() {
   return (
     <View style={il.frame}>
@@ -180,11 +127,12 @@ function IllusStoreInstall() {
           <View style={il.addBtn}><Text style={il.addBtnText}>追加</Text></View>
         </View>
       </View>
+      <Text style={il.hint}>拡張機能ストアで「KotoClip」を検索して追加</Text>
     </View>
   );
 }
 
-// PCブラウザ初回 Step 2: ログイン
+// PCブラウザ Step 2: ログイン
 function IllusLoginScreen() {
   return (
     <View style={il.frame}>
@@ -197,11 +145,12 @@ function IllusLoginScreen() {
         <View style={[il.loginField, { marginTop: 8, width: '70%' }]} />
         <View style={il.loginBtn}><Text style={il.loginBtnText}>ログイン</Text></View>
       </View>
+      <Text style={il.hint}>スマホアプリと同じアカウントでログイン</Text>
     </View>
   );
 }
 
-// PCブラウザ保存 Step 1: 単語をドラッグ選択
+// PCブラウザ Step 3: 単語をドラッグ選択
 function IllusBrowserSelect() {
   return (
     <View style={il.frame}>
@@ -223,7 +172,7 @@ function IllusBrowserSelect() {
   );
 }
 
-// PCブラウザ保存 Step 2: Kボタンが出現
+// PCブラウザ Step 4: Kボタンが出現
 function IllusKButton() {
   return (
     <View style={il.frame}>
@@ -240,12 +189,12 @@ function IllusKButton() {
         </View>
         <View style={il.textLine} />
       </View>
-      <Text style={il.hint}>KotoClipボタンをクリック</Text>
+      <Text style={il.hint}>KotoClipボタンをタップ</Text>
     </View>
   );
 }
 
-// PCブラウザ保存 Step 3: 拡張機能ポップアップ
+// PCブラウザ Step 5: 拡張機能ポップアップで保存
 function IllusExtPopup() {
   return (
     <View style={il.frame}>
@@ -255,6 +204,7 @@ function IllusExtPopup() {
         <Text style={il.popupMeaning}>定着する / 残る</Text>
         <View style={il.saveBtn}><Text style={il.saveBtnText}>保存する</Text></View>
       </View>
+      <Text style={il.hint}>訳を確認して「保存する」をタップ</Text>
     </View>
   );
 }
@@ -262,14 +212,6 @@ function IllusExtPopup() {
 // ── Step / GuideBlock ─────────────────────────────────────────────────────────
 
 type StepDef = { text: string; illus?: React.ReactNode };
-
-function Pill({ children }: { children: string }) {
-  return (
-    <View style={s.pill}>
-      <Text style={s.pillText}>{children}</Text>
-    </View>
-  );
-}
 
 function Step({ n, text, illus }: { n: number; text: string; illus?: React.ReactNode }) {
   return (
@@ -283,13 +225,10 @@ function Step({ n, text, illus }: { n: number; text: string; illus?: React.React
   );
 }
 
-function GuideBlock({ badge, title, copy, steps }: {
-  badge: string; title: string; copy: string; steps: StepDef[];
-}) {
+function GuideBlock({ title, copy, steps }: { title: string; copy: string; steps: StepDef[] }) {
   return (
     <View style={s.guideBlock}>
       <View style={s.blockHeader}>
-        <Pill>{badge}</Pill>
         <Text style={s.blockTitle}>{title}</Text>
         <Text style={s.blockCopy}>{copy}</Text>
       </View>
@@ -304,62 +243,48 @@ function GuideBlock({ badge, title, copy, steps }: {
 
 // ── Step data ─────────────────────────────────────────────────────────────────
 
-const PHONE_SETUP: StepDef[] = [
+const PHONE_STEPS: StepDef[] = [
   {
-    text: 'SafariやChromeで単語を選び、\n「共有」を押します。',
-    illus: <IllusWordMenu />,
-  },
-  {
-    text: '共有シートを右にスクロールし、\n「その他」をタップします。',
-    illus: <IllusAppListScroll />,
-  },
-  {
-    text: '一覧からKotoClipをタップすれば、\nその場で保存できます。\nよく使うならオンにしておくと、\n次回から一覧に表示されて便利です。',
-    illus: <IllusToggleKoto />,
-  },
-];
-
-const PHONE_SAVE: StepDef[] = [
-  {
-    text: '保存したい単語を長押しして選択します。',
+    text: '保存したい英単語を長押しして選択します。',
     illus: <IllusLongPress />,
   },
   {
-    text: '表示されたメニューから\n「共有」を押します。\n見えない場合は\nメニューを横にスワイプします。',
-    illus: <IllusShareKoto />,
+    text: '表示されたメニューから「共有」をタップします。見当たらない場合は横にスワイプしてください。',
+    illus: <IllusWordMenu />,
   },
   {
-    text: '訳・文脈・保存元URLが付いて、\n単語帳に自動保存されます。',
+    text: '一覧にKotoClipがなければ「その他」までスクロールして探します。使うほど一覧の前の方に表示されるようになります。',
+    illus: <IllusAppListScroll />,
+  },
+  {
+    text: 'KotoClipをタップすると、訳・文脈・保存元のURLが自動でついて単語帳に保存されます。',
     illus: <IllusSavedToast />,
   },
 ];
 
-const BROWSER_SETUP: StepDef[] = [
+const BROWSER_STEPS: StepDef[] = [
   {
-    text: 'Chromeは Chrome Web Store を、\nEdgeは Edge Add-ons を開きます。\n「KotoClip」を検索して\n追加してください。',
+    text: 'Chrome Web StoreまたはEdge Add-onsで「KotoClip」を検索し、拡張機能を追加します。',
     illus: <IllusStoreInstall />,
   },
   {
-    text: 'KotoClipを開きます。\nスマホアプリと同じ\nアカウントでログインしてください。',
+    text: '拡張機能を開き、スマホアプリと同じアカウントでログインします。',
     illus: <IllusLoginScreen />,
   },
-];
-
-const BROWSER_SAVE: StepDef[] = [
   {
-    text: '英語ページで保存したい\n単語をドラッグして選択します。',
+    text: '英語ページで保存したい単語をドラッグして選択します。',
     illus: <IllusBrowserSelect />,
   },
   {
-    text: '選択した単語の近くに出る\nKotoClipボタンを押します。',
+    text: '単語の近くに表示される「K」ボタンをタップします。',
     illus: <IllusKButton />,
   },
   {
-    text: '訳・例文・保存元URLを確認して、\n「保存する」を押します。\nスマホアプリに同期されます。',
+    text: '訳を確認して「保存する」をタップすると、スマホの単語帳に同期されます。',
     illus: <IllusExtPopup />,
   },
   {
-    text: '訳が表示されない場合は、\n単語を選択して右クリックし、\n「KotoClipに保存」を\n選ぶと保存できます。',
+    text: '訳が表示されない場合は、単語を選択して右クリックし「KotoClipに保存」を選びます。',
   },
 ];
 
@@ -376,7 +301,7 @@ export default function HowToScreen() {
           <Ionicons name="chevron-back" size={22} color={STRONG} />
           <Text style={s.backText}>戻る</Text>
         </TouchableOpacity>
-        <Text style={s.navTitle}>KotoClipの使い方</Text>
+        <Text style={s.navTitle}>単語の保存の仕方</Text>
       </View>
 
       <View style={s.tabBar}>
@@ -398,33 +323,20 @@ export default function HowToScreen() {
 
       <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
         {tab === 'phone' ? (
-          <>
-            <GuideBlock
-              badge="初回のみ"
-              title={'共有シートで\nKotoClipを見つけます。'}
-              copy={'「その他」の中からタップするだけで使えます。\nよく使う場合はお気に入りに登録すると、\n次回から一覧にすぐ表示されます。'}
-              steps={PHONE_SETUP}
-            />
-            <GuideBlock
-              badge="保存方法"
-              title={'読んでいるページから、\nそのまま保存します。'}
-              copy={'初回設定が済んでいれば、\n毎回この手順だけで保存できます。'}
-              steps={PHONE_SAVE}
-            />
-          </>
+          <GuideBlock
+            title="単語を選んで共有するだけ"
+            copy="文章中の英単語を選択して、共有メニューからKotoClipを選ぶと、訳・文脈・保存元つきで自動的に単語帳へ保存されます。"
+            steps={PHONE_STEPS}
+          />
         ) : (
           <>
+            <View style={s.banner}>
+              <Text style={s.bannerText}>💻 PCで単語を保存するには、ブラウザ拡張機能のインストールが必要です。</Text>
+            </View>
             <GuideBlock
-              badge="初回のみ"
-              title={'拡張機能を入れて、\nログインします。'}
-              copy={'一度だけ必要な設定です。\n設定後は「保存方法」の手順だけで使えます。'}
-              steps={BROWSER_SETUP}
-            />
-            <GuideBlock
-              badge="保存方法"
-              title={'PCで読んだ単語を、\nスマホの単語帳へ送ります。'}
-              copy={'単語を選択すると、\nページ上にKotoClipボタンが表示されます。'}
-              steps={BROWSER_SAVE}
+              title="拡張機能を入れて保存する"
+              copy="Chrome・Edge・Firefoxに対応した拡張機能を入れると、PCで読んでいるページからそのままスマホの単語帳に保存できます。"
+              steps={BROWSER_STEPS}
             />
           </>
         )}
@@ -450,7 +362,7 @@ const s = StyleSheet.create({
     flex: 1,
     textAlign: 'center',
     color: STRONG,
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '700',
     marginRight: 40,
   },
@@ -469,8 +381,18 @@ const s = StyleSheet.create({
   },
   tabBtn: { flex: 1, paddingVertical: 9, borderRadius: 8, alignItems: 'center' },
   tabBtnActive: { backgroundColor: '#263041' },
-  tabBtnText: { color: MUTED, fontWeight: '600', fontSize: 14 },
+  tabBtnText: { color: MUTED, fontWeight: '600', fontSize: 15 },
   tabBtnTextActive: { color: TEAL },
+  banner: {
+    marginHorizontal: 16,
+    marginBottom: 12,
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(245,184,75,0.35)',
+    backgroundColor: 'rgba(245,184,75,0.12)',
+  },
+  bannerText: { color: GOLD, fontSize: 15, fontWeight: '700', lineHeight: 22 },
   guideBlock: {
     marginHorizontal: 16,
     marginBottom: 16,
@@ -481,20 +403,9 @@ const s = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.08)',
     backgroundColor: 'rgba(24,30,40,0.94)',
   },
-  blockHeader: { alignItems: 'flex-start', gap: 8 },
-  pill: {
-    minWidth: 60,
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: 'rgba(124,247,223,0.22)',
-    backgroundColor: 'rgba(124,247,223,0.10)',
-  },
-  pillText: { color: '#9DEEE1', fontSize: 12, fontWeight: '800' },
-  blockTitle: { color: STRONG, fontSize: 17, lineHeight: 25, fontWeight: '700' },
-  blockCopy: { color: MUTED, fontSize: 13, lineHeight: 20, marginTop: 4 },
+  blockHeader: { alignItems: 'flex-start', gap: 6 },
+  blockTitle: { color: STRONG, fontSize: 21, lineHeight: 28, fontWeight: '700' },
+  blockCopy: { color: MUTED, fontSize: 16, lineHeight: 24, marginTop: 2 },
   steps: { gap: 10 },
   stepCard: {
     borderRadius: 15,
@@ -507,7 +418,7 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 10,
-    padding: 11,
+    padding: 12,
   },
   stepNum: {
     width: 28,
@@ -519,7 +430,7 @@ const s = StyleSheet.create({
     flexShrink: 0,
   },
   stepNumText: { color: BG, fontSize: 13, fontWeight: '900' },
-  stepText: { flex: 1, color: TEXT, fontSize: 13, lineHeight: 21, paddingTop: 3 },
+  stepText: { flex: 1, color: TEXT, fontSize: 16, lineHeight: 24, paddingTop: 2 },
   stepIllus: {
     borderTopWidth: 1,
     borderTopColor: 'rgba(255,255,255,0.06)',
@@ -580,7 +491,7 @@ const il = StyleSheet.create({
     fontWeight: '900',
   },
   menuSep: { width: 1, height: 26, backgroundColor: 'rgba(0,0,0,0.12)' },
-  hint: { color: GOLD, fontSize: 12, fontWeight: '700', textAlign: 'center' },
+  hint: { color: GOLD, fontSize: 14, fontWeight: '700', textAlign: 'center' },
 
   // 共有シート
   sheetBox: {
@@ -602,57 +513,11 @@ const il = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  appIconActive: { backgroundColor: BG, borderWidth: 1.5, borderColor: GOLD },
   appIconGold: { backgroundColor: GOLD },
   appIconText: { color: '#17202B', fontSize: 11, fontWeight: '900' },
   appLabel: { color: '#334155', fontSize: 9, textAlign: 'center' },
   scrollRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   scrollText: { color: GOLD, fontSize: 11, fontWeight: '700' },
-
-  // 「その他」パネル
-  panelBox: {
-    width: '90%',
-    backgroundColor: 'rgba(248,250,252,0.96)',
-    borderRadius: 16,
-    overflow: 'hidden',
-  },
-  panelHead: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    padding: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
-  },
-  panelHeadText: { color: '#1E293B', fontSize: 12, fontWeight: '800' },
-  panelEdit: { color: '#0F766E', fontSize: 12, fontWeight: '600' },
-  panelRow: { flexDirection: 'row', alignItems: 'center', padding: 10 },
-  panelRowTitle: { color: '#1E293B', fontSize: 13, fontWeight: '700' },
-  panelRowSub: { color: '#64748B', fontSize: 10 },
-  toggleOn: {
-    width: 44,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: '#22C55E',
-    padding: 3,
-    alignItems: 'flex-end',
-    justifyContent: 'center',
-  },
-  toggleKnob: { width: 20, height: 20, borderRadius: 10, backgroundColor: '#FFF' },
-
-  // KotoClipアイコン（鳥）
-  kotoShell: { position: 'relative', width: 28, height: 28, alignItems: 'center', justifyContent: 'flex-end' },
-  kotoLeaf: {
-    position: 'absolute',
-    top: 1,
-    left: 14,
-    width: 12,
-    height: 8,
-    borderRadius: 6,
-    backgroundColor: '#58D47B',
-    transform: [{ rotate: '-18deg' }],
-  },
-  kotoBody: { width: 15, height: 22, borderRadius: 999, backgroundColor: '#F2CC42', marginBottom: 1 },
-  kotoEye: { position: 'absolute', top: 8, width: 4, height: 4, borderRadius: 2, backgroundColor: BG },
 
   // トースト
   toast: {
