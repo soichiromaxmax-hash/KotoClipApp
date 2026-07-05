@@ -16,7 +16,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { api } from '@/lib/api';
 import { KotoBird } from '@/components/KotoBird';
 
-const FREE_LIMIT = 100; // fallback（サーバーから取得できない場合）
+const FREE_LIMIT = 50; // fallback（サーバーから取得できない場合）
 
 const LANG_LABELS: Record<string, string> = {
   en: '英語', es: 'スペイン語', zh: '中国語', ja: '日本語',

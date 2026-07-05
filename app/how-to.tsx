@@ -172,8 +172,8 @@ function IllusBrowserSelect() {
   );
 }
 
-// PCブラウザ Step 4: Kボタンが出現
-function IllusKButton() {
+// PCブラウザ Step 4: 選択すると訳のポップアップが自動で表示される
+function IllusSelectPopup() {
   return (
     <View style={il.frame}>
       <View style={il.browserBox}>
@@ -185,26 +185,15 @@ function IllusKButton() {
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginVertical: 6 }}>
           <View style={[il.textLine, { flex: 0, width: 28, marginVertical: 0 }]} />
           <View style={il.selectedWord}><Text style={il.selectedWordText}>stick</Text></View>
-          <View style={il.kBubble}><Text style={il.kBubbleText}>K</Text></View>
+          <View style={[il.textLine, { flex: 0, width: 36, marginVertical: 0 }]} />
         </View>
-        <View style={il.textLine} />
+        <View style={il.popupCard}>
+          <Text style={il.popupCardWord}>stick</Text>
+          <Text style={il.popupCardMeaning}>定着する / 残る</Text>
+          <View style={il.popupCardBtn}><Text style={il.popupCardBtnText}>＋ 単語帳に追加</Text></View>
+        </View>
       </View>
-      <Text style={il.hint}>KotoClipボタンをタップ</Text>
-    </View>
-  );
-}
-
-// PCブラウザ Step 5: 拡張機能ポップアップで保存
-function IllusExtPopup() {
-  return (
-    <View style={il.frame}>
-      <View style={il.popupBox}>
-        <Text style={il.popupBrand}>KotoClip</Text>
-        <Text style={il.popupWord}>stick</Text>
-        <Text style={il.popupMeaning}>定着する / 残る</Text>
-        <View style={il.saveBtn}><Text style={il.saveBtnText}>保存する</Text></View>
-      </View>
-      <Text style={il.hint}>訳を確認して「保存する」をタップ</Text>
+      <Text style={il.hint}>訳のポップアップが自動で表示される</Text>
     </View>
   );
 }
@@ -276,15 +265,11 @@ const BROWSER_STEPS: StepDef[] = [
     illus: <IllusBrowserSelect />,
   },
   {
-    text: '単語の近くに表示される「K」ボタンをタップします。',
-    illus: <IllusKButton />,
+    text: '選択すると訳のポップアップが自動で表示されます。内容を確認して「＋ 単語帳に追加」をタップすると、スマホの単語帳に同期されます。',
+    illus: <IllusSelectPopup />,
   },
   {
-    text: '訳を確認して「保存する」をタップすると、スマホの単語帳に同期されます。',
-    illus: <IllusExtPopup />,
-  },
-  {
-    text: '訳が表示されない場合は、単語を選択して右クリックし「KotoClipに保存」を選びます。',
+    text: 'ポップアップが出ない場合は、単語を選択して右クリックし「KotoClipに追加」を選びます。',
   },
 ];
 
@@ -544,17 +529,20 @@ const il = StyleSheet.create({
   chromeBar: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 8 },
   dot: { width: 7, height: 7, borderRadius: 3.5, backgroundColor: '#485569' },
   addrBar: { flex: 1, height: 10, borderRadius: 999, backgroundColor: '#303B4F', marginLeft: 4 },
-  kBubble: {
-    width: 32,
-    height: 32,
+
+  // ページ上に自動表示される訳ポップアップ
+  popupCard: {
+    marginTop: 8,
+    width: '100%',
+    backgroundColor: '#FFFFFF',
     borderRadius: 10,
-    backgroundColor: BG,
-    borderWidth: 1.5,
-    borderColor: GOLD,
-    alignItems: 'center',
-    justifyContent: 'center',
+    padding: 10,
+    gap: 4,
   },
-  kBubbleText: { color: MINT, fontSize: 13, fontWeight: '900' },
+  popupCardWord: { color: '#111827', fontSize: 15, fontWeight: '800' },
+  popupCardMeaning: { color: '#4F46E5', fontSize: 13, fontWeight: '700', marginBottom: 4 },
+  popupCardBtn: { backgroundColor: '#4F46E5', borderRadius: 8, paddingVertical: 7, alignItems: 'center' },
+  popupCardBtnText: { color: '#FFFFFF', fontSize: 12, fontWeight: '800' },
 
   // ストアカード
   storeBox: { width: '90%', backgroundColor: '#F8FAFC', borderRadius: 14, padding: 10, gap: 8 },
@@ -611,20 +599,4 @@ const il = StyleSheet.create({
     alignItems: 'center',
   },
   loginBtnText: { color: BG, fontSize: 13, fontWeight: '900' },
-
-  // 拡張機能ポップアップ
-  popupBox: {
-    width: '68%',
-    backgroundColor: '#202938',
-    borderRadius: 16,
-    padding: 13,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.11)',
-    gap: 4,
-  },
-  popupBrand: { color: MINT, fontSize: 10, fontWeight: '900', marginBottom: 2 },
-  popupWord: { color: STRONG, fontSize: 20, fontWeight: '900' },
-  popupMeaning: { color: MUTED, fontSize: 11, marginBottom: 6 },
-  saveBtn: { backgroundColor: MINT, borderRadius: 10, paddingVertical: 8, alignItems: 'center' },
-  saveBtnText: { color: BG, fontSize: 12, fontWeight: '900' },
 });

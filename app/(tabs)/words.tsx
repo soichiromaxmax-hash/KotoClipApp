@@ -59,6 +59,9 @@ export default function WordsScreen() {
   const [busyIds, setBusyIds] = useState<Record<number, boolean>>({});
 
   const [netError, setNetError] = useState(false);
+  const [isPremium, setIsPremium] = useState(false);
+  const [wordLimit, setWordLimit] = useState<number | null>(null); // null = 無制限（premium）
+  const [totalWordCount, setTotalWordCount] = useState<number | null>(null);
   const initialized = useRef(false);
 
   function fetchWords() {
@@ -82,6 +85,15 @@ export default function WordsScreen() {
 
   useFocusEffect(useCallback(() => {
     return fetchWords();
+  }, []));
+
+  useFocusEffect(useCallback(() => {
+    api.getSettings().catch(() => null).then((s) => {
+      if (!s) return;
+      setIsPremium(!!s.is_premium);
+      setWordLimit(s.is_premium ? null : (s.word_limit ?? null));
+      if (s.word_count !== undefined) setTotalWordCount(s.word_count);
+    });
   }, []));
 
   async function toggleFavorite(w: Word) {
@@ -158,24 +170,34 @@ export default function WordsScreen() {
     );
   }
 
-  const FREE_LIMIT = 100;
-  const countPct = Math.min((words.length / FREE_LIMIT) * 100, 100);
-  const countColor = words.length >= FREE_LIMIT ? '#EF4444' : words.length >= 80 ? '#F59E0B' : '#2DD4BF';
+  const displayCount = totalWordCount ?? words.length;
+  const countPct = wordLimit ? Math.min((displayCount / wordLimit) * 100, 100) : 100;
+  const countColor = wordLimit == null
+    ? '#2DD4BF'
+    : displayCount >= wordLimit ? '#EF4444' : displayCount >= wordLimit * 0.8 ? '#F59E0B' : '#2DD4BF';
 
   return (
     <SafeAreaView style={styles.root}>
       <Text style={styles.title}>単語帳</Text>
 
       {/* 単語数カウンター */}
-      {!loading && words.length > 0 && (
+      {!loading && displayCount > 0 && (
         <View style={styles.countBar}>
           <View style={styles.countRow}>
             <Text style={styles.countText}>
-              <Text style={[styles.countNum, { color: countColor }]}>{words.length}</Text>
-              <Text style={styles.countSep}> / {FREE_LIMIT}語</Text>
+              <Text style={[styles.countNum, { color: countColor }]}>{displayCount}</Text>
+              <Text style={styles.countSep}>
+                {isPremium ? '語（無制限）' : ` / ${wordLimit ?? 50}語`}
+              </Text>
             </Text>
             <Text style={[styles.countLabel, { color: countColor }]}>
-              {words.length >= FREE_LIMIT ? '無料プランの上限です' : words.length >= 80 ? 'もうすぐ上限です' : '無料プラン'}
+              {isPremium
+                ? 'プレミアム'
+                : wordLimit != null && displayCount >= wordLimit
+                ? '無料プランの上限です'
+                : wordLimit != null && displayCount >= wordLimit * 0.8
+                ? 'もうすぐ上限です'
+                : '無料プラン'}
             </Text>
           </View>
           <View style={styles.countTrack}>
