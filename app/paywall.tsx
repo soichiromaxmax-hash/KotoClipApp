@@ -20,7 +20,6 @@ import {
   isPremiumActive,
   PRODUCT_IDS,
 } from '@/lib/purchases';
-import { api } from '@/lib/api';
 
 const FEATURES = [
   { icon: '∞', label: '単語数無制限' },
@@ -81,7 +80,6 @@ export default function PaywallScreen() {
     try {
       const info = await purchasePackage(pkg);
       if (isPremiumActive(info)) {
-        await api.updateSetting('is_premium', '1').catch(() => {});
         Alert.alert('ありがとうございます！', 'プレミアムが有効になりました。', [
           { text: 'OK', onPress: () => router.back() },
         ]);
@@ -100,7 +98,6 @@ export default function PaywallScreen() {
     try {
       const info = await restorePurchases();
       if (isPremiumActive(info)) {
-        await api.updateSetting('is_premium', '1').catch(() => {});
         Alert.alert('復元しました', 'プレミアムが有効になりました。', [
           { text: 'OK', onPress: () => router.back() },
         ]);
@@ -114,12 +111,12 @@ export default function PaywallScreen() {
     }
   }
 
-  // 年額が月額より何%お得か
+  // 半年プラン（PRODUCT_IDS.yearly）が月額より何%お得か
   function savingsPercent(): string {
     if (!monthly || !yearly) return '';
-    const monthlyYear = monthly.product.price * 12;
+    const monthlySixMonths = monthly.product.price * 6;
     const yearlyPrice = yearly.product.price;
-    const pct = Math.round(((monthlyYear - yearlyPrice) / monthlyYear) * 100);
+    const pct = Math.round(((monthlySixMonths - yearlyPrice) / monthlySixMonths) * 100);
     return pct > 0 ? `${pct}%お得` : '';
   }
 
@@ -182,7 +179,7 @@ export default function PaywallScreen() {
               </TouchableOpacity>
             )}
 
-            {/* 年額 */}
+            {/* 半年（PRODUCT_IDS.yearly） */}
             {yearly && (
               <TouchableOpacity
                 style={[s.planCard, selected === 'yearly' && s.planCardSelected]}
@@ -194,7 +191,7 @@ export default function PaywallScreen() {
                 </View>
                 <View style={s.planInfo}>
                   <View style={s.planNameRow}>
-                    <Text style={[s.planName, selected === 'yearly' && s.planNameSelected]}>年額プラン</Text>
+                    <Text style={[s.planName, selected === 'yearly' && s.planNameSelected]}>半年プラン</Text>
                     {!!savingsPercent() && (
                       <View style={s.savingsBadge}>
                         <Text style={s.savingsBadgeText}>⚡ {savingsPercent()}</Text>
@@ -202,12 +199,12 @@ export default function PaywallScreen() {
                     )}
                   </View>
                   <Text style={s.planPrice}>
-                    {yearly.product.priceString}<Text style={s.planPer}> / 年</Text>
+                    {yearly.product.priceString}<Text style={s.planPer}> / 半年</Text>
                   </Text>
                   {monthly && (
                     <Text style={s.planMonthly}>
                       月あたり {yearly.product.currencyCode}{' '}
-                      {(yearly.product.price / 12).toFixed(0)}
+                      {(yearly.product.price / 6).toFixed(0)}
                     </Text>
                   )}
                 </View>

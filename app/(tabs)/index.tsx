@@ -123,8 +123,8 @@ export default function HomeScreen() {
     const hasCache = getCachedStats() !== null;
     if (!hasCache) setLoading(true);
 
-    // キャッシュなし時は8秒、あり時は35秒
-    const ms = hasCache ? 35000 : 8000;
+    // キャッシュなし時は30秒（Renderコールドスタート対応）、あり時は35秒
+    const ms = hasCache ? 35000 : 30000;
 
     Promise.all([
       withTimeout<Stats | null>(api.getStats(), null, ms),
@@ -161,12 +161,7 @@ export default function HomeScreen() {
     doFetch();
   }
 
-  // キャッシュなしでサーバー到達不可 → ログイン画面へ
-  useEffect(() => {
-    if (netError && getCachedStats() === null) {
-      router.replace('/auth/login' as any);
-    }
-  }, [netError, router]);
+  // netError 時はホームの「再試行」ボタンで対応（ログイン画面へ飛ばすと認証済みユーザーとの間でリダイレクトループが発生するため削除）
 
   useFocusEffect(useCallback(() => {
     doFetch();

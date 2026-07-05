@@ -5,7 +5,7 @@ import { Platform } from 'react-native';
 
 // ── RevenueCat の設定値 ──────────────────────────────────────────────────────
 // app.revenuecat.com → Apps → iOS → Public API Key
-export const RC_API_KEY_IOS = 'REVENUECAT_IOS_PUBLIC_KEY'; // TODO: 本番キーに差し替え
+export const RC_API_KEY_IOS = 'appl_SsVyUPAhQpgcGfLFEJhTtHhkWAU';
 
 // App Store Connect で作成した Subscription Group の Product IDs
 export const PRODUCT_IDS = {
@@ -23,16 +23,17 @@ export async function initPurchases() {
   if (__DEV__) Purchases.setLogLevel(LOG_LEVEL.DEBUG);
   Purchases.configure({ apiKey: RC_API_KEY_IOS });
 
-  // ログイン済みユーザーのメールを RevenueCat user ID としてセット
-  const email = await AsyncStorage.getItem('user_email').catch(() => null);
-  if (email) {
-    await Purchases.logIn(email).catch(() => {});
+  // ログイン済みユーザーの Supabase UID を RevenueCat の app_user_id としてセット
+  // （バックエンドの RevenueCat Webhook が app_user_id = Supabase UID を前提に処理するため）
+  const userId = await AsyncStorage.getItem('user_id').catch(() => null);
+  if (userId) {
+    await Purchases.logIn(userId).catch(() => {});
   }
 }
 
-export async function loginRevenueCat(email: string) {
+export async function loginRevenueCat(userId: string) {
   if (Platform.OS !== 'ios') return;
-  await Purchases.logIn(email).catch(() => {});
+  await Purchases.logIn(userId).catch(() => {});
 }
 
 export async function logoutRevenueCat() {

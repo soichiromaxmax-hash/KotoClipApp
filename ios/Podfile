@@ -64,7 +64,12 @@ target 'KotoClip' do
 
     # Swift 6 concurrency patch for EAS Build
     # pods を Swift 5 モードでコンパイルして actor isolation エラーを警告化→抑制
+    # ただし RevenueCat 系ポッド（RNPurchases / PurchasesHybridCommon 等）は
+    # podspec が Swift 5.7 を要求しており、5.0 に強制すると構文エラーになりうるため対象外にする
+    # （RevenueCat公式トラブルシューティングも「PodfileでSWIFT_VERSIONを上書きしないこと」と明記）
     installer.pods_project.targets.each do |target|
+      next if target.name =~ /Purchases/i
+
       target.build_configurations.each do |cfg|
         cfg.build_settings['SWIFT_VERSION']                 = '5.0'
         cfg.build_settings['SWIFT_STRICT_CONCURRENCY']      = 'minimal'

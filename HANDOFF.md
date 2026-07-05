@@ -1,6 +1,6 @@
 # KotoClip — 引き継ぎメモ（完全版）
 
-**最終更新: 2026-06-09**
+**最終更新: 2026-07-01（KotoClip Plus フェーズ1: 課金基盤 実装・デプロイ完了）**
 
 ---
 
@@ -11,142 +11,112 @@
 
 ---
 
-## 0. 最新状況（2026-06-09）★ここから読む
+## 0. 最新状況（2026-06-30 夜 更新）★ここから読む
 
 ### 現在のビルド・OTA状態
 
 | 項目 | 値 |
 |---|---|
-| TestFlight インストール済みビルド | **Build #40**（iOS ビルド番号。EAS 内部カウントと別） |
-| 次回 EAS Build 時のビルド番号 | **#41**（App Store Connect からの autoIncrement） |
-| コード（GitHub master） | 全変更 push 済み（commit `132bd42`） |
-| OTA production チャンネル | ✅ 作成済み・production ブランチに接続済み |
-| 最新 OTA | Update Group `cea87239`（2026-06-09 配信済み） |
+| 直近の EAS Build（iOS） | **Build #42**（2026-06-30 実行・App Store Connectへ自動提出済み・Apple処理待ち） |
+| ※過去メモにあった「Build #54」は誤記だった | `eas build:list` で実際に確認したところ #41 が直前の最新ビルドだった（訂正済み） |
+| 次回 EAS Build 時のビルド番号 | **#43**（App Store Connect autoIncrement） |
+| RevenueCat（課金機能） | ✅ 設定完了・Build #42 に組み込み済み |
+| OTA チャンネル | production チャンネル ✅ 作成・接続済み |
 
-### OTA の仕組み（修正済み・正常動作中）
+### 2026-06-30 に実施した変更
 
-2026-06-09 に判明した問題：**production チャンネルが存在しなかった**ため、過去の全 OTA がデバイスに届いていなかった。
-
-**修正済み内容：**
-- `eas channel:create production` でチャンネルを作成し、production ブランチに接続
-- `eas.json` に `"channel": "production"` を明示的に追加（Build #41 以降で確実に反映）
-- OTA コマンドに `EAS_SKIP_AUTO_FINGERPRINT=1` を組み込んだ npm スクリプトを追加
-
-**OTA 確認手順（必ず2回再起動）:**
-1. アプリを完全終了（ホームでアプリを上スワイプ）
-2. アプリを開く（バックグラウンドでダウンロード）
-3. もう一度完全終了
-4. アプリを開く → 更新が適用される
-
-**⚠️ Build #40 インストール端末への OTA :** チャンネルが当時なかったため、Build #40 端末への過去 OTA は届いていない可能性が高い。**Build #41 を入れれば以降は正常に動く。**
-
----
-
-### 2026-06-09 に実施した変更（全 OTA 配信済み）
-
-#### UI・UX 改善
+**OTA配信済み（ビルド不要・即反映）:**
 
 | 内容 | ファイル |
 |---|---|
-| フラッシュカード・苦手語カードをクイズ練習と同じティール色に統一 | `app/(tabs)/index.tsx` |
-| 使い方画面を「📱 スマホ」「💻 PCブラウザ」の2タブ構成に変更 | `app/how-to.tsx` |
-| 設定画面の通知行サブテキスト・sectionNote を削除してシンプル化 | `app/(tabs)/settings.tsx` |
+| Lv10でKotoが進化するよう修正（旧: Lv11から変わっていた） | `lib/gamification.ts` |
+| 復習完了後に「もう一度」ボタンを追加（連続復習ができなかった問題を修正） | `app/(tabs)/study.tsx` |
+| 起動ループバグ修正（サーバー遅延時にログイン画面→ホームの無限リダイレクト） | `app/(tabs)/index.tsx` |
+| 起動時タイムアウトを8秒→30秒に延長（Renderコールドスタート対応） | `app/(tabs)/index.tsx` |
+| 設定画面「KotoClipの使い方」→「単語の保存の仕方」に変更 | `app/(tabs)/settings.tsx` |
+| 使い方説明画面（how-to）：バッジ横並びレイアウトが原因の不自然な改行を修正。バッジを縦積みに変更＋文の区切りで明示的に改行 | `app/how-to.tsx` |
+| 使い方説明画面：「その他」トグルの説明を実際のiOS挙動（タップすれば即使える／ONは任意のお気に入り登録）に修正 | `app/how-to.tsx` |
+| 使い方説明画面：ブラウザ版に「訳が表示されない場合は右クリック→『KotoClipに保存』」の手順を追加 | `app/how-to.tsx` |
+| Paywall画面：実際の商品構成（月額/半年）に合わせて「年額」表記・お得率計算を修正 | `app/paywall.tsx` |
+| RevenueCat 公開APIキーを設定 | `lib/purchases.ts` |
 
-#### バグ修正
+**Build #42（ネイティブビルド）に含まれる変更:**
 
-| バグ | 修正内容 | ファイル |
+| 内容 | ファイル |
+|---|---|
+| RevenueCatネイティブSDK（react-native-purchases）を初めて組み込み | package.json（既存の依存関係が今回初めてコンパイルされた） |
+| RevenueCat系podをSwift 5.0強制設定から除外（podspecが要求するSwift 5.7でビルドされるように） | `ios/Podfile` |
+
+### 現在の課金プラン構成（当初計画から変更あり）
+
+| プラン | Product ID | 価格 |
 |---|---|---|
-| 苦手語クイズがエラーになる | API エラーを empty 扱いに。苦手語をクライアント側フィルタ（未学習・stability<2.5・期限超過）に変更 | `app/(tabs)/study.tsx` |
-| 久々起動時の読み込みが長い | キャッシュなし初回のタイムアウトを 8 秒に短縮。失敗時はログイン画面へ即遷移 | `app/(tabs)/index.tsx` |
-| フラッシュカードの遷移が遅い | `onRate` を非同期ブロックなし即時遷移に変更。ロックを 500→250ms に短縮 | `app/flashcard.tsx` |
-| 通知トグルを ON にして権限拒否しても ON のまま | 権限 denied 時にトグルを即 OFF に戻すよう修正 | `app/(tabs)/settings.tsx` |
-| word_limit がハードコード100 | サーバーの `word_limit` / `is_premium` を取得して動的制限。premium 時は無制限表示 | `app/(tabs)/add.tsx` |
+| 月額 | `jp.kotoclip.premium.monthly` | $1.99（¥300） |
+| 半年（Product IDは`yearly`のまま） | `jp.kotoclip.premium.yearly` | $9.99（¥1,500） |
 
----
+サブスクリプショングループ: `KotoClip Premium`（Group ID: `22200798`）
+RevenueCat Entitlement: `premium`
 
-### Build #41 の前にやること（★必須）
-
-**Build #41 は RevenueCat の設定が完了してから実行すること。**
-
-#### STEP 1 — App Store Connect で IAP 商品を作成（未完了）
-
-1. [App Store Connect](https://appstoreconnect.apple.com) → KotoClip → 「App 内課金」
-2. 「＋」→ **自動更新サブスクリプション** を選択
-3. サブスクリプショングループ名: `KotoClip Premium`
-4. 以下 2 商品を作成:
-
-| Product ID | 表示名 | 価格 |
-|---|---|---|
-| `jp.kotoclip.premium.monthly` | KotoClip Premium 月額 | ¥480（Tier 3） |
-| `jp.kotoclip.premium.yearly` | KotoClip Premium 年額 | ¥2,400（Tier 7） |
-
-#### STEP 2 — RevenueCat アカウント作成・設定（未完了）
-
-1. [app.revenuecat.com](https://app.revenuecat.com) でアカウント作成
-2. 新しいプロジェクト → iOS App 追加 → Bundle ID: `jp.kotoclip.app`
-3. App Store Connect API キー（`.p8` ファイル = `AuthKey_HK23GAU47L.p8`）を RevenueCat に登録
-4. **Entitlements** → ID: `premium` を作成
-5. **Offerings** → `default` を作成し、上記 2 商品を追加
-6. **iOS Public API Key** をコピー（`appl_xxxxx` 形式）
-
-#### STEP 3 — コードに API キーを設定（1分）
-
-`lib/purchases.ts` の1行を差し替える:
-
-```typescript
-// 変更前（プレースホルダー）
-export const RC_API_KEY_IOS = 'REVENUECAT_IOS_PUBLIC_KEY';
-
-// 変更後（RevenueCat ダッシュボードの値）
-export const RC_API_KEY_IOS = 'appl_xxxxxxxxxxxxxxxx';
-```
-
-#### STEP 4 — Build #41 を実行
-
-STEP 1〜3 完了後:
-
-```powershell
-cd "C:\Users\SoichiroKamibeppu(MC\KotoClipApp"
-npm run release:ios:build
-```
-
----
-
-### v1.0 リリース前 残タスク一覧
+### 次にやること（優先順）
 
 | # | 内容 | 状態 |
 |---|---|---|
-| 1 | Build #41 作成 → App Store 審査提出 | ⏳ STEP 1〜3 完了後 |
-| 2 | iOS 通知バグ修正 | ✅ 2026-06-09 修正済み |
-| 3 | RevenueCat 課金基盤 | ✅ コード完成・STEP 1〜3 待ち |
-| 4 | 単語数制限 UI | ✅ 2026-06-09 動的対応済み |
-| 5 | AI 検索回数制限 UI | ❌ サーバー実装確認が必要 |
-| 6 | Google/Apple ログイン | ❌ Supabase OAuth 設定が必要 |
-| 7 | 言語別単語帳（スペイン語等を英語と別管理） | ❌ サーバー実装確認が必要 |
-| 8 | App Store メタデータ（スクショ・説明文） | ❌ Build #41 後に実施 |
-| 9 | 拡張機能のスペイン語対応（language params） | ❌ Build #41 と同時に対応 |
+| 1 | RevenueCat 設定 | ✅ 完了 |
+| 2 | Build #42 → App Store 審査提出 | ✅ 提出済み・Apple処理待ち |
+| 3 | KotoClip Plus フェーズ1（安全な課金基盤） | ✅ 実装・デプロイ・疎通確認まで完了。**Sandbox実購入テストのみ未実施** |
+| 4 | 設定画面「使い方」の改行・説明修正 | ✅ 完了（OTA配信済み） |
+| 5 | Render無料プランのスリープ対策（cron-job.orgで10分おきping） | ✅ 設定済み |
+| 6 | 言語別フィルタリング（スペイン語/英語を別々に管理） | ❌ 後回し（30〜45分の作業） |
+| 7 | Expoパッケージ10個がSDK推奨バージョンよりわずかに古い（要調査） | ⚠️ 意図的に保留中（下記12章参照） |
+| 8 | KotoClip Plus フェーズ2（詳細は下記） | ❌ 未着手 |
 
 ---
 
-### どこに何が書いてあるか
+## 0-2. KotoClip Plus フェーズ1（2026-07-01・完了）
 
-| 知りたいこと | 参照先 |
+新しい課金仕様「KotoClip Plus」への移行を開始。フェーズ1は「安全な課金基盤」に絞って実装・本番デプロイ済み。詳細な設計判断は `C:\Users\SoichiroKamibeppu(MC\.claude\plans\zippy-dazzling-parnas.md` に残っている。
+
+### やったこと
+
+**フロントエンド（このリポジトリ）:**
+- RevenueCatのユーザーIDを メールアドレス → **Supabase UID** に変更（`lib/api.ts` / `lib/purchases.ts` / `context/auth.tsx`）。Webhookで正しくユーザーを特定するために必須の変更だった
+- `app/paywall.tsx`: 動いていなかった `api.updateSetting('is_premium', '1')` の直書きを削除（サーバー側にそのカラムが無く、常に無視されていたバグ）
+
+**バックエンド（別リポジトリ: `C:\Users\SoichiroKamibeppu(MC\anki_app`）:**
+- `user_stats` に `plan`（free/plus）・`subscription_status`・`subscription_expires_at`・AI利用回数カラムを追加
+- `POST /api/webhooks/revenuecat` を新設。RevenueCatからのWebhookを受けて、Subscriber APIで最新状態を取得しDBに反映
+- 単語保存上限: 100語 → **50語**（無料プラン）
+- AI意味検索: 月20回（無料）/ 300回（Plus）、AI再翻訳: 月5回（無料）/ 100回（Plus）の制限を追加
+- Render環境変数 `REVENUECAT_SECRET_KEY` / `REVENUECAT_WEBHOOK_SECRET` を設定済み・本番で疎通確認済み
+
+### 検証済み・未検証
+
+| 項目 | 状態 |
 |---|---|
-| 日常の OTA コマンド | **セクション 8**（このファイル） |
-| RevenueCat 実装の詳細 | `lib/purchases.ts`（コメント付き） |
-| ペイウォール UI | `app/paywall.tsx` |
-| ビルドの仕組み・パッチの理由 | **セクション 10**（このファイル） |
-| iOS 26 SDK 対応の経緯 | **セクション 7**（このファイル） |
-| アカウント・証明書の場所 | **セクション 4**（このファイル） |
-| 設計・API・デザイン詳細 | `HANDOVER.md`（同フォルダ） |
+| Webhook認証（Authorizationヘッダー） | ✅ 本番で確認済み |
+| RevenueCat Secret Keyでの接続 | ✅ 本番で確認済み |
+| 不正なapp_user_idへの耐性 | ✅ 修正・確認済み |
+| 既存機能（AI検索・単語保存等）への影響 | ✅ 破壊なし確認済み |
+| **実際のSandbox購入でplanが`plus`に切り替わるか** | ⏳ **未検証**（次回セッションで実施） |
 
----
+### 価格（App Store Connect / RevenueCat）
+
+現状は当初設定のまま（月額¥300・半年¥1,500）。新仕様書の月額¥450・半年¥2,400への変更は**未実施**。
+
+### KotoClip Plus フェーズ2（未着手・スコープ外にしたもの）
+- 苦手語モードの日次制限
+- Koto成長Lv10以降のPlus限定解放
+- 週間レポート簡易/詳細分岐
+- 広告導入（無料プランのみ）
+- バッジ拡充
+- Paywall誘導文言・トリガータイミング作り込み（40語到達時の警告など）
+- Share Extension（Swift）のトークン送信対応 → 現状Share ExtensionからのAI検索は無制限のまま（ネイティブ再ビルドが必要なため）
 
 ---
 
 ## 1. このプロジェクトは何か
 
-英語を読みながら出会った単語を保存し、スペースド・リピティション（間隔反復）で復習するiOSアプリ。  
+英語を読みながら出会った単語を保存し、スペースド・リピティション（間隔反復）で復習するiOSアプリ。
 Share Extension でブラウザやアプリから単語を直接追加できる。
 
 - バンドルID: `jp.kotoclip.app`
@@ -183,7 +153,7 @@ https://github.com/soichiromaxmax-hash/KotoClipApp
 
 | # | 何を | どこに / どうやって |
 |---|---|---|
-| ① | `.p8` ファイル（App Store Connect API キー） | 現在の保存場所: `C:\Users\SoichiroKamibeppu(MC\OneDrive\Desktop\ChatGPT Vocab Test\AuthKey_HK23GAU47L.p8` |
+| ① | `.p8` ファイル（App Store Connect API キー） | `C:\Users\SoichiroKamibeppu(MC\OneDrive\Desktop\ChatGPT Vocab Test\AuthKey_HK23GAU47L.p8` |
 | ② | GitHub リポジトリへの招待 | https://github.com/soichiromaxmax-hash/KotoClipApp/settings/access にメールアドレスを登録 |
 | ③ | Apple Developer への招待 | https://developer.apple.com/account/people にメールアドレスで招待 |
 | ④ | EAS（Expo）への招待 | https://expo.dev/accounts/soichiromax/settings/members にメールアドレスで招待 |
@@ -217,115 +187,52 @@ C:\Users\SoichiroKamibeppu(MC\KotoClipApp\
 ├── HANDOFF.md                ← このファイル
 ├── HANDOVER.md               ← 設計・API・デザインルール詳細
 ├── app.json                  ← Expo基本設定（buildNumberはEASが自動管理）
-├── eas.json                  ← EASビルド/サブミット設定（★後述の変更済み）
+├── eas.json                  ← EASビルド/サブミット設定
 ├── package.json              ← npm依存パッケージ（expo ~55.0.26）
-├── credentials.json          ← ローカル証明書の参照先（eas.jsonがcredentialsSource: localで使用）
+├── credentials.json          ← ローカル証明書の参照先
 │
-├── credentials/ios/          ← 証明書ファイル本体
-│   ├── dist-cert.p12         ← Distribution証明書
-│   ├── profile.mobileprovision        ← メインアプリ プロビジョニングプロファイル
-│   └── shareextension.mobileprovision ← Share Extension プロビジョニングプロファイル
+├── credentials/ios/          ← 証明書ファイル本体（絶対に触るな）
+│   ├── dist-cert.p12
+│   ├── profile.mobileprovision
+│   └── shareextension.mobileprovision
 │
 ├── scripts/
-│   └── patch-expo-swift.py   ← ★EASビルド時にnpm postinstallで自動実行されるSwiftパッチ
+│   └── patch-expo-swift.py   ← EASビルド時にnpm postinstallで自動実行されるSwiftパッチ
 │
-├── ios/
-│   ├── Podfile               ← Swift concurrency設定を含む（触るな・自動生成）
-│   └── Podfile.properties.json
+├── ios/                      ← 触るな（EAS Buildがそのまま使用）
 │
 ├── app/                      ← 画面ファイル（ここをよく触る）
 │   ├── _layout.tsx           ← ルート（認証・フォント・Renderウォームアップ）
 │   ├── flashcard.tsx
-│   ├── how-to.tsx            ← スマホ / PC タブ構成
-│   ├── paywall.tsx           ← ★RevenueCat ペイウォール（月額+年額）
+│   ├── how-to.tsx            ← スマホ / PC タブ構成（「単語の保存の仕方」リンク先）
+│   ├── paywall.tsx           ← RevenueCat ペイウォール（月額+年額）
 │   ├── auth/login.tsx
 │   ├── word/[id].tsx
 │   └── (tabs)/
 │       ├── index.tsx         ← ホーム（XPバー・統計・CTAカード）
-│       ├── study.tsx         ← クイズ練習（4択のみ）・苦手語クライアントフィルタ
-│       ├── add.tsx           ← word_limit 動的対応・上限モーダルでペイウォールへ誘導
-│       ├── words.tsx
-│       └── settings.tsx      ← アップグレードボタンがペイウォールへ接続済み
+│       ├── study.tsx         ← クイズ練習（4択）・復習・苦手語
+│       ├── add.tsx           ← 単語追加（word_limit 動的対応）
+│       ├── words.tsx         ← 単語帳一覧
+│       └── settings.tsx      ← 設定（言語・通知・プラン）
 │
 ├── lib/
 │   ├── api.ts                ← API呼び出しはすべてここ経由
 │   ├── gamification.ts       ← XP・レベル・Kotoステージ計算
-│   ├── notifications.ts
-│   └── purchases.ts          ← ★RevenueCat 課金ロジック（RC_API_KEY_IOS を差し替えること）
+│   ├── homeCache.ts          ← ホーム画面のキャッシュ
+│   ├── notifications.ts      ← プッシュ通知
+│   └── purchases.ts          ← RevenueCat 課金ロジック（APIキー設定済み・2026-06-30）
 │
 ├── context/auth.tsx          ← ログイン状態（useAuth フック）
 │
-├── components/
-│   ├── KotoBird.tsx          ← 黄色い鳥キャラ（ステージ別6デザイン）
-│   ├── Onboarding.tsx        ← ★絶対に触るな（確定版）
-│   └── SplashAnimation.tsx
-│
-├── targets/share-extension/
-│   └── ShareViewController.swift  ← Share Extension Swift実装（変更はフルビルド必要）
-│
-├── modules/shared-storage/ios/
-│   └── SharedStorageModule.swift   ← App Group UserDefaults（トークン共有）
-│
-├── plugins/
-│   ├── withShareExtension.js
-│   └── withoutPushEntitlement.js
-│
-└── koto-preview.html         ← Koto全ステージのブラウザプレビュー（開発確認用）
+└── components/
+    ├── KotoBird.tsx          ← 黄色い鳥キャラ（ステージ別6デザイン）
+    ├── Onboarding.tsx        ← ★絶対に触るな（確定版）
+    └── SplashAnimation.tsx
 ```
 
 ---
 
-## 6. 現在の状態（2026-06-09 更新）
-
-| 項目 | 値 |
-|---|---|
-| 次回ビルド番号 | **#41**（App Store Connect autoIncrement） |
-| TestFlight インストール済み | Build #40 |
-| OTA 最新 | Update Group `cea87239`（2026-06-09 配信済み） |
-| OTA チャンネル | production チャンネル ✅ 作成・接続済み |
-| コード状態 | 全変更 push 済み（commit `132bd42`） |
-| Expo SDK | ~55.0.26 |
-| React Native | 0.83.6 |
-| Xcode（EAS image） | `"latest"`（Xcode 26対応・2026-06-01に変更） |
-| iOS deployment target | 15.1（iOS 26 専用ではない・15.1以上で動く） |
-| RevenueCat SDK | `react-native-purchases@10.2.2` インストール済み |
-| RevenueCat API Key | `lib/purchases.ts` の `RC_API_KEY_IOS` を差し替え待ち |
-
----
-
-## 7. 2026-06-01 に行った変更（★重要）
-
-### 変更内容
-
-**`eas.json` の Xcode image を変更した。**
-
-```json
-// 変更前
-"image": "macos-sequoia-15.4-xcode-16.3"
-
-// 変更後
-"image": "latest"
-```
-
-### 変更理由
-
-Apple が 2026年6月から **iOS 26 SDK（Xcode 26）でビルドしたものだけをApp Store Connectで受け付ける** ように要件変更した。  
-旧設定（Xcode 16.3 = iOS 18.4 SDK）でビルドした IPA を TestFlight へ upload しようとしたところ、Apple 側で以下のエラーが発生して拒否された：
-
-```
-SDK version issue. This app was built with the iOS 18.4 SDK.
-All iOS and iPadOS apps must be built with the iOS 26 SDK or later.
-```
-
-`"latest"` にすることで EAS が持つ最新 Xcode image（Xcode 26対応）を自動的に使用するようになり、問題が解消した。
-
-### この変更で影響を受けるもの
-
-`scripts/patch-expo-swift.py` は Xcode 16.3 向けに作られたが、Xcode 26 でも問題なく動作することを確認済み（代替APIはすべてiOS 15以降から存在するため）。
-
----
-
-## 8. 日常の開発コマンド
+## 6. 日常の開発コマンド
 
 **コマンドを実行する前に必ずこのディレクトリに移動する:**
 ```
@@ -340,9 +247,7 @@ npm run release:ota -- --message "変更内容のメモ"
 ```
 iPhoneのアプリを完全に閉じて再起動すると1〜2分で反映。**ビルド不要・無料。**
 
-⚠️ `eas update` コマンドを直接使わないこと。`npm run release:ota` には `EAS_SKIP_AUTO_FINGERPRINT=1` が自動で付く。
-
-### パターン②：TestFlight に新しいビルドを送る
+### パターン②：TestFlight に新しいビルドを送る（月1〜2回）
 
 ```powershell
 cd "C:\Users\SoichiroKamibeppu(MC\KotoClipApp"
@@ -352,60 +257,30 @@ npm run release:ios:build
 
 ### パターン③：Swift・ネイティブコードを変えたとき
 
-`targets/share-extension/ShareViewController.swift` や  
-`modules/shared-storage/ios/SharedStorageModule.swift` を変えた場合は  
+`targets/share-extension/ShareViewController.swift` や
+`modules/shared-storage/ios/SharedStorageModule.swift` を変えた場合は
 パターン①では反映されない。パターン②のフルビルドが必要。
 
 ---
 
-## 9. 触っていいか一覧
+## 7. 触っていいか一覧
 
 | ファイル / フォルダ | 判断 | 理由 |
 |---|---|---|
-| `app/` 以下 | **自由に触る** | JS変更はeas updateで即反映 |
+| `app/` 以下 | **自由に触る** | JS変更はOTAで即反映 |
 | `lib/` 以下 | **自由に触る** | |
 | `context/auth.tsx` | **自由に触る** | |
 | `components/KotoBird.tsx` | **自由に触る** | |
-| `targets/share-extension/ShareViewController.swift` | 触れる（要フルビルド） | Swift変更はeas update不可 |
+| `targets/share-extension/ShareViewController.swift` | 触れる（要フルビルド） | Swift変更はOTA不可 |
 | `components/Onboarding.tsx` | **絶対触るな** | 確定版。変えると壊れる |
-| `scripts/patch-expo-swift.py` | 慎重に触る | npm postinstallで実行されるSwiftパッチ。EASビルドの根幹 |
-| `ios/` 以下 | **触るな** | EAS Buildがそのまま使用 |
+| `scripts/patch-expo-swift.py` | 慎重に触る | EASビルドの根幹 |
+| `ios/Podfile` | 慎重に触る | Swiftバージョン強制設定の根幹（RevenueCat除外設定あり・2026-06-30） |
+| `ios/` 以下（Podfile以外） | **触るな** | EAS Buildがそのまま使用 |
 | `credentials/ios/` | **触るな** | 証明書ファイル本体 |
 
 ---
 
-## 10. ビルドの仕組み（EAS Build）
-
-```
-npm install
-  └── postinstall → scripts/patch-expo-swift.py（Swiftパッチ自動適用）
-pod install（ios/Podfileを使用）
-  └── post_install: 全podをSwift 5.0 + SWIFT_STRICT_CONCURRENCY=minimalに強制
-xcodebuild archive → IPA export → TestFlight upload（--auto-submit時）
-```
-
-**なぜパッチが必要か:**  
-expo SDK 55のネイティブコードにSwift 6 concurrencyエラーが含まれている。  
-Podfileで全podをSwift 5.0モードにしてactor isolationを抑制しつつ、  
-それでも残るSendable系エラーをpatch-expo-swift.pyで個別修正している。
-
----
-
-## 11. システム構成
-
-```
-iOSアプリ（このリポジトリ）
-ブラウザ拡張・Webアプリ（soichiromaxmax-hash/KotoClip リポジトリ）
-          ↓ HTTPS
-FastAPI サーバー: https://kotoclip.onrender.com
-（Render.com 無料プラン → 15分でスリープ・初回30秒かかる）
-          ↓
-Supabase（本番DB + Auth）
-```
-
----
-
-## 12. デザインルール（必ず守る）
+## 8. デザインルール（必ず守る）
 
 | 色名 | 値 | 注意 |
 |---|---|---|
@@ -415,52 +290,103 @@ Supabase（本番DB + Auth）
 | 正解 | `#7CFFB2` | |
 | 不正解 | `#FF6B6B` | |
 
-**フォント:** LobsterTwo_700Bold（Koto）/ SpaceGrotesk_700Bold（Clip）  
+**フォント:** LobsterTwo_700Bold（Koto）/ SpaceGrotesk_700Bold（Clip）
 **KotoBird:** `components/KotoBird.tsx` の SVG のみ。絵文字で代替しない。
 
 ---
 
-## 13. Koto キャラクター ステージ別デザイン
+## 9. Koto キャラクター ステージ別デザイン
 
 | ステージ | Lv | 名前 | デザイン |
 |---|---|---|---|
 | 1 | 1〜5 | ひよこ | 素のKoto・フラッシュカードを持つ |
-| 2 | 6〜10 | 小学生 | 黄色い通学帽 ＋ 左手に水筒 |
-| 3 | 11〜15 | 高校生 | 学ラン（金ボタン・立ち衿）＋ 左に学生鞄・右に辞書 |
-| 4 | 16〜20 | ビジネス | スーツ（ネクタイ・眼鏡）＋ 左にスマホ・右にスーツケース |
-| 5 | 21〜25 | 研究者 | 白衣（ポケット・ペン・眼鏡）＋ 右にクリップボード |
-| 6 | 26〜30 | 卒業生 | ガウン・卒業帽・眼鏡 ＋ 右に卒業証書・スパークル・後光 |
+| 2 | 6〜9 | 小学生 | 黄色い通学帽 ＋ 左手に水筒 |
+| 3 | 10〜14 | 高校生 | 学ラン（金ボタン・立ち衿）＋ 左に学生鞄・右に辞書 |
+| 4 | 15〜19 | ビジネス | スーツ（ネクタイ・眼鏡）＋ 左にスマホ・右にスーツケース |
+| 5 | 20〜24 | 研究者 | 白衣（ポケット・ペン・眼鏡）＋ 右にクリップボード |
+| 6 | 25〜30 | 卒業生 | ガウン・卒業帽・眼鏡 ＋ 右に卒業証書・スパークル・後光 |
 
-デザイン確認: リポジトリ内の `koto-preview.html` をブラウザで開く。  
-実装ファイル: `components/KotoBird.tsx`
-
----
-
-## 14. 既知のバグ
-
-| バグ | 状況 | 対処 |
-|---|---|---|
-| 起動時にアクセスできないことがある | Render の15分スリープが原因 | `_layout.tsx` の `useRenderWarmup()` でping送信済み。完全ではない。「再試行」ボタンを押す |
-| iOS の通知設定が機能しない | `lib/notifications.ts` と `app/(tabs)/settings.tsx` に問題あり | 未修正 |
+ステージ変わるタイミング: **Lv 6, 10, 15, 20, 25** でKotoが進化する。
+デザイン確認: `koto-preview.html` をブラウザで開く。
+実装ファイル: `components/KotoBird.tsx`・`lib/gamification.ts`
 
 ---
 
-## 15. よくあるエラー
+## 10. 既知のバグ・未解決事項
+
+| 内容 | 状況 |
+|---|---|
+| iOS の通知設定が一部機能しない | `lib/notifications.ts` の権限フロー問題・未修正 |
+| 言語別フィルタリング未実装 | スペイン語と英語の単語が同じリストに混在する。将来対応予定（工数30〜45分）。 |
+
+---
+
+## 11. よくあるエラー
 
 | 症状 | 対処 |
 |---|---|
 | `eas build` 失敗 | Apple Developer Portal で `group.jp.kotoclip.app` App Group を確認 |
 | 証明書上限エラー | https://developer.apple.com/account/resources/certificates/list で古い Distribution 証明書を削除 |
 | `eas submit` 失敗 | `eas.json` に `ascAppId: "6765753980"` が入っているか確認 |
-| SDK version issue（Apple拒否） | `eas.json` の `image` が `"latest"` になっているか確認（2026-06-01に対応済み） |
-| ホームが接続エラー | Render cold start（最大30秒）→「再試行」ボタンを押す |
+| SDK version issue（Apple拒否） | `eas.json` の `image` が `"latest"` になっているか確認 |
+| ホームが接続エラー | Render cold start（最大30秒）→「再試行」ボタンを押す。cron-job.orgでのkeep-aliveping設定済み（10分おき）なので基本的には起きないはず |
 | AI例文が出ない | server.py のデプロイ確認 |
 | Share Extension が毎回ログイン要求 | Apple Developer Portal で App Group 作成 → 再ビルド |
-| フォントが出ない | `_layout.tsx` の `useFonts` を確認 |
+| RevenueCatの「App Store Connection」で.p8アップロード時にエラー | **2種類のキーが必要**。①App Store Connect API Key（`AuthKey_XXXXXXXXXX.p8`・EAS Build用と共通）と②In-App Purchase Key（`SubscriptionKey_XXXXXXXXXX.p8`・Users and Access → Integrations → In-App Purchaseで別途発行）。RevenueCatの画面には両方の入力欄がある |
+| RevenueCatで新規ネイティブモジュール追加後にビルドが不安 | `ios/Podfile`のpost_installが全podをSwift 5.0に強制する設定になっている。podspecがSwift 5.7以上を要求するライブラリ（RevenueCat等）を追加する場合は、対象podをこの強制から除外すること（12章参照） |
 
 ---
 
-## 16. Apple Developer Portal の確認場所
+## 12. ビルドの仕組み（EAS Build）
+
+```
+npm install
+  └── postinstall → scripts/patch-expo-swift.py（Swiftパッチ自動適用）
+pod install（ios/Podfileを使用）
+  └── post_install: 名前に"Purchases"を含まないpodだけSwift 5.0 + SWIFT_STRICT_CONCURRENCY=minimalに強制
+xcodebuild archive → IPA export → TestFlight upload（--auto-submit時）
+```
+
+**なぜパッチが必要か:**
+expo SDK 55のネイティブコードにSwift 6 concurrencyエラーが含まれている。
+Podfileで全podをSwift 5.0モードにしてactor isolationを抑制しつつ、
+それでも残るSendable系エラーをpatch-expo-swift.pyで個別修正している。
+
+**RevenueCat系podは対象外（2026-06-30追加）:**
+`react-native-purchases`（RNPurchases）・`PurchasesHybridCommon` はpodspecで
+`swift_version = '5.7'`を要求しており、全pod一律5.0強制のままだと構文エラーになりうる。
+RevenueCat公式トラブルシューティングも「PodfileでSWIFT_VERSIONを上書きしないこと」と明記している。
+そのため `ios/Podfile` の post_install で `next if target.name =~ /Purchases/i` を追加し、
+RevenueCat系podだけこの強制から除外している。
+**新しいネイティブライブラリを追加するときは、同様にpodspecの要求Swiftバージョンを確認し、
+必要なら同じ除外パターンを検討すること。**
+
+**保留中の技術的負債（2026-06-30時点）:**
+`npx expo install --check` で10個のExpoパッケージ（expo本体・expo-notifications・expo-web-browser等）が
+SDK推奨バージョンよりわずかに古いことが判明している。あえて更新していない理由は、
+`scripts/patch-expo-swift.py` が現在インストールされているバージョンの
+ソースコードを一言一句ピンポイントで書き換えるパッチだから。バージョンを上げると
+パッチが当たらなくなり（`WARN: pattern not found`と警告は出るがビルドは止まらない）、
+過去に直したSwiftコンパイルエラーが再発するリスクがある。
+更新する場合は、パッチが引き続き当たるか個別に検証してから行うこと。
+
+---
+
+## 13. システム構成
+
+```
+iOSアプリ（このリポジトリ）
+ブラウザ拡張・Webアプリ（soichiromaxmax-hash/KotoClip リポジトリ）
+          ↓ HTTPS
+FastAPI サーバー: https://kotoclip.onrender.com
+（Render.com 無料プラン → 15分でスリープ・初回最大30秒かかる）
+          ↓
+Supabase（本番DB + Auth）
+```
+
+---
+
+## 14. Apple Developer Portal の確認場所
 
 - **App Group（設定済み・変更不要）:** https://developer.apple.com/account/resources/identifiers/list
   - `jp.kotoclip.app` → `group.jp.kotoclip.app`
@@ -470,7 +396,7 @@ Supabase（本番DB + Auth）
 
 ---
 
-## 17. 禁止事項
+## 15. 禁止事項
 
 | 禁止 | 理由 |
 |---|---|
@@ -478,13 +404,12 @@ Supabase（本番DB + Auth）
 | ミュートカラーに `#6B7280` | 正解は `#8F99A8` |
 | クイズに穴埋め追加 | 廃止済み。ユーザー評価が低い |
 | Expo Goで確認 | SharedStorageネイティブモジュールが動かない |
-| TikTokをSNS共有に追加 | 廃止済み |
 
 ---
 
-## 18. Claude Code を使う場合
+## 16. Claude Code を使う場合
 
-```bash
+```powershell
 cd "C:\Users\SoichiroKamibeppu(MC\KotoClipApp"
 claude
 ```
@@ -492,5 +417,5 @@ claude
 - `CLAUDE.md` — プロジェクト概要（Claude が自動で読む）
 - `.claude/skills/` — 詳細仕様ファイル（必要に応じて参照）
 
-**注意:** Claude Code はプロジェクトディレクトリで起動しないと `CLAUDE.md` を読まず、  
+**注意:** Claude Code はプロジェクトディレクトリで起動しないと `CLAUDE.md` を読まず、
 ファイルの場所を把握していない状態で会話が始まる。必ず `cd` してから起動すること。

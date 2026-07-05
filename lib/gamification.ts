@@ -30,10 +30,10 @@ export function xpProgressPct(xp: number): number {
 /** レベルに対応するKotoステージ（1〜6） */
 export function kotoStage(level: number): 1 | 2 | 3 | 4 | 5 | 6 {
   if (level <= 5)  return 1;
-  if (level <= 10) return 2;
-  if (level <= 15) return 3;
-  if (level <= 20) return 4;
-  if (level <= 25) return 5;
+  if (level <= 9)  return 2;
+  if (level <= 14) return 3;
+  if (level <= 19) return 4;
+  if (level <= 24) return 5;
   return 6;
 }
 

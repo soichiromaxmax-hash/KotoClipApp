@@ -29,14 +29,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   async function login(email: string, password: string) {
-    await api.login(email, password);
-    loginRevenueCat(email).catch(() => {});
+    const data = await api.login(email, password);
+    loginRevenueCat(data.user_id).catch(() => {});
     setState('authenticated');
   }
 
   async function signup(email: string, password: string) {
     const data = await api.signup(email, password);
     if (data.access_token) {
+      if (data.user_id) loginRevenueCat(data.user_id).catch(() => {});
       setState('authenticated');
     }
     // access_token なし = メール確認待ち → unauthenticated のまま

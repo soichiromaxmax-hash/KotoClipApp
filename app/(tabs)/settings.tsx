@@ -190,7 +190,7 @@ export default function SettingsScreen() {
           activeOpacity={0.75}
         >
           <Ionicons name="help-circle-outline" size={20} color="#2DD4BF" />
-          <Text style={s.howToText}>KotoClipの使い方</Text>
+          <Text style={s.howToText}>単語の保存の仕方</Text>
           <Ionicons name="chevron-forward" size={16} color="#4B5563" style={{ marginLeft: 'auto' }} />
         </TouchableOpacity>
 

@@ -195,11 +195,13 @@ function ResultScreen({
   correct,
   wrong,
   onFree,
+  onRestart,
 }: {
   correct: number;
   wrong: number;
   mode: Mode;
   onFree: () => void;
+  onRestart: () => void;
 }) {
   const router = useRouter();
   const total = correct + wrong;
@@ -223,8 +225,11 @@ function ResultScreen({
           <Text style={styles.statLbl}>正答率</Text>
         </View>
       </View>
-      <TouchableOpacity style={styles.primaryBtn} onPress={onFree}>
-        <Text style={styles.primaryBtnText}>クイズ練習</Text>
+      <TouchableOpacity style={styles.primaryBtn} onPress={onRestart}>
+        <Text style={styles.primaryBtnText}>もう一度</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.ghostBtn} onPress={onFree}>
+        <Text style={styles.ghostBtnText}>クイズ練習へ</Text>
       </TouchableOpacity>
       <TouchableOpacity style={styles.ghostBtn} onPress={() => router.push('/(tabs)' as any)}>
         <Text style={styles.ghostBtnText}>ホームへ</Text>
@@ -740,6 +745,7 @@ export default function StudyScreen() {
             wrong={wrong}
             mode={mode}
             onFree={() => setMode('free')}
+            onRestart={() => loadQueue(mode)}
           />
         )}
       </ScrollView>
