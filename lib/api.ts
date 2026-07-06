@@ -154,6 +154,26 @@ async function _fetch(path: string, options: RequestInit = {}, timeoutMs = 30000
   }
 }
 
+// 認証不要な公開エンドポイント用。_fetch()と違いトークンを一切付けないため、
+// 期限切れ/無効なトークンが残っていても401→リフレッシュ→ログアウト処理に
+// 巻き込まれない。
+async function _publicFetch(path: string, timeoutMs = 30000): Promise<any> {
+  const res = await fetchWithTimeout(`${BASE}${path}`, {}, timeoutMs);
+  if (!res.ok) {
+    const errCt = res.headers.get('content-type') ?? '';
+    const errBody = errCt.includes('application/json') ? await res.json().catch(() => null) : null;
+    throw new ApiError(res.status, errBody?.detail ?? `HTTP_${res.status}`);
+  }
+  const ct = res.headers.get('content-type') ?? '';
+  try {
+    if (ct.includes('application/json')) return await res.json();
+    const text = await res.text();
+    return text ? { detail: text } : {};
+  } catch {
+    return {};
+  }
+}
+
 export const api = {
   async login(email: string, password: string) {
     const res = await fetch(`${BASE}/auth/login`, {
@@ -221,7 +241,7 @@ export const api = {
   getTimeline:       (id: number)         => _fetch(`/words/${id}/timeline`),
   getSettings:       ()                   => _fetch('/settings'),
   lookup: (word: string, targetLang = 'en', nativeLang = 'ja') =>
-    _fetch(`/lookup?word=${encodeURIComponent(word)}&target_lang=${targetLang}&native_lang=${nativeLang}`),
+    _publicFetch(`/lookup?word=${encodeURIComponent(word)}&target_lang=${targetLang}&native_lang=${nativeLang}`),
 
   addWord: (payload: object) =>
     _fetch('/words', { method: 'POST', body: JSON.stringify(payload) }),

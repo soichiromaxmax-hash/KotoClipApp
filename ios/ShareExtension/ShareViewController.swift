@@ -151,6 +151,16 @@ private class ShareVM: ObservableObject {
         return UserDefaults.standard.string(forKey: "koto_ext_refresh")
     }
 
+    // 本体アプリ(settings.tsx)がApp Group経由で同期する学習言語/母語。
+    // 未同期の場合はサーバー側のデフォルト(ja/en)に合わせる。
+    private func storedNativeLang() -> String {
+        UserDefaults(suiteName: APP_GROUP)?.string(forKey: "native_lang") ?? "ja"
+    }
+
+    private func storedTargetLang() -> String {
+        UserDefaults(suiteName: APP_GROUP)?.string(forKey: "target_lang") ?? "en"
+    }
+
     private func saveTokens(access: String, refresh: String) {
         let ud = UserDefaults(suiteName: APP_GROUP)
         ud?.set(access,  forKey: "vocab_token")
@@ -217,7 +227,11 @@ private class ShareVM: ObservableObject {
     // 認証不要のパブリックエンドポイント
     private func lookup(word: String) async throws -> LookupResult {
         var comps = URLComponents(string: "\(API_BASE)/lookup")!
-        comps.queryItems = [URLQueryItem(name: "word", value: word)]
+        comps.queryItems = [
+            URLQueryItem(name: "word", value: word),
+            URLQueryItem(name: "native_lang", value: storedNativeLang()),
+            URLQueryItem(name: "target_lang", value: storedTargetLang()),
+        ]
         guard let url = comps.url else { throw URLError(.badURL) }
         var req = URLRequest(url: url, timeoutInterval: 30)
         req.httpMethod = "GET"
@@ -242,6 +256,8 @@ private class ShareVM: ObservableObject {
             "context": context,
             "ai_explanation": [aiExampleNative, aiNotes].filter { !$0.isEmpty }.joined(separator: "\n"),
             "source_type": "share_extension",
+            "native_lang": storedNativeLang(),
+            "target_lang": storedTargetLang(),
         ])
         _ = try await authedData(url: url, method: "POST", body: body, token: token)
     }
@@ -504,17 +520,13 @@ class ShareViewController: UIViewController {
         }
 
         let providers = item.attachments ?? []
-        let typeIds = ["public.plain-text", "public.text", "public.url"]
+        // public.url は除外: URL文字列そのものは単語として保存しない
+        let typeIds = ["public.plain-text", "public.text"]
 
         for typeId in typeIds {
             for provider in providers where provider.hasItemConformingToTypeIdentifier(typeId) {
                 provider.loadItem(forTypeIdentifier: typeId, options: nil) { [weak self] data, _ in
-                    let text: String
-                    if let url = data as? URL {
-                        text = url.absoluteString
-                    } else {
-                        text = (data as? String) ?? ""
-                    }
+                    let text = (data as? String) ?? ""
                     let clipped = extractBestClip(from: text)
                     guard !clipped.isEmpty else {
                         DispatchQueue.main.async { self?.cancel() }
