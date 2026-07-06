@@ -17,11 +17,11 @@
 
 | 項目 | 値 |
 |---|---|
-| 直近の EAS Build（iOS） | **Build #42**（2026-06-30 実行・App Store Connectへ自動提出済み・Apple処理待ち） |
-| ※過去メモにあった「Build #54」は誤記だった | `eas build:list` で実際に確認したところ #41 が直前の最新ビルドだった（訂正済み） |
-| 次回 EAS Build 時のビルド番号 | **#43**（App Store Connect autoIncrement） |
-| RevenueCat（課金機能） | ✅ 設定完了・Build #42 に組み込み済み |
+| 直近の EAS Build（iOS） | **Build #43**（2026-07-05 実行・App Store Connectへ自動提出済み・Apple処理待ち。Share Extensionの実体不一致修正・言語設定対応を含む） |
+| 次回 EAS Build 時のビルド番号 | **#44**（appVersionSource: remote による自動採番） |
+| RevenueCat（課金機能） | ✅ 設定完了・Sandbox実購入検証済み |
 | OTA チャンネル | production チャンネル ✅ 作成・接続済み |
+| Swiftバージョン設定（訂正） | Main app・Share Extension・Podsとも`SWIFT_VERSION '5.0'`で統一（RevenueCat系podのみ対象外）。以前「メインアプリ/拡張は6.0」としていたのは誤りだった（12章参照） |
 
 ### 2026-06-30 に実施した変更
 
