@@ -194,18 +194,22 @@ function QuizQuestion({
 function ResultScreen({
   correct,
   wrong,
+  mode,
+  scheduledDone,
   onFree,
   onRestart,
 }: {
   correct: number;
   wrong: number;
   mode: Mode;
+  scheduledDone: boolean;
   onFree: () => void;
   onRestart: () => void;
 }) {
   const router = useRouter();
   const total = correct + wrong;
   const accuracy = total > 0 ? Math.round((correct / total) * 100) : 0;
+  const isScheduledDone = mode === 'scheduled' && scheduledDone;
 
   return (
     <View style={styles.centered}>
@@ -225,9 +229,13 @@ function ResultScreen({
           <Text style={styles.statLbl}>正答率</Text>
         </View>
       </View>
-      <TouchableOpacity style={styles.primaryBtn} onPress={onRestart}>
-        <Text style={styles.primaryBtnText}>もう一度</Text>
-      </TouchableOpacity>
+      {isScheduledDone ? (
+        <Text style={styles.scheduledDoneText}>今日の復習は終わりです</Text>
+      ) : (
+        <TouchableOpacity style={styles.primaryBtn} onPress={onRestart}>
+          <Text style={styles.primaryBtnText}>もう一度</Text>
+        </TouchableOpacity>
+      )}
       <TouchableOpacity style={styles.ghostBtn} onPress={onFree}>
         <Text style={styles.ghostBtnText}>クイズ練習へ</Text>
       </TouchableOpacity>
@@ -251,6 +259,7 @@ export default function StudyScreen() {
   const [feedback, setFeedback] = useState<{ correct: boolean; msg: string } | null>(null);
   const [correct, setCorrect] = useState(0);
   const [wrong, setWrong] = useState(0);
+  const [scheduledDone, setScheduledDone] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [sharePayload, setSharePayload] = useState<SharePayload | null>(null);
   const [saveError, setSaveError] = useState<{
@@ -268,6 +277,7 @@ export default function StudyScreen() {
     setFeedback(null);
     setCorrect(0);
     setWrong(0);
+    setScheduledDone(false);
     setQuestion(null);
     setSharePayload(null);
     setSaveError(null);
@@ -622,6 +632,13 @@ export default function StudyScreen() {
       api.awardXp('session_complete').catch(() => {});  // セッション完了 +30XP
       checkShareTriggers();
       checkNotificationTriggers();
+      if (mode === 'scheduled') {
+        // このバッチで今日の期限分を全て消化したか確認（20件超で複数バッチに
+        // 分かれる場合は「もう一度」で続きを取得できるようにする）
+        api.getDue(1)
+          .then((rest) => setScheduledDone(!Array.isArray(rest) || rest.length === 0))
+          .catch(() => {});
+      }
       return;
     }
     const nextWord = queue[nextIdx];
@@ -744,6 +761,7 @@ export default function StudyScreen() {
             correct={correct}
             wrong={wrong}
             mode={mode}
+            scheduledDone={scheduledDone}
             onFree={() => setMode('free')}
             onRestart={() => loadQueue(mode)}
           />
@@ -884,6 +902,13 @@ const styles = StyleSheet.create({
   saveErrorSub: { color: '#9CA3AF', fontSize: 13, textAlign: 'center', lineHeight: 20 },
 
   resultTitle: { color: '#F9FAFB', fontSize: 24, fontWeight: '500' },
+  scheduledDoneText: {
+    color: '#9CA3AF',
+    fontSize: 15,
+    fontWeight: '600',
+    marginTop: 4,
+    paddingVertical: 15,
+  },
   statsRow: { flexDirection: 'row', gap: 12 },
   statCard: {
     flex: 1,

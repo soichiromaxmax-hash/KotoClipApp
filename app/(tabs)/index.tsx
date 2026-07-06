@@ -339,8 +339,8 @@ export default function HomeScreen() {
                         <Text style={s.reviewTitle}>今日の復習</Text>
                       </View>
                       <View style={s.reviewMeta}>
-                        <Text style={s.reviewNumber}>01</Text>
-                        <Text style={s.reviewUnit}>{stats!.due}語</Text>
+                        <Text style={s.reviewNumber}>{stats!.due}</Text>
+                        <Text style={s.reviewUnit}>語</Text>
                       </View>
                     </LinearGradient>
                   </TouchableOpacity>
