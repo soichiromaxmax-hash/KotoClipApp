@@ -17,7 +17,8 @@
 
 | 項目 | 値 |
 |---|---|
-| 直近の EAS Build（iOS） | **Build #43**（2026-07-05 実行・App Store Connectへ自動提出済み・Apple処理待ち。Share Extensionの実体不一致修正・言語設定対応を含む） |
+| 直近の EAS Build（iOS） | **Build #43**（2026-07-05 実行。Share Extensionの実体不一致修正・言語設定対応を含む） |
+| App Store 審査 | **2026-07-05 提出済み・審査待ち**（カテゴリ:教育、価格:無料+アプリ内課金、プライバシーポリシー・データ収集申告・年齢制限すべて設定済み） |
 | 次回 EAS Build 時のビルド番号 | **#44**（appVersionSource: remote による自動採番） |
 | RevenueCat（課金機能） | ✅ 設定完了・Sandbox実購入検証済み |
 | OTA チャンネル | production チャンネル ✅ 作成・接続済み |
