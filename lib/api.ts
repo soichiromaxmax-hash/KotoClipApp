@@ -49,6 +49,13 @@ function safeSharedStorageRemove(key: string) {
   }
 }
 
+// Share Extensionは本体アプリの学習言語/母語設定を知らないため、App Group経由で
+// 同期する。未同期の場合はExtension側でサーバーのデフォルト(ja/en)にフォールバックする。
+function syncLangToSharedStorage(nativeLang?: string, targetLang?: string) {
+  if (nativeLang) safeSharedStorageSet('native_lang', nativeLang);
+  if (targetLang) safeSharedStorageSet('target_lang', targetLang);
+}
+
 // Supabaseのリフレッシュトークンは使い切り（ローテーション）方式のため、
 // 複数リクエストが同時に401を受けてそれぞれ独立にリフレッシュすると、
 // 2つ目以降が「既に使われたトークン」で失敗し、最悪トークンファミリーごと
@@ -88,6 +95,18 @@ export function setAuthExpiredHandler(handler: AuthExpiredHandler) {
   onAuthExpired = handler;
 }
 
+// サーバーのHTTPステータス(402の上限到達・429のAI回数上限など)を呼び出し元が
+// 判定できるよう、プレーンなErrorではなくstatusを保持したエラーを投げる。
+export class ApiError extends Error {
+  status: number;
+  detail: string;
+  constructor(status: number, detail: string) {
+    super(detail);
+    this.status = status;
+    this.detail = detail;
+  }
+}
+
 function fetchWithTimeout(url: string, opts: RequestInit, ms: number): Promise<Response> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), ms);
@@ -123,7 +142,7 @@ async function _fetch(path: string, options: RequestInit = {}, timeoutMs = 30000
   if (!res.ok) {
     const errCt = res.headers.get('content-type') ?? '';
     const errBody = errCt.includes('application/json') ? await res.json().catch(() => null) : null;
-    throw new Error(errBody?.detail ?? `HTTP_${res.status}`);
+    throw new ApiError(res.status, errBody?.detail ?? `HTTP_${res.status}`);
   }
   const ct = res.headers.get('content-type') ?? '';
   try {
@@ -172,6 +191,7 @@ export const api = {
 
   async getStoredToken() { return getToken(); },
   syncTokensToSharedStorage,
+  syncLangToSharedStorage,
 
   getStats: async () => {
     const raw = await _fetch('/stats');

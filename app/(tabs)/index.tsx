@@ -282,7 +282,6 @@ export default function HomeScreen() {
                 const lv = computeLevel(xp);
                 const prog = xpProgressPct(xp);
                 const toNext = xpToNextLevel(xp);
-                const stage = kotoStage(lv);
                 return (
                   <View style={s.xpCard}>
                     <View style={s.xpLabelRow}>

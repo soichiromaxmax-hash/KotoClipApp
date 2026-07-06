@@ -24,6 +24,7 @@ import {
   scheduleWeeklySummary,
   cancelWeeklySummary,
   syncNotifications,
+  isSettingOn,
 } from '@/lib/notifications';
 
 const LEARNING_LANGS = [
@@ -67,8 +68,7 @@ function Toggle({ on, onPress }: { on: boolean; onPress: () => void }) {
 }
 
 function isOn(settings: Record<string, any> | null, key: string) {
-  const v = settings?.[key];
-  return v === undefined || v === null || Boolean(v);
+  return isSettingOn(settings?.[key]);
 }
 
 export default function SettingsScreen() {
@@ -87,6 +87,7 @@ export default function SettingsScreen() {
       const data = s && typeof s === 'object' ? s : {};
       setSettings(data);
       syncNotifications(data).catch(() => {});
+      api.syncLangToSharedStorage(data.native_lang, data.target_lang);
     }).catch(() => setSettings({}));
     getPermissionStatus().then(setNotifPerm);
   }, []));
@@ -98,6 +99,8 @@ export default function SettingsScreen() {
       await api.updateSetting(key, value);
       setError('');
       flashSaved();
+      if (key === 'native_lang') api.syncLangToSharedStorage(String(value), undefined);
+      if (key === 'target_lang') api.syncLangToSharedStorage(undefined, String(value));
     } catch (e: any) {
       setSettings((s) => ({ ...(s ?? {}), [key]: prevValue }));
       setError(e.message || '設定の保存に失敗しました');

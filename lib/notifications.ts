@@ -11,6 +11,15 @@ Notifications.setNotificationHandler({
   }),
 });
 
+// 設定値のON/OFF判定を共通化する。バックエンドは設定値を文字列で返すことがあり
+// (例: "0")、Boolean("0") === true になってしまうため、素の Boolean() は使わない。
+// 未設定(undefined/null)はデフォルトON、0/"0"/false/"false"は明示的なOFFとして扱う。
+export function isSettingOn(value: unknown): boolean {
+  if (value === undefined || value === null) return true;
+  if (value === 0 || value === '0' || value === false || value === 'false') return false;
+  return Boolean(value);
+}
+
 export async function requestPermission(): Promise<'granted' | 'denied' | 'undetermined'> {
   if (Platform.OS !== 'ios') return 'granted';
   const { status: existing } = await Notifications.getPermissionsAsync();
@@ -93,12 +102,8 @@ export async function syncNotifications(settings: Record<string, any>) {
   const perm = await getPermissionStatus();
   if (perm !== 'granted') return;
 
-  const dailyOn = settings.notification_daily_enabled === undefined
-    || settings.notification_daily_enabled === null
-    || Boolean(settings.notification_daily_enabled);
-  const weeklyOn = settings.notification_weekly_enabled === undefined
-    || settings.notification_weekly_enabled === null
-    || Boolean(settings.notification_weekly_enabled);
+  const dailyOn = isSettingOn(settings.notification_daily_enabled);
+  const weeklyOn = isSettingOn(settings.notification_weekly_enabled);
 
   if (dailyOn) {
     await scheduleDailyReminder(settings.notification_daily_time || '08:00');

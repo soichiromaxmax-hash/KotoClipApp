@@ -10,7 +10,7 @@ import {
   Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { api } from '@/lib/api';
 import { KotoBird } from '@/components/KotoBird';
 import { resetHomeCache } from '@/lib/homeCache';
@@ -394,25 +394,12 @@ export default function StudyScreen() {
     } else {
       setMode(target); // mode が変われば下の useEffect が loadQueue を呼ぶ
     }
-  }, [tParam, modeParam]);
+  }, [tParam, modeParam, mode, loadQueue]);
 
   // modeBar から直接切り替えたときのロード
   useEffect(() => {
     loadQueue(mode);
   }, [mode, loadQueue]);
-
-  function applyResult(isCorrect: boolean, correctAnswer: string) {
-    if (isCorrect) {
-      correctRef.current += 1;
-      setCorrect((c) => c + 1);
-      setFeedback({ correct: true, msg: '正解！ 次回はもっと後に出てきます。' });
-    } else {
-      wrongRef.current += 1;
-      setWrong((w) => w + 1);
-      setFeedback({ correct: false, msg: `不正解… 正解: ${correctAnswer}。もう一度出てきます。` });
-    }
-    setPhase('feedback');
-  }
 
   async function onAnswer(_rawRating: 'good' | 'again', isCorrect: boolean) {
     const word = queue[idx];
@@ -480,10 +467,9 @@ export default function StudyScreen() {
     if (!saveError) return;
     try {
       await api.postReview(saveError.wordId, saveError.rating, saveError.elapsed);
-      const { isCorrect, correctAnswer } = saveError;
+      // 正解/不正解のカウントとフィードバック表示は onAnswer で既に済んでいる。
+      // ここでは保存状態を解決するだけ（applyResultを呼ぶと二重カウントになる）。
       setSaveError(null);
-      // リトライ時はXP表示なしで通常フィードバック
-      applyResult(isCorrect, correctAnswer);
     } catch {
       // still failing — keep showing the error
     }
@@ -491,9 +477,7 @@ export default function StudyScreen() {
 
   function skipSaveError() {
     if (!saveError) return;
-    const { isCorrect, correctAnswer } = saveError;
     setSaveError(null);
-    applyResult(isCorrect, correctAnswer);
   }
 
   function confirmDeleteWord() {

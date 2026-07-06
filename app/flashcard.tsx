@@ -19,6 +19,7 @@ interface Word {
   meaning: string;
   context?: string;
   ai_explanation?: string;
+  last_reviewed?: string;
 }
 
 type Direction = 'en_ja' | 'ja_en';
@@ -143,7 +144,6 @@ export default function FlashcardScreen() {
   const [done, setDone] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [direction, setDirection] = useState<Direction>('en_ja');
-  const startTime = useRef(Date.now());
   const sessionWords = useRef<Word[]>([]);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -171,12 +171,10 @@ export default function FlashcardScreen() {
     setIdx(0);
     setRatings({ good: 0, hard: 0, again: 0 });
     setDone(false);
-    startTime.current = Date.now();
   }
 
   function advanceQueue(rating: Rating) {
     setRatings((r) => ({ ...r, [rating]: (r[rating] ?? 0) + 1 }));
-    startTime.current = Date.now();
     if (idx + 1 >= queue.length) setDone(true);
     else setIdx((i) => i + 1);
   }
@@ -193,7 +191,12 @@ export default function FlashcardScreen() {
 
   function onRate(rating: Rating) {
     const word = queue[idx];
-    const elapsed = Math.max(1, Math.round(((Date.now() - startTime.current) / 1000 / 86400) * 10) / 10);
+    // カード表示からの経過時間ではなく、前回復習日時からの実際の経過日数を使う
+    // （study.tsxと同じ方式）。FSRSの忘却曲線計算に必要なのは後者。
+    const lastReviewed = word.last_reviewed ?? null;
+    const elapsed = lastReviewed
+      ? Math.max(0.1, Math.round((Date.now() - new Date(lastReviewed).getTime()) / 86400000 * 10) / 10)
+      : 1.0;
     advanceQueue(rating); // 即座に次のカードへ
     api.postReview(word.id, rating, elapsed).catch(() => {
       // バックグラウンド保存失敗は無視（フラッシュカードは任意学習）

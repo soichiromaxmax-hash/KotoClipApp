@@ -99,10 +99,18 @@ export default function PaywallScreen() {
     try {
       const info = await purchasePackage(pkg);
       if (isPremiumActive(info)) {
-        await waitForPlanSync();
-        Alert.alert('ありがとうございます！', 'プレミアムが有効になりました。', [
-          { text: 'OK', onPress: () => router.back() },
-        ]);
+        const synced = await waitForPlanSync();
+        if (synced) {
+          Alert.alert('ありがとうございます！', 'プレミアムが有効になりました。', [
+            { text: 'OK', onPress: () => router.back() },
+          ]);
+        } else {
+          Alert.alert(
+            '購入は完了しました',
+            '反映まで少し時間がかかっています。少し待ってからアプリを再起動してご確認ください。',
+            [{ text: 'OK', onPress: () => router.back() }]
+          );
+        }
       }
     } catch (e: any) {
       if (!e?.userCancelled) {
@@ -118,10 +126,18 @@ export default function PaywallScreen() {
     try {
       const info = await restorePurchases();
       if (isPremiumActive(info)) {
-        await waitForPlanSync();
-        Alert.alert('復元しました', 'プレミアムが有効になりました。', [
-          { text: 'OK', onPress: () => router.back() },
-        ]);
+        const synced = await waitForPlanSync();
+        if (synced) {
+          Alert.alert('復元しました', 'プレミアムが有効になりました。', [
+            { text: 'OK', onPress: () => router.back() },
+          ]);
+        } else {
+          Alert.alert(
+            '復元しました',
+            '反映まで少し時間がかかっています。少し待ってからアプリを再起動してご確認ください。',
+            [{ text: 'OK', onPress: () => router.back() }]
+          );
+        }
       } else {
         Alert.alert('購入履歴が見つかりません', '以前ご購入のアカウントでログインしているか確認してください。');
       }
