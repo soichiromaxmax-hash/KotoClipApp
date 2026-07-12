@@ -209,6 +209,31 @@ export const api = {
     await clearTokens();
   },
 
+  async anonymousLogin() {
+    const res = await fetch(`${BASE}/auth/anonymous`, { method: 'POST' });
+    const ct = res.headers.get('content-type') ?? '';
+    const data = ct.includes('application/json') ? await res.json().catch(() => null) : null;
+    if (!res.ok) throw new Error(data?.detail ?? '匿名ログインに失敗しました');
+    await saveTokens(data.access_token, data.refresh_token ?? '');
+    if (data?.user_id) await AsyncStorage.setItem('user_id', data.user_id).catch(() => {});
+    return data as { user_id: string; access_token: string; refresh_token: string };
+  },
+
+  async upgradeAccount(email: string, password: string) {
+    const data = await _fetch('/auth/upgrade', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    });
+    // Supabaseはemail/password変更時に匿名セッションのトークンを即失効させるため、
+    // /auth/upgrade が発行し直した新トークンで必ず上書きする（失効済みトークンを
+    // 使い続けると次のAPI呼び出しで401→ログアウトに落ちてしまう）。
+    if (data.access_token) await saveTokens(data.access_token, data.refresh_token ?? '');
+    await AsyncStorage.setItem('user_email', email).catch(() => {});
+    return data as { status: string; user_id: string; access_token: string; refresh_token: string };
+  },
+
+  getMe: () => _fetch('/auth/me') as Promise<{ user_id: string; email: string | null; is_anonymous: boolean }>,
+
   async getStoredToken() { return getToken(); },
   syncTokensToSharedStorage,
   syncLangToSharedStorage,

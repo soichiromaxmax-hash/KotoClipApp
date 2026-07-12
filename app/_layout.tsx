@@ -41,8 +41,10 @@ function RootLayoutNav() {
 
     if (state === 'unauthenticated' && !inAuth) {
       router.replace('/auth/login' as any);
-    } else if (state === 'authenticated' && inAuth) {
-      router.replace('/(tabs)' as any);
+      // 匿名アカウントは常に authenticated 扱いのため、ここでの
+      // 「authenticated && inAuth → tabsへ強制送還」は行わない。
+      // 設定画面から匿名ユーザーが /auth/login を任意に開けるようにするため。
+      // ログイン/新規登録成功後の画面遷移は login.tsx 側で明示的に行う。
     } else if (state === 'authenticated' && !inAuth && !onboardingChecked.current) {
       onboardingChecked.current = true;
       hasSeenOnboarding().then((seen) => {
@@ -60,6 +62,7 @@ function RootLayoutNav() {
         <Stack.Screen name="flashcard" />
         <Stack.Screen name="how-to" />
         <Stack.Screen name="paywall" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="upgrade" options={{ presentation: 'modal' }} />
       </Stack>
       <StatusBar style="light" />
       <Onboarding

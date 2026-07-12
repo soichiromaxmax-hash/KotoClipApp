@@ -81,6 +81,7 @@ export default function SettingsScreen() {
   const [showLearningLangPicker, setShowLearningLangPicker] = useState(false);
   const [showNativeLangPicker, setShowNativeLangPicker] = useState(false);
   const [notifPerm, setNotifPerm] = useState<'granted' | 'denied' | 'undetermined' | null>(null);
+  const [me, setMe] = useState<{ email: string | null; is_anonymous: boolean } | null>(null);
 
   useFocusEffect(useCallback(() => {
     api.getSettings().then((s) => {
@@ -90,6 +91,7 @@ export default function SettingsScreen() {
       api.syncLangToSharedStorage(data.native_lang, data.target_lang);
     }).catch(() => setSettings({}));
     getPermissionStatus().then(setNotifPerm);
+    api.getMe().then(setMe).catch(() => {});
   }, []));
 
   async function saveSetting(key: string, value: string | number) {
@@ -338,6 +340,33 @@ export default function SettingsScreen() {
 
         {saved && (
           <Text style={s.savedText}>保存しました</Text>
+        )}
+
+        {/* アカウント */}
+        {me && (
+          <View style={s.accountSection}>
+            {me.is_anonymous ? (
+              <>
+                <TouchableOpacity
+                  style={s.accountBtn}
+                  onPress={() => router.push('/upgrade' as any)}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons name="shield-checkmark-outline" size={16} color="#2DD4BF" />
+                  <Text style={s.accountBtnText}>データを保護するためアカウントを作成</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => router.push('/auth/login' as any)}
+                  activeOpacity={0.7}
+                  style={{ marginTop: 10 }}
+                >
+                  <Text style={s.accountLoginLink}>すでにアカウントをお持ちの方はこちら</Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <Text style={s.accountEmail}>{me.email}</Text>
+            )}
+          </View>
         )}
 
         {/* ログアウト */}
@@ -679,6 +708,28 @@ const s = StyleSheet.create({
   },
 
   // ログアウト
+  accountSection: {
+    marginHorizontal: 16,
+    marginTop: 28,
+    paddingTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.08)',
+  },
+  accountBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(45,212,191,0.07)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(45,212,191,0.18)',
+    paddingVertical: 14,
+  },
+  accountBtnText: { color: '#2DD4BF', fontWeight: '600', fontSize: 14 },
+  accountLoginLink: { color: '#6B7280', fontSize: 13, textAlign: 'center' },
+  accountEmail: { color: '#8F99A8', fontSize: 13, textAlign: 'center' },
+
   logoutSection: {
     marginHorizontal: 16,
     marginTop: 28,

@@ -11,6 +11,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
 import { useAuth } from '@/context/auth';
 import { KotoBird } from '@/components/KotoBird';
 
@@ -18,6 +19,7 @@ type Mode = 'login' | 'signup';
 
 export default function LoginScreen() {
   const { login, signup } = useAuth();
+  const router = useRouter();
   const [mode, setMode] = useState<Mode>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -36,9 +38,14 @@ export default function LoginScreen() {
     try {
       if (mode === 'login') {
         await login(email.trim(), password);
+        router.replace('/(tabs)' as any);
       } else {
-        await signup(email.trim(), password);
-        setError('確認メールを送信しました。メールのリンクをクリックして有効化してください。');
+        const authenticated = await signup(email.trim(), password);
+        if (authenticated) {
+          router.replace('/(tabs)' as any);
+        } else {
+          setError('確認メールを送信しました。メールのリンクをクリックして有効化してください。');
+        }
       }
     } catch (e: any) {
       setError(e?.message ?? '操作に失敗しました');

@@ -8,6 +8,7 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
+  Linking,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -280,6 +281,16 @@ export default function PaywallScreen() {
           サブスクリプションはApp Storeアカウントに請求されます。{'\n'}
           次の更新日の24時間前までにキャンセルしない限り、自動更新されます。
         </Text>
+
+        <View style={s.legalLinks}>
+          <TouchableOpacity onPress={() => Linking.openURL('https://kotoclip.onrender.com/privacy')} activeOpacity={0.7}>
+            <Text style={s.legalLink}>プライバシーポリシー</Text>
+          </TouchableOpacity>
+          <Text style={s.footerDot}>·</Text>
+          <TouchableOpacity onPress={() => Linking.openURL('https://www.apple.com/legal/internet-services/itunes/dev/stdeula/')} activeOpacity={0.7}>
+            <Text style={s.legalLink}>利用規約</Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -385,4 +396,7 @@ const s = StyleSheet.create({
   footerDot: { color: '#374151', fontSize: 13 },
 
   legal: { color: '#374151', fontSize: 10, textAlign: 'center', lineHeight: 16 },
+
+  legalLinks: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 12, marginTop: 12 },
+  legalLink: { color: '#6B7280', fontSize: 11, textDecorationLine: 'underline' },
 });
