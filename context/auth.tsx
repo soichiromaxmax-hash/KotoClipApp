@@ -18,6 +18,20 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AuthState>('loading');
 
+  // トークンが無い（初回起動）場合と、保存済みトークンが期限切れ・無効化された場合の
+  // どちらでも、ログイン画面を挟まず匿名ユーザーを自動発行してアプリを使い続けられる
+  // ようにする（App Store Guideline 5.1.1(v) 対応）。ネットワーク不通など匿名ログイン
+  // 自体に失敗した場合のみ、既存のログイン/新規登録画面をフォールバックとして表示する。
+  async function startAnonymousSession() {
+    try {
+      const data = await api.anonymousLogin();
+      loginRevenueCat(data.user_id).catch(() => {});
+      setState('authenticated');
+    } catch {
+      setState('unauthenticated');
+    }
+  }
+
   useEffect(() => {
     api.getStoredToken().then(async (token) => {
       if (token) {
@@ -25,22 +39,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setState('authenticated');
         return;
       }
-      // トークンが無い = 初回起動。ログイン画面を挟まず、匿名ユーザーを
-      // 自動発行して即アプリを使えるようにする（App Store Guideline 5.1.1(v) 対応）。
-      try {
-        const data = await api.anonymousLogin();
-        loginRevenueCat(data.user_id).catch(() => {});
-        setState('authenticated');
-      } catch {
-        // ネットワーク不通など匿名ログイン自体に失敗した場合のみ、
-        // 既存のログイン/新規登録画面をフォールバックとして表示する。
-        setState('unauthenticated');
-      }
+      await startAnonymousSession();
     }).catch(() => {
       setState('unauthenticated');
     });
 
-    setAuthExpiredHandler(() => { resetHomeCache(); setState('unauthenticated'); });
+    setAuthExpiredHandler(() => {
+      resetHomeCache();
+      startAnonymousSession();
+    });
   }, []);
 
   async function login(email: string, password: string) {
