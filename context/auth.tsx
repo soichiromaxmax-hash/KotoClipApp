@@ -11,6 +11,9 @@ interface AuthContextValue {
   signup: (email: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
   upgrade: (email: string, password: string) => Promise<void>;
+  continueAsGuest: () => Promise<void>;
+  loginOrMerge: (email: string, password: string) => Promise<void>;
+  signupOrUpgrade: (email: string, password: string) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -18,11 +21,12 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AuthState>('loading');
 
-  // トークンが無い（初回起動）場合と、保存済みトークンが期限切れ・無効化された場合の
-  // どちらでも、ログイン画面を挟まず匿名ユーザーを自動発行してアプリを使い続けられる
-  // ようにする（App Store Guideline 5.1.1(v) 対応）。ネットワーク不通など匿名ログイン
-  // 自体に失敗した場合のみ、既存のログイン/新規登録画面をフォールバックとして表示する。
-  async function startAnonymousSession() {
+  // 保存済みトークンが期限切れ・無効化された場合、ログイン画面に落とさず匿名
+  // ユーザーを自動発行してアプリを使い続けられるようにする（一度ログイン/ゲスト
+  // 選択を終えたユーザーに再度選択画面を強制しないための復旧専用ルート）。
+  // ネットワーク不通など匿名ログイン自体に失敗した場合のみ、既存のログイン/
+  // 新規登録画面をフォールバックとして表示する。
+  async function recoverWithAnonymousSession() {
     try {
       const data = await api.anonymousLogin();
       loginRevenueCat(data.user_id).catch(() => {});
@@ -39,14 +43,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setState('authenticated');
         return;
       }
-      await startAnonymousSession();
+      // トークンが無い = 初回起動。ログイン/新規登録/ゲスト利用を選べる
+      // ログイン画面を表示する（App Store Guideline 5.1.1(v) 対応: ゲスト利用が
+      // 常に選べるので登録必須にはならない）。
+      setState('unauthenticated');
     }).catch(() => {
       setState('unauthenticated');
     });
 
     setAuthExpiredHandler(() => {
       resetHomeCache();
-      startAnonymousSession();
+      recoverWithAnonymousSession();
     });
   }, []);
 
@@ -80,8 +87,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // user_id は不変なので state・RevenueCatのログイン状態はそのまま変わらない
   }
 
+  async function continueAsGuest() {
+    const data = await api.anonymousLogin();
+    loginRevenueCat(data.user_id).catch(() => {});
+    setState('authenticated');
+  }
+
+  // ブラウザ拡張機能/PC用Webアプリはメール+パスワードのみでログインするため、
+  // スマホで匿名のまま使っていたユーザーが既存アカウントにログインしようとする
+  // 場合、単純に置き換えるとその匿名アカウントのデータが繋がらなくなる。
+  // 現在のユーザーが匿名なら「ログイン」ではなく「統合(merge)」を行う。
+  async function loginOrMerge(email: string, password: string) {
+    const me = await api.getMe().catch(() => null);
+    if (me?.is_anonymous) {
+      const data = await api.mergeAccount(email, password);
+      if (data.user_id) loginRevenueCat(data.user_id).catch(() => {});
+      setState('authenticated');
+    } else {
+      await login(email, password);
+    }
+  }
+
+  // 同様に「新規登録」も、現在匿名ならデータを引き継ぐupgradeを使う。
+  async function signupOrUpgrade(email: string, password: string): Promise<boolean> {
+    const me = await api.getMe().catch(() => null);
+    if (me?.is_anonymous) {
+      await upgrade(email, password);
+      return true;
+    }
+    return signup(email, password);
+  }
+
   return (
-    <AuthContext.Provider value={{ state, login, signup, logout, upgrade }}>
+    <AuthContext.Provider
+      value={{ state, login, signup, logout, upgrade, continueAsGuest, loginOrMerge, signupOrUpgrade }}
+    >
       {children}
     </AuthContext.Provider>
   );

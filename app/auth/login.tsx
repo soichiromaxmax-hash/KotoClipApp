@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -13,18 +13,28 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/context/auth';
+import { api } from '@/lib/api';
 import { KotoBird } from '@/components/KotoBird';
 
 type Mode = 'login' | 'signup';
 
 export default function LoginScreen() {
-  const { login, signup } = useAuth();
+  const { loginOrMerge, signupOrUpgrade, continueAsGuest } = useAuth();
   const router = useRouter();
   const [mode, setMode] = useState<Mode>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [guestLoading, setGuestLoading] = useState(false);
   const [error, setError] = useState('');
+  const [hasAnonymousData, setHasAnonymousData] = useState(false);
+
+  useEffect(() => {
+    // 既に匿名セッションでデータを持っている状態でこの画面に来た場合
+    // （設定画面からの「アカウントを作成/ログイン」導線など）、
+    // ログイン/登録するとそのデータが引き継がれる旨を案内する。
+    api.getMe().then((me) => setHasAnonymousData(!!me.is_anonymous)).catch(() => {});
+  }, []);
 
   function switchMode(next: Mode) {
     setMode(next);
@@ -37,10 +47,10 @@ export default function LoginScreen() {
     setError('');
     try {
       if (mode === 'login') {
-        await login(email.trim(), password);
+        await loginOrMerge(email.trim(), password);
         router.replace('/(tabs)' as any);
       } else {
-        const authenticated = await signup(email.trim(), password);
+        const authenticated = await signupOrUpgrade(email.trim(), password);
         if (authenticated) {
           router.replace('/(tabs)' as any);
         } else {
@@ -51,6 +61,20 @@ export default function LoginScreen() {
       setError(e?.message ?? '操作に失敗しました');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleGuest() {
+    if (guestLoading) return;
+    setGuestLoading(true);
+    setError('');
+    try {
+      await continueAsGuest();
+      router.replace('/(tabs)' as any);
+    } catch (e: any) {
+      setError(e?.message ?? 'ログインなしでの利用開始に失敗しました');
+    } finally {
+      setGuestLoading(false);
     }
   }
 
@@ -128,6 +152,14 @@ export default function LoginScreen() {
               </View>
             )}
 
+            {!error && hasAnonymousData && (
+              <View style={[s.msg, s.msgInfo]}>
+                <Text style={[s.msgText, s.msgTextInfo]}>
+                  今保存されている単語・学習履歴は、ログイン/登録すると自動的に引き継がれます。
+                </Text>
+              </View>
+            )}
+
             {/* 入力 */}
             <TextInput
               style={s.input}
@@ -160,6 +192,22 @@ export default function LoginScreen() {
               }
             </TouchableOpacity>
           </View>
+
+          {/* ゲスト利用 */}
+          <TouchableOpacity
+            style={s.guestBtn}
+            onPress={handleGuest}
+            disabled={guestLoading}
+            activeOpacity={0.7}
+          >
+            {guestLoading
+              ? <ActivityIndicator color="#8F99A8" />
+              : <Text style={s.guestBtnText}>ログインなしで使用してみる</Text>
+            }
+          </TouchableOpacity>
+          <Text style={s.guestHint}>
+            パソコンのブラウザ拡張機能など、他の端末と連携するにはアカウント作成が必要です
+          </Text>
         </ScrollView>
       </KeyboardAvoidingView>
     </LinearGradient>
@@ -356,5 +404,26 @@ const s = StyleSheet.create({
     fontWeight: '500',
     fontSize: 15,
     letterSpacing: -0.1,
+  },
+
+  // ゲスト利用
+  guestBtn: {
+    marginTop: 18,
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  guestBtnText: {
+    color: '#8F99A8',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  guestHint: {
+    color: '#4B5563',
+    fontSize: 11,
+    textAlign: 'center',
+    lineHeight: 16,
+    maxWidth: 300,
+    alignSelf: 'center',
+    marginTop: -6,
   },
 });

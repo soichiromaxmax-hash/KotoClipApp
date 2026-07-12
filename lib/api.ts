@@ -234,6 +234,17 @@ export const api = {
 
   getMe: () => _fetch('/auth/me') as Promise<{ user_id: string; email: string | null; is_anonymous: boolean }>,
 
+  async mergeAccount(email: string, password: string) {
+    const data = await _fetch('/auth/merge', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    });
+    // upgradeAccount同様、統合先アカウントの新トークンで必ず上書きする。
+    if (data.access_token) await saveTokens(data.access_token, data.refresh_token ?? '');
+    await AsyncStorage.setItem('user_email', email).catch(() => {});
+    return data as { status: string; user_id: string; access_token: string; refresh_token: string };
+  },
+
   async getStoredToken() { return getToken(); },
   syncTokensToSharedStorage,
   syncLangToSharedStorage,
