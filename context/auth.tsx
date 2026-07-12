@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { api, setAuthExpiredHandler } from '@/lib/api';
 import { resetHomeCache } from '@/lib/homeCache';
-import { loginRevenueCat, logoutRevenueCat } from '@/lib/purchases';
+import { loginRevenueCat, logoutRevenueCat, restorePurchases } from '@/lib/purchases';
 
 type AuthState = 'loading' | 'authenticated' | 'unauthenticated';
 
@@ -101,7 +101,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const me = await api.getMe().catch(() => null);
     if (me?.is_anonymous) {
       const data = await api.mergeAccount(email, password);
-      if (data.user_id) loginRevenueCat(data.user_id).catch(() => {});
+      if (data.user_id) {
+        await loginRevenueCat(data.user_id).catch(() => {});
+        // 匿名のまま課金していた場合、購入自体はApple ID(デバイス)に紐づいて
+        // 残っているため、ログイン先アカウントに復元して引き継ぐ。何も購入して
+        // いなければ何も起きない。失敗してもペイウォールの「購入を復元」で
+        // 手動リカバリできるため、ここではエラーを無視する。
+        restorePurchases().catch(() => {});
+      }
       setState('authenticated');
     } else {
       await login(email, password);

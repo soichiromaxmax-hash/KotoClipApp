@@ -64,9 +64,11 @@ export default function PaywallScreen() {
   const [yearly, setYearly] = useState<PurchasesPackage | null>(null);
   const [selected, setSelected] = useState<'monthly' | 'yearly'>('yearly');
   const [error, setError] = useState('');
+  const [isAnonymous, setIsAnonymous] = useState(false);
 
   useEffect(() => {
     loadOfferings();
+    api.getMe().then((me) => setIsAnonymous(!!me.is_anonymous)).catch(() => {});
   }, []);
 
   async function loadOfferings() {
@@ -179,6 +181,20 @@ export default function PaywallScreen() {
           <Text style={s.title}>KotoClip Premium</Text>
           <Text style={s.subtitle}>単語もAI検索も、上限を気にせず使い放題</Text>
         </View>
+
+        {/* 匿名利用中の案内 */}
+        {isAnonymous && (
+          <TouchableOpacity
+            style={s.guestNotice}
+            onPress={() => router.push('/upgrade' as any)}
+            activeOpacity={0.8}
+          >
+            <Text style={s.guestNoticeText}>
+              ログインなしでの購入も可能ですが、機種変更・再インストール時に購入情報を失わないよう、先にアカウントを作成することをおすすめします。
+            </Text>
+            <Text style={s.guestNoticeLink}>アカウントを作成する →</Text>
+          </TouchableOpacity>
+        )}
 
         {/* 機能リスト */}
         <View style={s.features}>
@@ -312,6 +328,18 @@ const s = StyleSheet.create({
   hero: { alignItems: 'center', paddingTop: 60, paddingBottom: 24, gap: 10 },
   title: { fontSize: 26, fontWeight: '700', color: '#F9FAFB', letterSpacing: -0.5 },
   subtitle: { fontSize: 14, color: '#8F99A8' },
+
+  guestNotice: {
+    backgroundColor: 'rgba(245,184,75,0.08)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(245,184,75,0.22)',
+    padding: 12,
+    marginBottom: 16,
+    gap: 6,
+  },
+  guestNoticeText: { color: '#E9EDF2', fontSize: 12, lineHeight: 18 },
+  guestNoticeLink: { color: '#F5B84B', fontSize: 12, fontWeight: '700' },
 
   features: {
     backgroundColor: 'rgba(21,26,34,0.9)',
