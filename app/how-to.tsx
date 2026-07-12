@@ -316,7 +316,7 @@ export default function HowToScreen() {
         ) : (
           <>
             <View style={s.banner}>
-              <Text style={s.bannerText}>💻 PCで単語を保存するには、ブラウザ拡張機能のインストールが必要です。</Text>
+              <Text style={s.bannerText}>💻 PCで単語を保存するには、ブラウザ拡張機能のインストールに加えて、アカウントの作成とログインが必要です。「ログインなしで使用してみる」のままでは連携できません。</Text>
             </View>
             <GuideBlock
               title="拡張機能を入れて保存する"
