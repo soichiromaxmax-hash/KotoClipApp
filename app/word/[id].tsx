@@ -113,8 +113,10 @@ export default function WordDetailScreen() {
       } else {
         setRetranslateError(res?.detail || 'AI再翻訳に失敗しました');
       }
-    } catch {
-      setRetranslateError('AI再翻訳に失敗しました');
+    } catch (e: any) {
+      setRetranslateError(
+        e?.status === 429 ? '無料プランのAI利用回数上限です。Premiumで増やせます。' : 'AI再翻訳に失敗しました'
+      );
     } finally {
       setRetranslating(false);
     }

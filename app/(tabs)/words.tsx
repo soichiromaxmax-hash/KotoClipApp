@@ -20,13 +20,20 @@ interface Word {
   meaning: string;
   part_of_speech?: string;
   reps?: number;
-  is_favorite?: number | boolean;
+  is_favorite?: number | boolean | string;
   correct_count?: number;
   wrong_count?: number;
 }
 
 type FilterKey = 'all' | 'new' | 'learning' | 'mastered' | 'favorites';
 type SortKey = 'created_desc' | 'alpha' | 'reps_desc';
+
+// バックエンドが is_favorite を文字列で返すことがあり("0"等)、素の Boolean() だと
+// Boolean("0") === true になってしまうため正規化する。未設定は未お気に入り扱い。
+function isFavorite(value: Word['is_favorite']): boolean {
+  if (value === 0 || value === '0' || value === false || value === 'false' || value == null) return false;
+  return Boolean(value);
+}
 
 function masteryInfo(reps: number) {
   if (reps >= 5) return { label: '定着済み', color: '#22C55E', dots: 5 };
@@ -98,7 +105,7 @@ export default function WordsScreen() {
 
   async function toggleFavorite(w: Word) {
     if (busyIds[w.id]) return;
-    const next = w.is_favorite ? 0 : 1;
+    const next = isFavorite(w.is_favorite) ? 0 : 1;
     setBusyIds((b) => ({ ...b, [w.id]: true }));
     setWords((prev) => prev.map((x) => x.id === w.id ? { ...x, is_favorite: next } : x));
     try {
@@ -113,7 +120,7 @@ export default function WordsScreen() {
   const q = search.trim().toLowerCase();
   const filtered = words.filter((w) => {
     if (q && !w.word.toLowerCase().includes(q) && !(w.meaning ?? '').toLowerCase().includes(q)) return false;
-    if (filter === 'favorites') return Boolean(w.is_favorite);
+    if (filter === 'favorites') return isFavorite(w.is_favorite);
     if (filter === 'mastered')  return (w.reps ?? 0) >= 5;
     if (filter === 'learning')  return (w.reps ?? 0) >= 1 && (w.reps ?? 0) < 5;
     if (filter === 'new')       return (w.reps ?? 0) === 0;
@@ -163,7 +170,7 @@ export default function WordsScreen() {
             disabled={busyIds[w.id]}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Text style={[styles.star, Boolean(w.is_favorite) && styles.starActive]}>★</Text>
+            <Text style={[styles.star, isFavorite(w.is_favorite) && styles.starActive]}>★</Text>
           </TouchableOpacity>
         </View>
       </TouchableOpacity>

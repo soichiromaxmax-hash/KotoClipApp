@@ -228,6 +228,7 @@ export const api = {
     // /auth/upgrade が発行し直した新トークンで必ず上書きする（失効済みトークンを
     // 使い続けると次のAPI呼び出しで401→ログアウトに落ちてしまう）。
     if (data.access_token) await saveTokens(data.access_token, data.refresh_token ?? '');
+    if (data?.user_id) await AsyncStorage.setItem('user_id', data.user_id).catch(() => {});
     await AsyncStorage.setItem('user_email', email).catch(() => {});
     return data as { status: string; user_id: string; access_token: string; refresh_token: string };
   },
@@ -241,6 +242,7 @@ export const api = {
     });
     // upgradeAccount同様、統合先アカウントの新トークンで必ず上書きする。
     if (data.access_token) await saveTokens(data.access_token, data.refresh_token ?? '');
+    if (data?.user_id) await AsyncStorage.setItem('user_id', data.user_id).catch(() => {});
     await AsyncStorage.setItem('user_email', email).catch(() => {});
     return data as { status: string; user_id: string; access_token: string; refresh_token: string };
   },

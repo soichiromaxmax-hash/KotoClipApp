@@ -71,8 +71,12 @@ export default function AddWordScreen() {
       } else {
         setStatus({ type: 'error', msg: '翻訳結果が取得できませんでした' });
       }
-    } catch {
-      setStatus({ type: 'error', msg: '翻訳に失敗しました' });
+    } catch (e: any) {
+      if (e?.status === 429) {
+        setStatus({ type: 'error', msg: '無料プランのAI利用回数上限です。Premiumで増やせます。' });
+      } else {
+        setStatus({ type: 'error', msg: '翻訳に失敗しました' });
+      }
     } finally {
       setLoading(false);
     }

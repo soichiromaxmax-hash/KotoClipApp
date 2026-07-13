@@ -225,7 +225,7 @@ export default function SettingsScreen() {
                   ? { width: '100%' as any, backgroundColor: '#2DD4BF' }
                   : {
                       width: `${Math.min(((settings.word_count ?? 0) / (settings.word_limit ?? 50)) * 100, 100)}%` as any,
-                      backgroundColor: (settings.word_count ?? 0) >= (settings.word_limit ?? 50) ? '#EF4444' : (settings.word_count ?? 0) >= 80 ? '#F59E0B' : '#2DD4BF',
+                      backgroundColor: (settings.word_count ?? 0) >= (settings.word_limit ?? 50) ? '#EF4444' : (settings.word_count ?? 0) >= (settings.word_limit ?? 50) * 0.8 ? '#F59E0B' : '#2DD4BF',
                     },
               ]} />
             </View>

@@ -102,7 +102,7 @@ function IllusSavedToast() {
     <View style={il.frame}>
       <View style={il.toast}>
         <Ionicons name="checkmark-circle" size={16} color={BG} />
-        <Text style={il.toastText}>訳・文脈・保存元つきで保存しました</Text>
+        <Text style={il.toastText}>訳・文脈つきで保存しました</Text>
       </View>
       <Text style={il.hint}>自動的に単語帳へ追加されます</Text>
     </View>
@@ -246,7 +246,7 @@ const PHONE_STEPS: StepDef[] = [
     illus: <IllusAppListScroll />,
   },
   {
-    text: 'KotoClipをタップすると、訳・文脈・保存元のURLが自動でついて単語帳に保存されます。',
+    text: 'KotoClipをタップすると、訳・文脈が自動でついて単語帳に保存されます。',
     illus: <IllusSavedToast />,
   },
 ];
@@ -310,7 +310,7 @@ export default function HowToScreen() {
         {tab === 'phone' ? (
           <GuideBlock
             title="単語を選んで共有するだけ"
-            copy="文章中の英単語を選択して、共有メニューからKotoClipを選ぶと、訳・文脈・保存元つきで自動的に単語帳へ保存されます。"
+            copy="文章中の英単語を選択して、共有メニューからKotoClipを選ぶと、訳・文脈つきで自動的に単語帳へ保存されます。"
             steps={PHONE_STEPS}
           />
         ) : (
