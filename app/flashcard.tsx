@@ -10,8 +10,11 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api } from '@/lib/api';
 import { KotoBird } from '@/components/KotoBird';
+
+const DIRECTION_KEY = 'koto_flashcard_direction_v1';
 
 interface Word {
   id: number;
@@ -144,10 +147,21 @@ export default function FlashcardScreen() {
   const [done, setDone] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [direction, setDirection] = useState<Direction>('en_ja');
+  const [started, setStarted] = useState(false);
   const sessionWords = useRef<Word[]>([]);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    AsyncStorage.getItem(DIRECTION_KEY).then((saved) => {
+      if (saved === 'en_ja' || saved === 'ja_en') setDirection(saved);
+    }).catch(() => {});
+  }, []);
+
+  function handleStart(d: Direction) {
+    setDirection(d);
+    AsyncStorage.setItem(DIRECTION_KEY, d).catch(() => {});
+    setStarted(true);
+    load();
+  }
 
   async function load() {
     try {
@@ -237,6 +251,26 @@ export default function FlashcardScreen() {
   }
 
   const pct = queue.length > 0 ? (idx / queue.length) * 100 : 0;
+
+  // 方向選択（開始前）
+  if (!started) {
+    return (
+      <SafeAreaView style={s.root}>
+        <View style={s.centered}>
+          <KotoBird size={82} />
+          <Text style={s.emptyTitle}>どちら向きで復習しますか？</Text>
+          <TouchableOpacity style={s.primaryBtn} onPress={() => handleStart('en_ja')} activeOpacity={0.85}>
+            <Text style={s.primaryBtnText}>英 → 日</Text>
+            <Text style={s.selectBtnSub}>単語を見て意味を答える</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={s.secondaryBtn} onPress={() => handleStart('ja_en')} activeOpacity={0.85}>
+            <Text style={s.secondaryBtnText}>日 → 英</Text>
+            <Text style={[s.selectBtnSub, { color: '#2DD4BF' }]}>意味を見て単語を答える</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   // ローディング
   if (!allLoaded) {
@@ -472,6 +506,7 @@ const s = StyleSheet.create({
     width: '100%',
   },
   secondaryBtnText: { color: '#2DD4BF', fontWeight: '700', fontSize: 16 },
+  selectBtnSub: { color: '#0E1116', fontSize: 12, marginTop: 2, opacity: 0.7 },
 
   deleteWordBtn: {
     paddingVertical: 10,
