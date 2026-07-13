@@ -190,7 +190,7 @@ export default function PaywallScreen() {
             activeOpacity={0.8}
           >
             <Text style={s.guestNoticeText}>
-              ログインなしでの購入も可能ですが、機種変更・再インストール時に購入情報を失わないよう、先にアカウントを作成することをおすすめします。
+              アカウントを作成すると、単語データも購入情報も引き継げます
             </Text>
             <Text style={s.guestNoticeLink}>アカウントを作成する →</Text>
           </TouchableOpacity>
