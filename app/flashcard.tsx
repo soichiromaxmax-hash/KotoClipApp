@@ -10,11 +10,8 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api } from '@/lib/api';
 import { KotoBird } from '@/components/KotoBird';
-
-const DIRECTION_KEY = 'koto_flashcard_direction_v1';
 
 interface Word {
   id: number;
@@ -150,15 +147,8 @@ export default function FlashcardScreen() {
   const [started, setStarted] = useState(false);
   const sessionWords = useRef<Word[]>([]);
 
-  useEffect(() => {
-    AsyncStorage.getItem(DIRECTION_KEY).then((saved) => {
-      if (saved === 'en_ja' || saved === 'ja_en') setDirection(saved);
-    }).catch(() => {});
-  }, []);
-
   function handleStart(d: Direction) {
     setDirection(d);
-    AsyncStorage.setItem(DIRECTION_KEY, d).catch(() => {});
     setStarted(true);
     load();
   }
