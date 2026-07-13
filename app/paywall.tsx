@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import type { PurchasesPackage } from 'react-native-purchases';
 import { KotoBird } from '@/components/KotoBird';
 import {
@@ -189,10 +190,12 @@ export default function PaywallScreen() {
             onPress={() => router.push('/upgrade' as any)}
             activeOpacity={0.8}
           >
-            <Text style={s.guestNoticeText}>
-              アカウントを作成すると、単語データも購入情報も引き継げます
-            </Text>
-            <Text style={s.guestNoticeLink}>アカウントを作成する →</Text>
+            <Text style={s.guestNoticeTitle}>アカウントを作成しませんか？</Text>
+            <Text style={s.guestNoticeText}>作成前のデータ・購入情報も引き継がれます</Text>
+            <View style={s.guestNoticeLinkRow}>
+              <Text style={s.guestNoticeLink}>アカウントを作成する</Text>
+              <Ionicons name="chevron-forward" size={16} color="#F5B84B" />
+            </View>
           </TouchableOpacity>
         )}
 
@@ -330,16 +333,18 @@ const s = StyleSheet.create({
   subtitle: { fontSize: 14, color: '#8F99A8' },
 
   guestNotice: {
-    backgroundColor: 'rgba(245,184,75,0.08)',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(245,184,75,0.22)',
-    padding: 12,
-    marginBottom: 16,
-    gap: 6,
+    backgroundColor: 'rgba(245,184,75,0.10)',
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: 'rgba(245,184,75,0.4)',
+    padding: 16,
+    marginBottom: 18,
+    gap: 5,
   },
-  guestNoticeText: { color: '#E9EDF2', fontSize: 12, lineHeight: 18 },
-  guestNoticeLink: { color: '#F5B84B', fontSize: 12, fontWeight: '700' },
+  guestNoticeTitle: { color: '#F9FAFB', fontSize: 17, fontWeight: '800', lineHeight: 23 },
+  guestNoticeText: { color: '#E9EDF2', fontSize: 14, lineHeight: 20 },
+  guestNoticeLinkRow: { flexDirection: 'row', alignItems: 'center', gap: 2, marginTop: 6 },
+  guestNoticeLink: { color: '#F5B84B', fontSize: 15, fontWeight: '800' },
 
   features: {
     backgroundColor: 'rgba(21,26,34,0.9)',
